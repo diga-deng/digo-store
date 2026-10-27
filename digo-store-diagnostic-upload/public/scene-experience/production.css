@@ -15,3 +15,22 @@
 .catalog-recent-placeholder{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:#e3e1d8;color:#5c6861}
 .catalog-recent-placeholder svg{width:58px;height:58px;stroke-width:1}
 .catalog-recent-placeholder span{font-size:20px;max-width:80%;text-align:center}
+
+/* On phones the rail takes one fifth of the viewport, with compact image tiles. */
+@media(max-width:760px){
+ .glass-product-rail,.swipe-main .glass-product-rail{width:20vw;min-width:0;max-width:none;left:8px;padding:5px 4px;border-radius:12px;bottom:auto}
+ .glass-product-item,.swipe-main .glass-product-item{position:relative;display:block;padding:5px 0}
+ .glass-product-image,.swipe-main .glass-product-image{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:6px}
+ .glass-product-details{position:absolute;right:-3px;bottom:1px;width:44px;height:44px}
+ .glass-product-cart,.swipe-main .glass-product-cart{width:44px;height:44px;position:relative;border-radius:50%}
+ .glass-product-cart:before{content:'';position:absolute;width:25px;height:25px;border:1px solid #ffffff70;border-radius:50%;background:#f5f3edb8;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+ .glass-product-cart svg{position:relative;width:15px;height:15px;color:#24333a;filter:none}
+ .swipe-header .header-tools .icon-btn,.swipe-header .profile-entry{width:44px;height:44px;margin-left:0}
+ .swipe-header .cart-entry{height:44px}
+ .picture-tool,.swipe-main .feed-help{width:44px;height:44px}
+ .swipe-main .glass-product-rail{max-height:calc(100% - 143px)}
+ .bottom-lanes{gap:0}
+ .scene-shop-entry,.scene-enter{min-height:44px}
+ .scene-enter{min-width:44px}
+ .modal input,.modal select,.modal textarea{font-size:16px}
+}

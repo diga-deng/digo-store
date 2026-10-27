@@ -18,7 +18,7 @@ function routePath() { return location.hash.slice(1) || '/'; }
 function laneIndex() { return lanePaths.indexOf(routePath()); }
 function knownScene(id) { return [...baseScenes, ...state.custom].some(s => s.id === id); }
 function interestedScenes() { return state.sceneInteractions.filter(x => knownScene(x.id)).map(x => getScene(x.id)); }
-function viewedPieces() { return state.viewedProducts.filter(x => getProduct(x.id)); }
+function viewedPieces() { return state.viewedProducts.filter(x => x && (getProduct(x.id) || (x.kind === 'catalog' && typeof x.product?.slug === 'string' && typeof x.product?.name === 'string' && Number.isSafeInteger(x.product?.price_cents)))); }
 function rememberSceneView() { return interestedScenes()[ui.interestIndex]?.id; }
 
 function recordSceneInteraction(id, action) {
@@ -59,6 +59,7 @@ function recentProductsPage() {
   const entries = viewedPieces();
   ui.recentIndex = Math.min(ui.recentIndex || 0, Math.max(0, entries.length - 1));
   const entry = entries[ui.recentIndex];
+  if (entry?.kind === 'catalog') return catalogRecentPage(entry);
   const p = entry && getProduct(entry.id);
   const source = entry?.scene && knownScene(entry.scene) ? getScene(entry.scene) : null;
   return `${header()}<main id="main" class="swipe-main gesture-surface recent-lane" data-feed="recent"><h1 class="sr-only">Viewed products</h1>${p ? `<section class="recent-stage" data-active-product="${p.id}" data-scene="${source?.id || ''}" aria-label="${esc(p.name)}" tabindex="0"><button class="recent-product-art" data-action="product" data-id="${p.id}" aria-label="View ${esc(p.name)}">${productPhoto(p)}</button><div class="recent-product-summary"><span class="recent-category" aria-label="${p.category}">${icon(p.category === 'Wear' ? 'shirt' : 'home')}</span><h2>${esc(p.name)}</h2><p>${esc(p.material)}</p><button class="recent-buy" data-action="product" data-id="${p.id}" aria-label="Choose options for ${esc(p.name)}">${icon('cart')}</button>${source ? `<a class="recent-source" href="#/scene/${source.id}" aria-label="See ${esc(source.title)}" title="${esc(source.title)}"><img src="${esc(source.image)}" alt="${esc(source.title)}" draggable="false">${icon('arrow')}</a>` : ''}</div><button class="feed-help icon-btn" data-action="gesture-help" aria-label="Replay swipe guide" title="Swipe guide">${icon('info')}</button></section>` : `<section class="feed-empty"><span class="empty-symbol">${icon('bag')}</span><p>Pieces you open will be waiting here.</p><a class="empty-return" href="#/" aria-label="Back to Discover" title="Discover">${icon('left')}${icon('sun')}</a><a class="empty-catalog" href="#/shop" aria-label="Browse all products" title="All products">${icon('search')}</a></section>`}<span class="sr-only" role="status" aria-live="polite">${p ? esc(p.name) : 'No viewed products yet'}</span></main>${bottomNavigation()}<div id="gesture-coach-root"></div>`;

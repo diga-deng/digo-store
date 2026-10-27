@@ -42,6 +42,13 @@ test('a product tap records its scene and deduplicates the most recent pieces', 
   assert.equal(f.run('JSON.stringify(state.sceneInteractions.map(x=>x.id))'), '["a","b"]');
 });
 
+test('real catalog views share the recent lane without generating a scene interaction', () => {
+  const f = fixture();
+  f.run("state.viewedProducts=[{id:'store:scarf',kind:'catalog',product:{slug:'scarf',name:'Scarf',price_cents:4500}},{id:'broken',kind:'catalog',product:{}},{id:'lamp',scene:'a'}]");
+  assert.equal(f.run('JSON.stringify(viewedPieces().map(x=>x.id))'), '["store:scarf","lamp"]');
+  assert.equal(f.run('state.sceneInteractions.length'), 0);
+});
+
 test('new interactions lead the next lane while current interest stays stable', () => {
   const f = fixture();
   f.run("recordSceneInteraction('a','save');recordSceneInteraction('b','details');ui.interestIndex=1;recordSceneInteraction('c','product')");

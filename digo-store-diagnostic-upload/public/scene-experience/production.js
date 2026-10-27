@@ -76,10 +76,21 @@ async function searchResults() {
   if (selectedType === 'Scenes') return;
   const catalog = await storeCatalog();
   if (!target.isConnected || ui.search.toLowerCase().trim() !== q || ui.searchType !== selectedType) return;
-  const actual = catalog.filter(p => matches(`${p.name} ${p.material || ''} ${p.category || ''}`)).slice(0, 20);
+  const actual = catalog.filter(p => !q || (tokens.length ? tokens : [q]).every(t => `${p.name} ${p.material || ''} ${p.category || ''}`.toLowerCase().includes(t))).slice(0, 20);
   const live = actual.map(p => `<a class="search-result" href="/products/${encodeURIComponent(p.slug)}"><div class="thumb live-piece-symbol">${icon('bag')}</div><div><h3>${esc(p.name)}</h3><p>${esc(storeMoney(p.price_cents, p.currency))} · Current collection</p></div>${icon('arrow')}</a>`).join('');
   const result = (selectedType === 'All' ? sr : '') + live + cr;
   target.innerHTML = result || '<p>No matching pieces yet.</p><a class="text-btn" href="/shop">Browse the current collection</a>';
 }
 
-window.addEventListener('pageshow', event => { if (event.persisted) render(false); });
+function catalogRecentPage(entry) {
+  const p = entry.product;
+  const href = '/products/' + encodeURIComponent(p.slug);
+  const image = typeof p.image_url === 'string' && (/^https:\/\//.test(p.image_url) || /^\/(?!\/)/.test(p.image_url)) ? p.image_url : null;
+  const art = image ? `<img src="${esc(image)}" alt="${esc(p.name)}" draggable="false">` : `<div class="catalog-recent-placeholder">${icon('bag')}<span>${esc(p.material || p.category || 'DIGO')}</span></div>`;
+  return `${header()}<main id="main" class="swipe-main gesture-surface recent-lane" data-feed="recent"><h1 class="sr-only">Viewed products</h1><section class="recent-stage" aria-label="${esc(p.name)}" tabindex="0"><a class="recent-product-art catalog-recent-art" href="${href}" aria-label="View ${esc(p.name)}">${art}</a><div class="recent-product-summary"><span class="recent-category">${icon('bag')}</span><h2>${esc(p.name)}</h2><p>${esc(p.material || '')}</p><a class="recent-buy catalog-recent-price" href="${href}">${esc(storeMoney(p.price_cents, p.currency))} ${icon('cart')}</a></div></section></main>${bottomNavigation()}<div id="gesture-coach-root"></div>`;
+}
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  try { const saved = JSON.parse(localStorage.getItem('digo-world-v1') || '{}'); if (Array.isArray(saved.viewedProducts)) state.viewedProducts = saved.viewedProducts; } catch {}
+  render(false);
+});

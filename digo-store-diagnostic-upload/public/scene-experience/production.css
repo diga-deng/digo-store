@@ -10,3 +10,8 @@
 .recent-buy{font-size:0}
 .recent-buy svg{font-size:initial}
 .editor-concept-note{font-size:11px;color:#68716b;padding:8px 4%}
+.catalog-recent-price{font-size:19px}
+.catalog-recent-art img{width:100%;height:100%;object-fit:contain}
+.catalog-recent-placeholder{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:#e3e1d8;color:#5c6861}
+.catalog-recent-placeholder svg{width:58px;height:58px;stroke-width:1}
+.catalog-recent-placeholder span{font-size:20px;max-width:80%;text-align:center}

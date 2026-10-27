@@ -715,3 +715,14 @@ button:disabled { cursor:not-allowed; opacity:.5; }
 }
 
 .preview-topline button { border:0; background:transparent; }
+
+/* Shared frame between the immersive home and the existing store. */
+body,button,input,select,textarea,h1,h2,h3,h4,.brand{font-family:Arial,Helvetica,sans-serif}
+body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+.world-store-header .brand{font-size:25px;font-weight:500;letter-spacing:2px}
+.world-store-header .nav{margin-left:auto;gap:16px}
+.world-store-header .header-icon{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+.world-store-lanes{position:fixed;inset:auto 0 0;height:calc(68px + env(safe-area-inset-bottom,0px));padding:0 max(20px,calc((100vw - 420px)/2)) env(safe-area-inset-bottom,0px);display:flex;align-items:center;justify-content:space-between;background:#fbfaf7ed;backdrop-filter:blur(18px);border-top:1px solid #1b2a3610;z-index:35}
+.world-store-lanes a{width:56px;height:52px;display:grid;place-items:center;color:#68747b}
+.world-store-lanes svg{width:23px;height:23px;stroke-width:1.55}
+.world-store-lanes a:focus-visible,.world-store-header a:focus-visible{outline:2px solid #1b2a36;outline-offset:3px}

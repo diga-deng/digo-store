@@ -59,3 +59,26 @@ This is an MVP admin flow. It is protected by a shared admin password, which is 
 ## Payment integration setup and verification
 
 See [PAYMENT_SETUP.md](PAYMENT_SETUP.md) for test-only Stripe configuration, the exact webhook URL, and end-to-end acceptance checks.
+
+## Scene-first experience
+
+The production homepage is the approved DIGO scene experience, served at `/` by
+an internal rewrite to `public/scene-experience/index.html`. All scripts, styles
+and compressed images are hosted on the same domain. The existing `/shop`,
+`/products/[slug]`, `/checkout`, admin and payment API routes remain available.
+
+- Vertical swipes change scenes; horizontal swipes move through Discover,
+  interested scenes, viewed concept pieces and My World. Four bottom icons also
+  provide direct access. A transparent hand introduces gestures on the first visit.
+- Scene edits, saves, interests and the guide are local to this browser, under
+  `digo-world-v1`. Simply swiping does not create an interest signal.
+- Scene photography and the six concept objects are illustrative. They cannot
+  be added to the real cart. Concept price estimates only support scene planning.
+- `production.js` connects the real `digo-cart-v3` shopping bag, current product
+  search through `/api/catalog`, and the existing checkout. Actual catalog
+  products retain their original pricing, reservation and payment rules.
+- `/api/catalog` returns only allowlisted public fields, excluding supplier costs.
+- Existing payment configuration and live-payment restrictions are unchanged.
+
+Run `npm ci`, `npm test`, and `npm run build` before deploying. The suite includes
+payment integrity, gesture intent/history and concept-versus-commerce checks.

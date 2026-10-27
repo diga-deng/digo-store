@@ -4,8 +4,8 @@ import { CartProvider } from "@/components/CartProvider";
 import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "Digo — Find your look. Make it yours.",
-  description: "Discover outfit inspiration for the days ahead. Explore by temperature and occasion, save your favourite looks, and choose the accessories you need."
+  title: "DIGO — A life that feels like you",
+  description: "Discover scenes, make them your own, and bring a little of that world home."
 };
 
 export default function RootLayout({

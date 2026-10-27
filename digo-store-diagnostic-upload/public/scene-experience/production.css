@@ -1,0 +1,12 @@
+/* Concepts carry no sales price; actual prices live in the current collection. */
+.glass-product-details{justify-content:center}
+.concept-note{font-size:12px;color:#68716b;margin:24px 0}
+.live-cart-item{padding:22px 0;border-bottom:1px solid var(--line)}
+.live-cart-item h3{font-size:17px;font-weight:500}
+.live-cart-item p{font-size:12px;color:#68716b}
+.live-cart-item strong{font-size:15px;font-weight:500}
+.live-piece-symbol{display:grid;place-items:center;background:#eeece5}
+.live-piece-symbol svg{width:28px;height:28px}
+.recent-buy{font-size:0}
+.recent-buy svg{font-size:initial}
+.editor-concept-note{font-size:11px;color:#68716b;padding:8px 4%}

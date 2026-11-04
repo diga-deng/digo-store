@@ -193,3 +193,16 @@ test('all live collection remains closed until fulfilment is implemented',async(
  }
  assert.equal(f.creates.length,0);
 });
+
+test('wardrobe receipt only comes from verified paid DIGO sessions and contains no customer or sourcing details',()=>{
+ const {wardrobeReceipt}=load('lib/wardrobe.ts');
+ const built=core.buildCheckout([item],[product]);
+ const paid={...session,created:1700000000,metadata:built.metadata};
+ const receipt=wardrobeReceipt(paid,[product]);
+ assert.equal(receipt.id,session.id);assert.equal(receipt.test,true);assert.equal(receipt.items[0].id,product.id);
+ assert.equal(receipt.items[0].product.name,product.name);assert.equal(receipt.items[0].product.supplier_price_cny,undefined);
+ assert.equal(JSON.stringify(receipt).includes('test@example.com'),false);
+ assert.equal(wardrobeReceipt({...paid,payment_status:'unpaid'},[product]),null);
+ assert.equal(wardrobeReceipt({...paid,metadata:{digo_checkout:'foreign'}},[product]),null);
+ const missing=wardrobeReceipt(paid,[]);assert.equal(missing.items[0].id,product.id);assert.equal(missing.items[0].product.name,'Purchased piece');
+});

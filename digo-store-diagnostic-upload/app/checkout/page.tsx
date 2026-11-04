@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ServicePreview } from "@/components/ServicePreview";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, LockKeyhole, Trash2 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
     {!cart.items.length ? <div className="edit-empty"><h2>Your bag is waiting.</h2><p>Find a look you love, then choose the pieces you need.</p><Link className="editorial-button" href="/">Explore the edit <ArrowRight size={16}/></Link></div> : <div className="checkout-grid">
       <section><div className="checkout-line-items">{cart.items.map(({product,quantity,kind,reservationPlan}) => <article className="checkout-line" key={purchaseKey(product.id,kind,reservationPlan)}><div className="piece-monogram" aria-hidden="true">{product.category?.slice(0,1) || "D"}</div><div className="checkout-line-copy"><Link href={`/products/${product.slug}`}><strong>{product.name}</strong></Link><span>{purchaseLabel(kind,reservationPlan)}</span><small>Qty {quantity} · Stock and delivery to be confirmed</small>{kind === "reservation" && <small>Product balance later: {formatMoney((product.price_cents-product.reserve_price_cents!)*quantity)}</small>}</div><div className="checkout-line-price"><strong>{formatMoney((kind === "reservation" ? product.reserve_price_cents! : product.price_cents)*quantity)}</strong><button className="icon-button" aria-label={`Remove one ${product.name}, ${purchaseLabel(kind,reservationPlan)}`} onClick={() => cart.removeItem(product.id,kind,reservationPlan)}><Trash2 size={15}/></button></div></article>)}</div>
       {reservations.length > 0 && <div className="checkout-explanation"><span className="small-label">WHAT HAPPENS AFTER THE DEPOSIT?</span><h2>Reserved now. Yours when ready.</h2><p>Your reservation joins the queue after payment is confirmed. When stock becomes available, you can review delivery and pay the remaining balance. If stock is already available, you can move straight to that step.</p><p>No automatic balance charge. No dispatch until the balance payment and delivery details are confirmed.</p><Link href="/reservation-terms" className="text-link">Reservation terms <ArrowRight size={14}/></Link></div>}
+      <ServicePreview productTotal={fullTotal}/>
       </section>
       <aside className="checkout-summary"><span className="small-label">ORDER SUMMARY · USD</span><div className="summary-amounts"><div><span>Selected product total</span><strong>{formatMoney(fullTotal)}</strong></div>{reservations.length > 0 && <div><span>Product balance later</span><strong>{formatMoney(balance)}</strong></div>}<div className="summary-due"><span>Due today</span><strong>{formatMoney(cart.total)}</strong></div></div>
         <p className="context-note">Shipping, tax and delivery are not yet confirmed.</p>

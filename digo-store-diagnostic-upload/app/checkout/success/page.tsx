@@ -5,6 +5,8 @@ import { recordPaidOrder } from "@/lib/orders";
 import { formatMoney } from "@/lib/money";
 import { reservationSummary } from "@/lib/checkout";
 import { purchaseLabel } from "@/lib/purchase";
+import { wardrobeReceipt, type WardrobeReceipt } from "@/lib/wardrobe";
+import { getActiveProducts } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { session_id?: string } }) {
@@ -14,6 +16,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
   let saved = false;
   let total: number | null = null;
   let isTest = false;
+  let receipt: WardrobeReceipt | null = null;
   let reservations: ReturnType<typeof reservationSummary> = [];
   if (id && /^cs_(test_|live_)?[a-zA-Z0-9]+$/.test(id)) {
     try {
@@ -31,12 +34,16 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
               return { id: item.id, quantity: item.quantity, kind: item.kind, ...(item.kind === "reservation" ? {reservationPlan: item.reservationPlan} : {}) };
             }));
           saved = await recordPaidOrder(session);
+          if (saved) {
+            const products = await getActiveProducts().catch(() => []);
+            receipt = wardrobeReceipt(session, products);
+          }
         }
       }
     } catch { /* The webhook retries order storage independently. */ }
   }
   return <main className="shell"><section className="panel" style={{ marginTop: 40 }}>
-    {paid && saved && fingerprint && <CompleteCheckout fingerprint={fingerprint} />}
+    {paid && saved && fingerprint && <CompleteCheckout fingerprint={fingerprint} receipt={receipt} />}
     <h1>{paid ? (isTest ? "Test payment completed" : "Payment received") : "Payment not confirmed"}</h1>
     <p className="muted">{paid ? (saved ? "Your payment and order have been recorded." : "Your payment was received. Your order confirmation is still processing. Please refresh this page shortly; do not pay again.") : "We could not confirm a completed payment. If you just paid, refresh this page before starting another checkout."}</p>
     {paid && total !== null && <p>Total: {formatMoney(total)}</p>}
@@ -45,6 +52,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
       {reservations.map((reservation,index) => <p key={index}>{reservation.plan ? purchaseLabel("reservation",reservation.plan) : "Reservation deposit"} · {reservation.quantity} piece(s) · Product balance: {formatMoney(reservation.balance)}</p>)}
       <p>Stock and delivery are awaiting confirmation. No queue position or dispatch date is promised. Your balance will not be charged automatically.</p><button className="editorial-button" disabled>Balance payment opens after stock confirmation</button>
       {isTest && <p>This test does not allocate real inventory or create a procurement order.</p>}</div>}
-    <Link className="button primary" href="/">Continue shopping</Link>
+    <Link className="button primary" href="/#/wardrobe?tab=purchased">Open wardrobe</Link>{" "}
+    <Link className="button" href="/">Continue shopping</Link>
   </section></main>;
 }

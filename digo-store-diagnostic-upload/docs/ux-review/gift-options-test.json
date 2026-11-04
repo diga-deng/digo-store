@@ -1,0 +1,16 @@
+{
+  "demo": true,
+  "noOrderPlaced": true,
+  "packaging": "gift_box",
+  "giftMessage": "A little something for your next chapter.",
+  "scent": "cedar",
+  "scentCarrier": "Separate scented paper card; not applied to garment",
+  "sampleFees": {
+    "giftCents": 1200,
+    "scentCents": 300
+  },
+  "productTotalCents": 3500,
+  "illustrativeTotalCents": 5000,
+  "delivery": "Unconfirmed",
+  "includedAccessories": "Per-style configuration pending"
+}

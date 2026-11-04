@@ -17,6 +17,7 @@ export type Product = {
   reserve_price_cents?: number;
   source_catalog?: number;
   catalog_preview_key?: string;
+  brand?: string;
 };
 
 export type CartItem = {

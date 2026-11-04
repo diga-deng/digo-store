@@ -1,16 +1,13 @@
 /* The frame stays still. Only the current moment or module changes. */
-:root { --journey-header:78px; --journey-nav:96px; }
+:root { --journey-header:78px; --journey-nav:74px; }
 body { padding-bottom:0; }
 .life-main { padding-bottom:calc(var(--journey-nav) + env(safe-area-inset-bottom,0px) + 28px); }
 .life-nav { height:calc(var(--journey-nav) + env(safe-area-inset-bottom,0px)); padding:8px 20px calc(8px + env(safe-area-inset-bottom,0px)); gap:28px; }
 .life-nav a { flex:0 1 110px; min-width:0; flex-direction:column; justify-content:center; gap:6px; padding:0; position:relative; font-size:10px; }
+.life-nav svg { width:20px; height:20px; stroke-width:1.6; flex-shrink:0; }
 .life-nav a:after { display:none; }
-.nav-picture { width:100%; height:54px; border-radius:4px; overflow:hidden; background:#e7e4db; outline:1px solid transparent; outline-offset:3px; opacity:.65; transition:opacity .2s,outline-color .2s; }
-.nav-picture>img { width:100%; height:100%; object-fit:cover; }
-.nav-picture .nav-style-crop { object-position:76% 46%; transform:scale(1.8); }
-.nav-picture .product-photo { width:100%; height:100%; }
-.life-nav a[aria-current=page] .nav-picture { outline-color:#596650; opacity:1; }
-.life-nav a:hover .nav-picture { opacity:1; }
+.life-nav a[aria-current=page]:after { display:block; position:absolute; bottom:-5px; left:calc(50% - 2px); width:4px; height:4px; }
+.life-nav a:hover { color:var(--life-ink); }
 body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
 .journey-feed #app { height:100%; }
 .life-main.moment-feed { position:relative; height:calc(100dvh - var(--journey-header) - var(--journey-nav) - env(safe-area-inset-bottom,0px)); min-height:0; max-width:none; padding:0 16px 8px; overflow:hidden; touch-action:pinch-zoom; overscroll-behavior:none; }
@@ -36,10 +33,9 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
 @keyframes journey-left { from { transform:translateX(40px); opacity:.6; } to { transform:translateX(0); opacity:1; } }
 @keyframes journey-right { from { transform:translateX(-40px); opacity:.6; } to { transform:translateX(0); opacity:1; } }
 @media(max-width:640px) {
-  :root { --journey-header:62px; --journey-nav:88px; }
+  :root { --journey-header:62px; --journey-nav:76px; }
   .life-nav { gap:16px; padding-left:18px; padding-right:18px; }
   .life-nav a { flex:1; font-size:10px; gap:6px; }
-  .nav-picture { height:44px; }
   .life-main.moment-feed { padding:0 6px 6px; }
   .moment-feed .life-rail { top:62px; max-height:calc(100% - 154px); }
   .moment-feed .scene-quick { top:65px; }
@@ -50,9 +46,8 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
   .style-refine-entry { top:13px; min-height:30px; padding:6px 10px; font-size:9px; }
 }
 @media(max-height:540px) and (min-width:641px) {
-  :root { --journey-header:58px; --journey-nav:72px; }
+  :root { --journey-header:58px; --journey-nav:64px; }
   .life-header { height:var(--journey-header); }
-  .nav-picture { height:34px; }
   .moment-feed .life-rail { top:55px; max-height:calc(100% - 130px); }
   .moment-feed .scene-quick { top:56px; }
 }

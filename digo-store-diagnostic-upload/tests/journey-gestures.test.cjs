@@ -10,8 +10,8 @@ function fixture() {
   let active = 0, count = 3, clock = 1000;
   const makeSurface = kind => ({
     kind, isConnected: true, clientWidth: 900,
-    classList: { add() {}, remove() {} }, setPointerCapture() {}, focus() {},
-    matches(selector) { return selector === (kind === 'wardrobe' ? '.closet-garments' : kind === 'nav' ? '.life-nav' : '.life-scene'); },
+    classList: { add() {}, remove() {}, toggle() {} }, setPointerCapture() {}, focus() {},
+    matches(selector) { return selector === (kind === 'wardrobe' ? '.closet-garments' : kind === 'nav' ? '.life-nav' : '.moment-feed'); },
     querySelectorAll() { return ['/', '/style', '/wardrobe', '/plans'].map((p, i) => ({ getAttribute: key => key === 'href' ? '#' + p : i === active ? 'page' : null })); },
     scrollIntoView() { calls.scenes.push(this.id); }
   });
@@ -22,18 +22,18 @@ function fixture() {
     if (ignored && /input|button/.test(selector)) return {};
     if (selector.includes('.closet-garments') && surface.kind === 'wardrobe') return surface;
     if (selector.includes('.life-nav') && surface.kind === 'nav') return surface;
-    if (selector === '.discover-page .life-scene' && surface.kind === 'scene') return surface;
+    if (['.journey-module','.moment-feed'].includes(selector) && surface.kind === 'scene') return surface;
     return null;
   }});
   const document = {
-    documentElement: { classList: { toggle() {} } },
+    documentElement: { classList: { toggle() {}, remove() {} } }, body: { classList: { toggle() {} } },
     addEventListener(name, fn) { (handlers[name] ||= []).push(fn); },
     querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '.closet-garments' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
   vm.runInNewContext(source, {
     document, window: { addEventListener() {} }, performance: { now: () => clock },
-    requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
+    journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
     closetRecords: () => Array.from({ length: count }), closetMove: step => calls.wardrobe.push(step),
     navigate: p => { calls.navigation.push(p); active = ['/', '/style', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
   });
@@ -85,11 +85,20 @@ test('dialogs, editable controls and empty rails are protected', () => {
   f.setCount(0);f.drag(f.wardrobe, -150);
   assert.deepEqual(f.calls.wardrobe, []);
 });
-test('desktop scene drags move vertically; touch keeps native scrolling and horizontal drags do not change pages', () => {
+test('mouse and touch page up/down once, and horizontal gestures switch modules', () => {
   const f = fixture();f.drag(f.scenes[0], 0, -150);f.drag(f.scenes[1], 0, 150);
-  assert.deepEqual(f.calls.scenes, ['b', 'a']);
-  f.drag(f.scenes[0], -150);f.drag(f.scenes[0], 0, -150, 'touch');
-  assert.deepEqual(f.calls.scenes, ['b', 'a']);assert.deepEqual(f.calls.navigation, []);
+  f.drag(f.scenes[0], 0, -150, 'touch');
+  assert.deepEqual(f.calls.scenes, [1, -1, 1]);
+  f.drag(f.scenes[0], -150);
+  assert.deepEqual(f.calls.navigation, ['/style']);
+});
+test('vertical wheel momentum cannot skip multiple scenes after replacement', () => {
+  const f = fixture();
+  for(let n=0;n<12;n++){f.tick(20);f.event('wheel',f.scenes[n%3],{deltaY:45});}
+  assert.deepEqual(f.calls.scenes,[1]);
+  f.tick(250);f.event('wheel',f.scenes[1],{deltaY:-90});
+  assert.deepEqual(f.calls.scenes,[1,-1]);
+  assert.equal(f.event('wheel',f.scenes[0],{deltaY:100,ctrlKey:true}).prevented,undefined);
 });
 test('horizontal trackpad momentum moves once; vertical wheels and zoom remain native', () => {
   const f = fixture();

@@ -57,14 +57,14 @@ function miniBoard(b) { return `<div class="mini-board">${b.items.slice(0,4).map
 function resumeCard() { const r=world.resume;return r?`<a class="resume-card" href="#${esc(r.path)}" data-life="resume"><span>${icon('undo')} Pick up where you left off</span><strong>${esc(r.label)}</strong>${icon('right')}</a>`:''; }
 function sceneSection(s,index,single=false) {
   const m=moments[s.id]||[s.title,s.subtitle,'YOUR MOMENT'];
-  return `<section class="life-scene" id="moment-${s.id}" data-scene="${s.id}" aria-label="${esc(m[0])}">
+  return `<section class="life-scene" id="moment-${s.id}" data-scene="${s.id}" aria-label="${esc(m[0])}" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown">
     <img class="life-scene-photo" src="${esc(s.image)}" alt="${esc(m[1])}" ${index===0?'fetchpriority="high"':'loading="lazy"'} draggable="false">
     <div class="scene-topline"><span>${String(index+1).padStart(2,'0')} / A LIFE THAT FEELS LIKE YOU</span><span class="scene-static-label">Concept still</span></div>
     <aside class="life-rail" aria-label="Pieces in this moment"><span>THE DETAILS</span>${s.items.slice(0,4).map(id=>`<button data-life="product" data-id="${id}" data-type="concept" data-scene="${s.id}" aria-label="View ${esc(getProduct(id).name)}">${productPhoto(getProduct(id))}<small>View piece ${icon('plus')}</small></button>`).join('')}</aside>
     <button class="life-hotspot" style="left:72%;top:48%" data-life="product" data-type="concept" data-id="${s.items[0]}" data-scene="${s.id}" aria-label="View ${esc(getProduct(s.items[0]).name)}">${icon('plus')}</button>
     <div class="scene-quick"><button data-life="save-scene" data-id="${s.id}" aria-label="Save this moment" aria-pressed="${world.saved.some(x=>x.kind==='scene'&&x.id===s.id)}">${icon('save')}<span>Save</span></button><button data-life="circle" data-id="${s.id}">${icon('circle')}<span>Circle a detail</span></button></div>
     <div class="life-scene-copy"><h2 class="sr-only">${esc(m[0])}</h2><div class="life-actions"><a class="life-btn light" href="#/edit/${s.id}">Make it mine ${icon('plus')}</a><button class="life-btn glass" data-life="scene-pieces" data-id="${s.id}">Explore pieces ${icon('arrow')}</button></div></div>
-    <div class="scene-index"><span>${single?'YOUR INSPIRATION':'SCROLL TO THE NEXT MOMENT'}</span>${!single?`<a href="#moment-${baseScenes[(index+1)%baseScenes.length].id}" data-life="next-scene" data-id="${baseScenes[(index+1)%baseScenes.length].id}" aria-label="Next moment">↓</a>`:''}</div>
+    <div class="scene-index"><span>${single?'YOUR INSPIRATION':'SCROLL TO THE NEXT MOMENT'}</span>${!single?`${index>0?`<a class="scene-step" href="#moment-${baseScenes[index-1].id}" data-life="next-scene" data-id="${baseScenes[index-1].id}" aria-label="Previous moment">↑</a>`:''}<a class="scene-step" href="#moment-${baseScenes[(index+1)%baseScenes.length].id}" data-life="next-scene" data-id="${baseScenes[(index+1)%baseScenes.length].id}" aria-label="Next moment">↓</a>`:''}</div>
   </section>`;
 }
 function discoverPage() {
@@ -134,7 +134,7 @@ function render(scroll=true) {
   else if(['style','taste'].includes(parts[0]))content=stylePage();else if(parts[0]==='plans')content=plansPage();else if(parts[0]==='plan')content=planPage(parts[1]);else if(parts[0]==='account')content=accountPage();else if(parts[0]==='choose'){content=wrap('<div class="life-empty" role="status">Loading your friend’s question…</div>');loadChoice(parts[1]);}
   else if(parts[0]==='product'){content=discoverPage();if(catalogStatus!=='loading')queueMicrotask(()=>showProduct(parts[1],getProduct(parts[1])?'concept':'catalog',new URLSearchParams(location.search).get('scene')));}
   else if(parts[0]==='search'){content=discoverPage();queueMicrotask(()=>searchModal());}else if(parts[0]==='shop'){location.assign('/shop');return;}else content=discoverPage();
-  $('#app').innerHTML=content;document.body.classList.remove('feed-mode');document.title='DIGO — A life that feels like you';if(scroll)window.scrollTo(0,0);
+  $('#app').innerHTML=content;document.body.classList.remove('feed-mode');document.title='DIGO — A life that feels like you';if(typeof mountJourneyGestures==='function')mountJourneyGestures();if(scroll)window.scrollTo(0,0);
 }
 function trackProduct(id,type,sceneId) {
   const p=type==='concept'?getProduct(id):productFor(id);if(!p)return;

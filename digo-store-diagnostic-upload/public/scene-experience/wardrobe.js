@@ -114,9 +114,5 @@ document.addEventListener('click',async e=>{
 function ownedClosetDetail(record) { overlay(`<div class="product-detail-art">${closetArt(record)}</div><h2>${esc(record.name)}</h2><p>${esc(record.brand||'Your own piece')}</p>${btn('Care & services','care',record.id,'','subtle')}`,'Owned piece'); }
 document.addEventListener('input',e=>{if(e.target.id==='closet-search'){closetQuery=e.target.value;closetLimit=18;$('#closet-picker').innerHTML=closetCatalogRows();}});
 document.addEventListener('change',e=>{if(e.target.id==='closet-group'){groupFilter=e.target.value;render(false);}});
-document.addEventListener('keydown',e=>{if(e.target.closest('.closet-garments')&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();closetMove(e.key==='ArrowRight'?1:-1);$('.closet-garments')?.focus();}});
-let closetTouch=null;
-document.addEventListener('touchstart',e=>{if(e.target.closest('.closet-garments'))closetTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
-document.addEventListener('touchend',e=>{if(!closetTouch)return;const dx=e.changedTouches[0].clientX-closetTouch.x,dy=e.changedTouches[0].clientY-closetTouch.y;closetTouch=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){closetSwipedUntil=Date.now()+400;closetMove(dx<0?1:-1);}},{passive:true});
 window.addEventListener('storage',e=>{if(e.key==='digo-wardrobe-orders-v1'){importWardrobeOrders();if(route()==='/wardrobe'&&!$('#overlay-root').innerHTML)render(false);}});
 window.addEventListener('digo-wardrobe-orders',()=>{importWardrobeOrders();if(route()==='/wardrobe')render(false);});

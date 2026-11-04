@@ -25,13 +25,13 @@ function recordSceneInteraction() {}
 function recordProductView() {}
 function mountSwipePage() {}
 function remember(path, label) { if(applyingRemoteState || (world.resume?.path===path&&world.resume.label===label))return; world.resume = { path, label, scroll:world.resume?.path===path?world.resume.scroll:0, at: Date.now() }; writeWorld(); }
-function navLink(path, text, art, active) { return `<a href="#${path}" ${active ? 'aria-current="page"' : ''}><span class="nav-picture" aria-hidden="true">${art}</span><span>${text}</span></a>`; }
+function navLink(path, text, glyph, active) { return `<a href="#${path}" ${active ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${text}</span></a>`; }
 function header() {
   return `<header class="life-header"><a class="brand" href="#/" aria-label="DIGO home">DIGO</a><span class="brand-line">Different brands. Your style.</span><div class="header-tools"><button class="icon-btn" data-life="search" aria-label="Search">${icon('search')}</button><button class="icon-btn" data-life="bag" aria-label="Shopping bag">${icon('bag')}<span class="bag-count">${storeCartCount()}</span></button><a class="icon-btn" href="#/account" aria-label="Account">${icon('user')}</a></div></header>`;
 }
 function bottomNavigation() {
-  const r = route(), picture = (id, cls='') => `<img class="${cls}" src="${esc(sceneFor(id).image)}" alt="" draggable="false">`;
-  return `<nav class="life-nav" aria-label="Main navigation">${navLink('/', 'Discover', picture('amalfi'), r==='/' || r.startsWith('/scene'))}${navLink('/style','Style',picture('amalfi','nav-style-crop'),r==='/style'||r.startsWith('/edit'))}${navLink('/wardrobe','Wardrobe',productPhoto(getProduct('dress')),['/wardrobe','/world','/recent','/interests'].includes(r))}${navLink('/plans','Plans',picture('dinner'),r.startsWith('/plan'))}</nav>`;
+  const r = route();
+  return `<nav class="life-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/scene'))}${navLink('/style','Style','spark',r==='/style'||r.startsWith('/edit'))}${navLink('/wardrobe','Wardrobe','shirt',['/wardrobe','/world','/recent','/interests'].includes(r))}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
 }
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';

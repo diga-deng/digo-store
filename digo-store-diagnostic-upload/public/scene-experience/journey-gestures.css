@@ -1,15 +1,59 @@
-html.scene-scroll { scroll-snap-type: y proximity; scroll-padding-top: 90px; }
-.discover-page .life-scene { scroll-snap-align: start; scroll-margin-top: 0; }
-.closet-garments, .closet-garments button, .life-nav, .life-nav a { touch-action: pan-y pinch-zoom; }
-.closet-garments, .life-nav { overscroll-behavior-x: contain; }
-.closet-garments, .closet-garments button, .life-nav { cursor: grab; }
-.is-gesture-dragging, .is-gesture-dragging * { cursor: grabbing !important; user-select: none; }
-.closet-garments img, .life-nav a { -webkit-user-drag: none; }
-.scene-index .scene-step { width: 34px; height: 44px; display: grid; place-items: center; font-size: 22px; }
-@media (hover: hover) { .discover-page .life-scene > .life-scene-photo { cursor: grab; } }
-@media (max-width: 640px) {
-  html.scene-scroll { scroll-padding-top: 62px; }
-  .scene-index { gap: 2px; }
-  .scene-index .scene-step { width: 28px; height: 36px; font-size: 18px; }
+/* The frame stays still. Only the current moment or module changes. */
+:root { --journey-header:78px; --journey-nav:96px; }
+body { padding-bottom:0; }
+.life-main { padding-bottom:calc(var(--journey-nav) + env(safe-area-inset-bottom,0px) + 28px); }
+.life-nav { height:calc(var(--journey-nav) + env(safe-area-inset-bottom,0px)); padding:8px 20px calc(8px + env(safe-area-inset-bottom,0px)); gap:28px; }
+.life-nav a { flex:0 1 110px; min-width:0; flex-direction:column; justify-content:center; gap:6px; padding:0; position:relative; font-size:10px; }
+.life-nav a:after { display:none; }
+.nav-picture { width:100%; height:54px; border-radius:4px; overflow:hidden; background:#e7e4db; outline:1px solid transparent; outline-offset:3px; opacity:.65; transition:opacity .2s,outline-color .2s; }
+.nav-picture>img { width:100%; height:100%; object-fit:cover; }
+.nav-picture .nav-style-crop { object-position:76% 46%; transform:scale(1.8); }
+.nav-picture .product-photo { width:100%; height:100%; }
+.life-nav a[aria-current=page] .nav-picture { outline-color:#596650; opacity:1; }
+.life-nav a:hover .nav-picture { opacity:1; }
+body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
+.journey-feed #app { height:100%; }
+.life-main.moment-feed { position:relative; height:calc(100dvh - var(--journey-header) - var(--journey-nav) - env(safe-area-inset-bottom,0px)); min-height:0; max-width:none; padding:0 16px 8px; overflow:hidden; touch-action:pinch-zoom; overscroll-behavior:none; }
+.moment-feed .life-scene { height:100%; min-height:0; max-height:none; margin:0; }
+.moment-feed>.life-notice { position:absolute; z-index:15; top:0; left:20px; right:20px; }
+.moment-feed .life-rail { top:72px; max-height:calc(100% - 170px); touch-action:pan-y pinch-zoom; overscroll-behavior:contain; }
+.moment-feed .life-scene-copy { bottom:24px; right:120px; }
+.moment-feed .scene-index { right:20px; bottom:23px; gap:6px; }
+.scene-index .scene-step { width:40px; height:44px; display:grid; place-items:center; font-size:22px; color:inherit; border:1px solid #ffffff60; border-radius:50%; background:#20302720; }
+.style-refine-entry { position:absolute; top:22px; left:50%; transform:translateX(-50%); z-index:4; min-height:36px; padding:8px 15px; font-size:11px; }
+.journey-module,.closet-garments,.closet-garments button,.life-nav,.life-nav a { touch-action:pan-y pinch-zoom; }
+.journey-module.moment-feed { touch-action:pinch-zoom; }
+.closet-garments,.life-nav { overscroll-behavior-x:contain; }
+.closet-garments,.closet-garments button,.life-nav,.moment-feed .life-scene-photo { cursor:grab; }
+.is-gesture-dragging,.is-gesture-dragging * { cursor:grabbing!important; user-select:none; }
+.closet-garments img,.life-nav img,.life-nav a { -webkit-user-drag:none; }
+.journey-enter-up .life-scene { animation:journey-up .38s cubic-bezier(.22,.65,.3,1); }
+.journey-enter-down .life-scene { animation:journey-down .38s cubic-bezier(.22,.65,.3,1); }
+.journey-enter-left { animation:journey-left .32s ease-out; }
+.journey-enter-right { animation:journey-right .32s ease-out; }
+@keyframes journey-up { from { transform:translateY(100%); } to { transform:translateY(0); } }
+@keyframes journey-down { from { transform:translateY(-100%); } to { transform:translateY(0); } }
+@keyframes journey-left { from { transform:translateX(40px); opacity:.6; } to { transform:translateX(0); opacity:1; } }
+@keyframes journey-right { from { transform:translateX(-40px); opacity:.6; } to { transform:translateX(0); opacity:1; } }
+@media(max-width:640px) {
+  :root { --journey-header:62px; --journey-nav:88px; }
+  .life-nav { gap:16px; padding-left:18px; padding-right:18px; }
+  .life-nav a { flex:1; font-size:10px; gap:6px; }
+  .nav-picture { height:44px; }
+  .life-main.moment-feed { padding:0 6px 6px; }
+  .moment-feed .life-rail { top:62px; max-height:calc(100% - 154px); }
+  .moment-feed .scene-quick { top:65px; }
+  .moment-feed .life-scene-copy { left:12px; right:55px; bottom:18px; }
+  .moment-feed .life-scene-copy .life-btn { padding:10px; min-height:44px; font-size:9px; gap:5px; }
+  .moment-feed .scene-index { right:10px; bottom:14px; flex-direction:column; gap:4px; }
+  .scene-index .scene-step { width:32px; height:36px; font-size:17px; }
+  .style-refine-entry { top:13px; min-height:30px; padding:6px 10px; font-size:9px; }
 }
-@media (prefers-reduced-motion: reduce) { html.scene-scroll { scroll-snap-type: none; } }
+@media(max-height:540px) and (min-width:641px) {
+  :root { --journey-header:58px; --journey-nav:72px; }
+  .life-header { height:var(--journey-header); }
+  .nav-picture { height:34px; }
+  .moment-feed .life-rail { top:55px; max-height:calc(100% - 130px); }
+  .moment-feed .scene-quick { top:56px; }
+}
+@media(prefers-reduced-motion:reduce) { [class*="journey-enter-"] { animation:none!important; } }

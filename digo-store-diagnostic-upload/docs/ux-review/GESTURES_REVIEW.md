@@ -1,11 +1,9 @@
-# Desktop preview and directional gestures — 2026-11-04
+# Full-page browsing and persistent visual navigation — 2026-11-04
 
-- Discover: native vertical touch/wheel scrolling with proximity snapping; desktop mouse drags up/down move between moments; visible previous/next arrows remain.
-- Wardrobe: horizontal mouse, touch and pen drags, horizontal trackpad scrolling, Shift+wheel, arrow keys, and visible previous/next buttons.
-- Bottom navigation: horizontal swipes and trackpad gestures switch between the four labelled destinations. Horizontal gestures elsewhere do not unexpectedly leave the page.
-- Open dialogs, text inputs, circle drawing and pinch zoom do not trigger navigation. A drag suppresses its trailing click; wheel momentum advances only once per gesture, including when the navigation DOM is replaced.
-- The desktop preview keeps a 1440px iframe layout and scales its display to available width. Mobile uses a 390px layout. Changing preview mode preserves the same iframe and its current choices.
+Discover, Style and scene deep links now show one viewport-sized moment at a time. Up/down touch, mouse dragging, wheel and arrow-key gestures replace that moment, with visible previous/next controls. This supersedes the earlier continuous scrolling/proximity-snap behaviour. The four picture tabs stay fixed at the bottom; horizontal swipes on the scene or tabs switch Discover, Style, Wardrobe and Plans. Wardrobe's garment rail retains local horizontal item selection. Editors, plan forms and product sheets retain ordinary content scrolling.
 
-Validation: 50 tests pass, including new pointer, touch, cancel, input, modal, zoom, momentum and navigation regression cases. Next.js production build passed. Browser validation exercised upward/downward scene dragging, bottom navigation dragging, wardrobe mouse drag in both directions, horizontal wheel and keyboard navigation. Actual phone hardware was not used; touch event behaviour is covered by automated tests and the 390px responsive preview.
+Discover and Style keep independent current-scene IDs on this device. Opening/closing product details, switching modules and refreshing preserve the selected scene. Removed promotional headings stay removed. Style refinement remains available through the compact Refine control; related catalog pieces and plan creation remain available through Explore pieces. No catalogue, order, payment or service rules were changed.
 
-Previous payment, catalogue and sharing-service boundaries are unchanged.
+Guards cover editable controls, circle mode, open dialogs, local product-rail scrolling, multi-touch, cancelled gestures and pinch zoom. A drag suppresses the trailing click. Wheel bursts have a stable identity across DOM replacement so inertial tails cannot skip several pages.
+
+Validation: 51 automated tests passed and Next.js production build passed. Browser checks verified vertical wheel and mouse pagination, horizontal module switching, current scene after closing a product and refreshing, and the 390px mobile layout. Mobile frame measured 390 × 844 with one scene, document height 844, four picture tabs, and navigation bottom at 844. Touch behaviour is covered by gesture tests; physical iOS/Android hardware was not available.

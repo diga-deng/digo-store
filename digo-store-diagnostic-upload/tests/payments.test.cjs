@@ -17,6 +17,7 @@ function load(entry, overrides = {}, cache = new Map()) {
   }}).outputText;
   const module = { exports: {} }; cache.set(rel, module);
   function localRequire(spec) {
+    if (overrides[spec]) return overrides[spec];
     if (spec.startsWith('@/') || spec.startsWith('.')) {
       let next = spec.startsWith('@/') ? spec.slice(2) : path.relative(root, path.resolve(path.dirname(file), spec));
       if (!path.extname(next)) next += '.ts';
@@ -29,8 +30,10 @@ function load(entry, overrides = {}, cache = new Map()) {
 }
 const core = load('lib/checkout.ts');
 const {RESERVATION_TERMS_VERSION}=load('lib/purchase.ts');
-const catalog = load('lib/supplierCatalog.ts').supplierCatalog;
-const product = catalog[0];
+const catalogModule = load('lib/supplierCatalog.ts');
+const catalog = catalogModule.supplierCatalog;
+// Payment mechanics use an explicitly active fixture, not the withdrawn production batch.
+const product = { ...catalog[0], active: true };
 const item = { id: product.id, quantity: 1, kind: 'retail' };
 function request(body) { return new Request('https://digo.example/api/checkout', {method:'POST',body:JSON.stringify(body)}); }
 function fixture({storageError = false, mode = 'test'} = {}) {
@@ -54,6 +57,7 @@ function fixture({storageError = false, mode = 'test'} = {}) {
     creates.push({params,options}); return {id:'cs_test_unit',status:'open',url:'https://checkout.stripe.com/c/pay/cs_test_unit'};
   };
   const overrides = {'lib/supabase.ts':{getSupabaseAdminClient:()=>client},
+    'lib/supplierCatalog.ts':{supplierCatalog:[product],isProductListed:p=>p.active},
     'lib/stripe.ts':{getStripe:()=>stripe,getCheckoutSiteUrl:()=> 'https://digo.example'}};
   return {orders, creates, productQueries, stripe, overrides, setFail(value){fail=value;}};
 }
@@ -92,6 +96,47 @@ test('supplier checkout does not send supplier IDs to UUID database query; retri
  assert.equal(f.creates[0].params.payment_method_types,undefined); // Dashboard controls eligible methods.
  assert.match(f.creates[0].params.success_url,/session_id=\{CHECKOUT_SESSION_ID\}/);
  assert.deepEqual(f.creates[0].params.shipping_address_collection.allowed_countries,['US']);
+});
+test('every withdrawn accessory is rejected before checkout or storage is contacted',async()=>{
+ const f=fixture();delete f.overrides['lib/supplierCatalog.ts'];
+ f.overrides['lib/stripe.ts']={getStripe(){assert.fail('Withdrawn pieces must be rejected before Stripe');}};
+ f.overrides['lib/supabase.ts']={getSupabaseAdminClient(){assert.fail('Withdrawn pieces must be rejected before storage');}};
+ const route=load('app/api/checkout/route.ts',f.overrides);
+ assert.equal(catalog.length,141);
+ for(const piece of catalog){
+  assert.equal(piece.active,false);
+  const response=await route.POST(request({items:[{id:piece.id,quantity:1,kind:'retail'}],requestId:'withdrawn-check-000001'}));
+  assert.equal(response.status,400);assert.match((await response.json()).error,/no longer available/);
+ }
+ assert.equal(f.creates.length,0);
+});
+
+function catalogBoundary({configured=false,data=[],error=null}={}){
+ const keys=['NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY'];
+ const before=keys.map(key=>process.env[key]);let queries=0;
+ try{
+  for(const key of keys){if(configured)process.env[key]=key.endsWith('URL')?'https://unit.example':'unit-public-key';else delete process.env[key];}
+  const client={from(){queries++;const query={select(){return query;},eq(){return query;},order:async()=>({data,error}),single:async()=>({data:data[0]??null,error})};return query;}};
+  return {...load('lib/supabase.ts',{'@supabase/supabase-js':{createClient:()=>client}}),queries:()=>queries};
+ }finally{keys.forEach((key,index)=>{if(before[index]===undefined)delete process.env[key];else process.env[key]=before[index];});}
+}
+test('catalog fallback and old product URLs never expose the withdrawn batch',async()=>{
+ for(const options of [{},{configured:true,error:{message:'catalog offline'}}]){
+  const boundary=catalogBoundary(options);
+  assert.deepEqual(await boundary.getActiveProducts(),[]);
+  const before=boundary.queries();
+  for(const piece of catalog)assert.equal(await boundary.getProductBySlug(piece.slug),null);
+  assert.equal(boundary.queries(),before);
+ }
+});
+test('database copies stay withdrawn while unrelated active products remain available',async()=>{
+ const fresh={...product,id:'new-product',slug:'new-product'};
+ const mirrored={...product,id:'database-copy'};
+ const boundary=catalogBoundary({configured:true,data:[mirrored,fresh,{...fresh,id:'inactive',active:false}]});
+ assert.deepEqual(await boundary.getActiveProducts(),[fresh]);
+ assert.equal(await boundary.getProductBySlug(product.slug),null);
+ assert.deepEqual(await catalogBoundary({configured:true,data:[fresh]}).getProductBySlug(fresh.slug),fresh);
+ assert.equal(catalogModule.isProductListed(mirrored),false);
 });
 test('unreachable order table blocks Stripe session creation before payment',async()=>{
  const f=fixture({storageError:true});const route=load('app/api/checkout/route.ts',f.overrides);

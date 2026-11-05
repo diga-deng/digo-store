@@ -337,7 +337,7 @@ function mountSceneHotspots() {
   sceneHotspotObserver?.disconnect();
   const section=document.querySelector('.life-scene[data-real-room]');
   if(!section)return;
-  const scene=roomScenes.find(s=>s.id===section.dataset.scene),photo=section.querySelector('.life-scene-photo');
+  const scene=baseScenes.find(s=>s.id===section.dataset.scene),photo=section.querySelector('.life-scene-photo');
   const update=()=>{
     const width=section.clientWidth,height=section.clientHeight,rect=section.getBoundingClientRect();
     const rail=section.querySelector('.life-rail')?.getBoundingClientRect();

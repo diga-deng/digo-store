@@ -50,3 +50,38 @@
 .reference-scene[data-real-room] .scene-quick{right:10px}
 }
 @media(prefers-reduced-motion:reduce){.room-hotspot span{transition:none}}
+
+/* Screen moments keep the real frame and separate clothes and objects in the rail. */
+.screen-scene .life-rail .reference-product-photo{padding:4px;object-fit:contain}
+.scene-wide-view{position:absolute;right:24px;bottom:90px;display:flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;background:#f7f5efee;color:#24332d;font-size:10px;border:1px solid #fff8;border-radius:3px;z-index:4}
+.scene-wide-view svg{width:16px;height:16px}
+.screen-extracted-art{background:#efeee8;border-radius:3px;height:min(55vh,530px)}
+.screen-extracted-art .reference-product-photo{background:transparent;padding:14px}
+.screen-extraction-note{font-size:10px!important;color:#73756e;line-height:1.5!important}
+.screen-reference-detail dl>div{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid #ddd9d0;font-size:12px}
+.screen-reference-detail dd{margin:0;text-align:right}
+.screen-origin{display:block;position:relative;width:100%;padding:0;margin:22px 0 5px;overflow:hidden;border-radius:3px}
+.screen-origin img{display:block;width:100%;height:auto}
+.screen-origin-dot{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border:2px solid white;box-shadow:0 0 0 4px #0002;border-radius:50%;background:#fff4}
+.full-scene-sheet{width:min(1120px,96vw);max-height:92dvh;padding:32px;overflow:auto}
+.screen-full-frame{position:relative;width:100%;background:#242923;overflow:hidden}
+.screen-full-frame>img{display:block;width:100%;height:100%;object-fit:contain}
+.screen-full-frame .room-hotspot{position:absolute}
+.screen-full-pieces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}
+.screen-full-pieces button{padding:0;text-align:left}
+.screen-full-pieces img{height:120px;object-fit:contain;background:#eeede7;padding:7px}
+.screen-full-pieces span{display:block;font-size:11px;line-height:1.5;margin-top:8px}
+@media(max-width:640px){
+.screen-scene .scene-topline{left:12px;right:12px}
+.screen-scene .scene-static-label{font-size:8px;padding:4px 6px;gap:2px}
+.screen-scene .scene-quick button{min-width:40px;width:40px;padding:10px}
+.screen-scene .scene-quick button span{display:none}
+.scene-wide-view{right:10px;bottom:106px;font-size:9px;padding:8px;min-height:44px}
+.screen-extracted-art{height:260px}
+.full-scene-sheet{width:100%;padding:34px 14px 20px;max-height:90dvh}
+.screen-full-pieces{gap:8px}
+.screen-full-pieces img{height:90px}
+.screen-full-pieces span{font-size:9px}
+.screen-full-frame .room-hotspot{padding:9px}
+.screen-full-frame .room-hotspot span{width:26px;height:26px;font-size:9px}
+}

@@ -1,0 +1,27 @@
+{
+  "purpose": "Visual demo references only; excluded from DIGO inventory and checkout. Brand assets remain attributed to the source brands; this is not a claim of partnership or commercial image licensing.",
+  "checkedAt": "2026-11-05",
+  "transform": "EXIF orientation, proportional downsize and WebP encoding only. No generative edits.",
+  "sources": {
+    "dress": "https://static.zara.net/assets/public/c4bc/e536/e2a54e28ac88/0fcad3b9eb1b/07561727052-p/07561727052-p.jpg?ts=1783508256885&w=1600",
+    "cardigan": "https://static.zara.net/assets/public/bb4f/9cc4/1c684b0aada4/8d8c9e10b781/02893338803-p/02893338803-p.jpg?ts=1793259614503&w=1600",
+    "lamp-scene": "https://static.zarahome.net/assets/public/03f7/b526/762c45ecbe1e/fb3d2cc70eaa/46165047052-a7/46165047052-a7.jpg?ts=1776679126468&w=1600",
+    "lamp-front": "https://static.zarahome.net/assets/public/8419/c185/961f41b887b3/8f939bdf9d1e/46165047052-p1/46165047052-p1.jpg?ts=1725376352648&w=1200",
+    "lamp-detail": "https://static.zarahome.net/assets/public/3e43/3df1/b79b4c88a170/c7387e0307ec/46165047052-a1/46165047052-a1.jpg?ts=1725376352625&w=1200",
+    "chair-scene": "https://static.zarahome.net/assets/public/f189/a75d/252046508861/d7d3c8bf653d/48331073052-a7/48331073052-a7.jpg?ts=1772528572188&w=1600",
+    "chair-front": "https://static.zarahome.net/assets/public/39dc/1b2f/91c0415c941a/15519d25df64/48331073052-p1/48331073052-p1.jpg?ts=1740416939002&w=1200",
+    "chair-detail": "https://static.zarahome.net/assets/public/fba2/a50a/da8747709e46/48e974f64278/48331073052-a1/48331073052-a1.jpg?ts=1740416936567&w=1200",
+    "lamp-open": "https://static.zarahome.net/assets/public/5987/7ea8/d8ec4c4c902d/6e7359860a21/46165047052-a2/46165047052-a2.jpg?ts=1725376352866&w=1200"
+  },
+  "assetMapping": {
+    "dress": "zara-linen-dress",
+    "cardigan": "zara-wool-cardigan",
+    "chair-scene": "zarahome-chair-scene",
+    "chair-front": "zarahome-chair-front",
+    "chair-detail": "zarahome-chair-detail",
+    "lamp-scene": "zarahome-lamp-scene",
+    "lamp-open": "zarahome-lamp-open",
+    "lamp-detail": "zarahome-lamp-detail",
+    "lamp-front": "zarahome-lamp-folded"
+  }
+}

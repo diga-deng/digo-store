@@ -10,21 +10,29 @@ function fixture(){
   const c=vm.createContext({document:{addEventListener(){}},esc:String});
   vm.runInContext("const products=[{id:'dress',name:'Original concept'}]; const baseScenes=[{id:'amalfi',items:['dress']}]; const getProduct=id=>products.find(p=>p.id===id);",c);
   vm.runInContext(source,c);
+  vm.runInContext(fs.readFileSync(path.join(root,'public/scene-experience/scene-products.js'),'utf8'),c);
   return code=>vm.runInContext(code,c);
 }
 test('real reference feed preserves old saved identities and binds each photo to its actual product',()=>{
   const run=fixture(),data=JSON.parse(run('JSON.stringify({products:referenceProducts,scenes:baseScenes,archived:archivedScenes})'));
-  assert.equal(data.products.length,4);
+  assert.equal(data.products.length,13);
+  assert.equal(data.scenes.length,3);
+  assert.equal(data.archived.length,5);
+  assert.equal(data.archived.find(s=>s.id==='linen-afternoon').items[0],'ref-zara-linen-dress');
   assert.equal(run("getProduct('dress').name"),'Original concept');
   assert.equal(data.archived[0].id,'amalfi');
   for(const scene of data.scenes){
-    assert.equal(scene.items.length,1);
+    assert.equal(scene.items.length,3);
+    assert.equal(scene.hotspots.length,scene.items.length);
+    assert.deepEqual(scene.hotspots.map(h=>h.id),scene.items);
+    assert.equal(scene.fullScene,true);
     const product=data.products.find(p=>p.id===scene.items[0]);
     assert.equal(scene.brand,product.brand);
     assert.equal(product.reference,true);
     assert.ok(fs.existsSync(path.join(root,'public',scene.image)));
     for(const photo of product.gallery)assert.ok(fs.existsSync(path.join(root,'public',photo)));
-    assert.match(product.sourceUrl,/^https:\/\/www\.(zara|zarahome)\.com\/us\//);
+    assert.match(product.sourceUrl,/^https:\/\/fermliving\.com\/products\//);
+    assert.ok(scene.items.every(id=>data.products.find(p=>p.id===id).image!==scene.image));
     assert.equal(product.active,undefined);
     assert.equal(product.tile,null);
   }
@@ -49,4 +57,21 @@ test('reference detail supports saving and editing but offers only the original 
   assert.match(html,/add-to-board/);
   assert.match(html,/https:\/\/www.zarahome.com\/us\/wooden-chair-with-backrest/);
   assert.doesNotMatch(html,/add-real|add-bag|\/checkout/);
+});
+
+test('room markers remain on their photographed objects at desktop and mobile cover crops',()=>{
+  const run=fixture();
+  for(const [width,height] of [[1408,800],[378,700],[360,600]]) {
+    const points=JSON.parse(run(`JSON.stringify(roomScenes.flatMap(s=>s.hotspots.map(h=>({...scenePhotoPoint(h,s.width,s.height,${width},${height},s.position),scene:s.id,product:h.id}))))`));
+    for(const point of points){assert.ok(point.x>=0&&point.x<=width,JSON.stringify(point));assert.ok(point.y>=0&&point.y<=height,JSON.stringify(point));}
+  }
+  const p=JSON.parse(run('JSON.stringify(scenePhotoPoint({x:.5,y:.5},100,200,400,200,[.5,.5]))'));
+  assert.deepEqual(p,{x:200,y:100});
+});
+test('European references retain their currency and original sold-out identity',()=>{
+  const run=fixture();
+  run("let captured='';const world={options:{}};const storeMoney=(x,c)=>new Intl.NumberFormat('en-US',{style:'currency',currency:c}).format(x/100);const icon=()=>'';const btn=(label,action)=>'<button data-life=\"'+action+'\">'+label+'</button>';const overlay=html=>captured=html;const $=()=>null;");
+  run("showReferenceProduct(getProduct('ref-ferm-insert-table'),'a-quiet-living-room')");
+  const html=run('captured');
+  assert.match(html,/€1,219.00/);assert.match(html,/Brand reference price · EUR/);assert.match(html,/Out of stock at the source/);assert.match(html,/insert-side-table-stone-sand/);assert.doesNotMatch(html,/add-real|add-bag|\/checkout/);
 });

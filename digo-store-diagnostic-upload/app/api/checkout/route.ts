@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { getStripe, getCheckoutSiteUrl } from "@/lib/stripe";
-import { supplierCatalog } from "@/lib/supplierCatalog";
+import { supplierCatalog, isProductListed } from "@/lib/supplierCatalog";
 import { buildCheckout, CheckoutInputError, parseCheckoutItems } from "@/lib/checkout";
 import type { Product } from "@/lib/types";
 import { RESERVATION_TERMS_VERSION } from "@/lib/purchase";
@@ -27,6 +27,9 @@ export async function POST(request: Request) {
 
   try {
     const items = parseCheckoutItems(body?.items);
+    if (items.some(item => supplierCatalog.some(product => product.id === item.id && !isProductListed(product)))) {
+      throw new CheckoutInputError("A selected product is no longer available. Your saved choices have been kept.");
+    }
     if (items.some(item => item.kind === "reservation") && body.reservationTerms !== RESERVATION_TERMS_VERSION) {
       throw new CheckoutInputError("Please read and accept the reservation terms before continuing.");
     }
@@ -49,7 +52,7 @@ export async function POST(request: Request) {
     if (databaseIds.length) {
       const { data, error } = await supabase.from("products").select("*").in("id", databaseIds).eq("active", true);
       if (error) throw new Error("Product lookup failed.");
-      products.push(...(data ?? []) as Product[]);
+      products.push(...((data ?? []) as Product[]).filter(isProductListed));
     }
     const { line_items, metadata, hasRetail } = buildCheckout(items, products);
     // Live payments stay closed until inventory, fulfillment and final terms are ready.

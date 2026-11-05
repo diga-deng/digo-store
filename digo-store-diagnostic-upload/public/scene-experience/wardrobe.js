@@ -76,6 +76,7 @@ function closetCatalogRows() {
   const q=closetQuery.toLowerCase().trim(),matches=catalog.filter(p=>[p.name,p.brand,p.category,p.material,p.style_code].some(v=>String(v||'').toLowerCase().includes(q)));
   if(catalogStatus==='loading')return '<p role="status">Loading pieces…</p>';
   if(catalogStatus==='error')return `<p>Could not load pieces. Your wardrobe is kept.</p><button class="life-btn subtle" data-closet="retry-catalog">Try again</button>`;
+  if(!catalog.length)return '<p>New pieces, soon.</p><a class="life-btn subtle" href="#/">Explore moments</a>';
   return matches.length?`<div class="closet-picker-grid">${matches.slice(0,closetLimit).map(p=>{
     const saved=world.saved.some(x=>x.kind==='product'&&x.id===p.id&&x.savedManually!==false);
     return `<article><button class="life-art" data-life="product" data-id="${esc(p.id)}" aria-label="View ${esc(p.name)}">${productArt(p)}</button><small>${esc(brandFor(p))}</small><h3>${esc(p.name)}</h3><p>${storeMoney(p.price_cents,p.currency)}</p><button class="life-btn subtle" data-closet="save" data-key="${esc(p.id)}" ${saved?'disabled':''}>${saved?'Added ✓':'Add to wardrobe'}</button></article>`;

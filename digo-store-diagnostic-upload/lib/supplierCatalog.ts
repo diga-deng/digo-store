@@ -157,7 +157,8 @@ export const supplierCatalog: Product[] = rawCatalog.trim().split("\n").map((row
     price_cents: Number(retail) * 100,
     currency: "usd",
     image_url: null,
-    active: true,
+    // Withdrawn from sale; retain source records for existing orders and saved pieces.
+    active: false,
     created_at: "2026-08-27T00:00:00.000Z",
     style_code: code,
     category,
@@ -170,3 +171,8 @@ export const supplierCatalog: Product[] = rawCatalog.trim().split("\n").map((row
     catalog_preview_key: previewKey
   };
 });
+
+export function isProductListed(product: Product): boolean {
+  return product.active && !supplierCatalog.some((source) =>
+    !source.active && (source.id === product.id || source.slug === product.slug));
+}

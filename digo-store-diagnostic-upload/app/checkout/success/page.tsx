@@ -7,6 +7,7 @@ import { reservationSummary } from "@/lib/checkout";
 import { purchaseLabel } from "@/lib/purchase";
 import { wardrobeReceipt, type WardrobeReceipt } from "@/lib/wardrobe";
 import { getActiveProducts } from "@/lib/supabase";
+import { supplierCatalog } from "@/lib/supplierCatalog";
 
 export const dynamic = "force-dynamic";
 export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { session_id?: string } }) {
@@ -36,7 +37,8 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
           saved = await recordPaidOrder(session);
           if (saved) {
             const products = await getActiveProducts().catch(() => []);
-            receipt = wardrobeReceipt(session, products);
+            // Historical receipts still resolve withdrawn pieces without relisting them.
+            receipt = wardrobeReceipt(session, [...products, ...supplierCatalog]);
           }
         }
       }

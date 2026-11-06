@@ -71,8 +71,8 @@ const curatedProducts = [
     "brand": "Loro Piana",
     "name": "Paige Dress",
     "sku": "FAP0016_P0DG",
-    "color": "Ivory",
-    "styleColor": "ivory",
+    "color": "Burgundy",
+    "styleColor": "red",
     "styleTemperatures": [
       15,
       20
@@ -203,8 +203,8 @@ const curatedProducts = [
     "brand": "Loro Piana",
     "name": "Parksville Jacket",
     "sku": "FAP5979_MF99",
-    "color": "Warm brown",
-    "styleColor": "earth",
+    "color": "Stone grey",
+    "styleColor": "stone",
     "styleTemperatures": [
       0,
       5,
@@ -370,9 +370,8 @@ const curatedScenes = [
  {id:'architecture-canoas',title:'A different kind of stillness.',brand:'Loro Piana',category:'Architecture',image:'/scene-experience/assets/architecture-canoas.jpg',position:[0.58,0.5],description:'Two people stand within the glass, concrete and tropical garden of Oscar Niemeyer’s Casa das Canoas.',items:['edit-lp-25','edit-lp-26','edit-lp-30','edit-lp-33','edit-lp-34','edit-lp-16','edit-lp-21','edit-arc-earth'],tags:'architecture modernist quiet luxury garden green earth knitwear',sourceUrl:'https://us.loropiana.com/en/cm/campaigns/narratives/springsummer2025',sourceCredit:'Loro Piana · Mario Sorrenti · SS25 image reference'}
 ].map(s=>({...s,reference:true,editorial:true,fullScene:false,subtitle:s.description,headline:s.title,place:s.category,label:s.brand,collection:'The Discover edit',tone:'#59605b'}));
 // Home pieces remain colour-sortable, but never enter clothing temperature groups.
-for(const [id,color] of [['ref-ferm-cilla-blanket','ivory'],['ref-ferm-arum-lamp','black'],['ref-ferm-insert-table','earth']]) { const p=getProduct(id); if(p)p.styleColor=color; }
-// Stainless steel is a neutral, not a black colourway.
-getProduct('ref-ferm-arum-lamp').styleColor=null;
+for(const [id,color] of [['ref-ferm-cilla-blanket','ivory'],['ref-ferm-arum-lamp','stone'],['ref-ferm-insert-table','earth']]) { const p=getProduct(id); if(p)p.styleColor=color; }
+// Neutral grey and silver objects share the Stone column.
 baseScenes.splice(0,baseScenes.length,...curatedScenes,roomScenes[0]);
 function showEditorialProduct(p,sceneId) {
   const s=sceneFor(sceneId)||baseScenes.find(s=>s.items.includes(p.id));

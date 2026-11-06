@@ -3,7 +3,7 @@ const styleView = { mode: 'color', positions: {color:0,temperature:0}, lanes: {}
 const styleColors = [
   {id:'red',name:'Red',tone:'#9e363c'}, {id:'blue',name:'Blue',tone:'#507a9d'},
   {id:'ivory',name:'Ivory',tone:'#d5cbb6'}, {id:'green',name:'Green',tone:'#596c58'},
-  {id:'earth',name:'Earth',tone:'#92745d'}, {id:'black',name:'Black',tone:'#2f3233'}
+  {id:'earth',name:'Earth',tone:'#92745d'}, {id:'black',name:'Black',tone:'#2f3233'}, {id:'stone',name:'Stone',tone:'#9a9d99'}
 ];
 const styleTemperatures = [
   {id:'0',name:'0–5°C',tone:'#718795',note:'Winter layers'},
@@ -15,7 +15,7 @@ const styleTemperatures = [
 ];
 function styleProducts() {
   const ids = new Set(baseScenes.flatMap(s=>s.items));
-  return products.filter(p=>ids.has(p.id) && p.styleColor);
+  return products.filter(p=>ids.has(p.id) && p.styleColor).sort((a,b)=>Number(a.category==='Home')-Number(b.category==='Home'));
 }
 function styleGroups(mode=styleView.mode) {
   const all=styleProducts();

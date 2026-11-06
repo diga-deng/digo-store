@@ -1,0 +1,44 @@
+[
+  {
+    "sceneId": "outdoor-dawn",
+    "image": "/scene-experience/assets/outdoor-dawn.jpg",
+    "sourcePage": "https://arcteryx.com/us/en",
+    "sourceImage": "https://arc-cms-prod.imgix.net/content/2024-01/Tile1_32_Crop_0.jpg?auto=format&fit=crop&q=85&w=1800",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  },
+  {
+    "sceneId": "architecture-glass",
+    "image": "/scene-experience/assets/architecture-glass.jpg",
+    "sourcePage": "https://us.loropiana.com/en/cm/campaigns/narratives/springsummer2025",
+    "sourceImage": "https://static-b2c.loropiana.com/cms/resource/image/913218/landscape_ratio4x3/1960/1470/d45b573a9afd3196cf987f6ef1fd56a4/3CEF9E14957A973248081F1BE03792D5/ss25-adv-social-crops-16x9-lp3-1-no-logo.jpg",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  },
+  {
+    "sceneId": "outdoor-ridgewalk",
+    "image": "/scene-experience/assets/outdoor-ridgewalk.jpg",
+    "sourcePage": "https://arcteryx.com/ca/en/",
+    "sourceImage": "https://cdn.sanity.io/images/inkbj32c/production/69801c1e8760abd2236a92a3028c8b960dbc439b-3000x2000.jpg?fm=jpg&q=85&w=1800",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  },
+  {
+    "sceneId": "architecture-courtyard",
+    "image": "/scene-experience/assets/architecture-courtyard.jpg",
+    "sourcePage": "https://us.loropiana.com/en/cm/campaigns/narratives/springsummer2025",
+    "sourceImage": "https://static-b2c.loropiana.com/cms/resource/image/903554/landscape_ratio4x3/1960/1470/ea9f720b702e6c6c4775f911ac7de504/F59842073F6A591457BFB3F74FD1DBAC/ss25-adv-social-crops-16x9-lp4-no-logo.jpg",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  },
+  {
+    "sceneId": "outdoor-powder",
+    "image": "/scene-experience/assets/outdoor-powder.jpg",
+    "sourcePage": "https://arcteryx.com/",
+    "sourceImage": "https://arc-cms-prod.imgix.net/content/images/simple_page/block/F22-3x2-1620x1080-Ski_Snow-Option_1.jpg?auto=format&fit=crop&w=1800",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  },
+  {
+    "sceneId": "architecture-lounge",
+    "image": "/scene-experience/assets/architecture-lounge.jpg",
+    "sourcePage": "https://us.loropiana.com/en/cm/campaigns/narratives/springsummer2025",
+    "sourceImage": "https://static-b2c.loropiana.com/cms/resource/image/897766/landscape_ratio4x3/1960/1470/2ac628a8625599e2f10d23fcf095133/9D863C9DF615B5C2366E563A08D3536F/ss25-adv-social-crops-16x9-lp1-no-logo.jpg",
+    "usage": "Editorial reference demo; curated product pairings are not verified campaign garments."
+  }
+]

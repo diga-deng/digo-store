@@ -34,16 +34,16 @@ function mountStyleBrowser() {
   const track=document.querySelector('.style-track'); if(!track)return;
   const mode=styleView.mode,lanes=[...track.querySelectorAll('.style-lane')];
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let frame=0,drag=null,suppressClick=false;
+  let frame=0,drag=null,suppressClick=false,programmaticUntil=0;
   const paint=()=>{
     frame=0;const center=track.scrollLeft+track.clientWidth/2;let nearest=0,dist=Infinity;
     lanes.forEach((lane,i)=>{const d=(lane.offsetLeft+lane.offsetWidth/2-center)/track.clientWidth;const bounded=Math.max(-1,Math.min(1,d));lane.style.setProperty('--lane-rotate',`${reduced?0:-bounded*9}deg`);lane.style.setProperty('--lane-shift',`${reduced?0:Math.abs(bounded)*10}px`);if(Math.abs(d)<dist){dist=Math.abs(d);nearest=i;}});
-    styleView.positions[mode]=track.scrollLeft;styleView.active[mode]=nearest;
-    document.querySelectorAll('[data-style-jump]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===nearest)));
+    styleView.positions[mode]=track.scrollLeft;if(performance.now()>programmaticUntil)styleView.active[mode]=nearest;
+    document.querySelectorAll('[data-style-jump]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===styleView.active[mode])));
     document.querySelector('[data-style-step="-1"]').disabled=track.scrollLeft<2;
     document.querySelector('[data-style-step="1"]').disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2;
   };
-  const scrollToLane=i=>{const lane=lanes[Math.max(0,Math.min(lanes.length-1,i))];track.scrollTo({left:lane.offsetLeft-(track.clientWidth-lane.offsetWidth)/2,behavior:reduced?'instant':'smooth'});};
+  const scrollToLane=i=>{const index=Math.max(0,Math.min(lanes.length-1,i));const lane=lanes[index];styleView.active[mode]=index;programmaticUntil=performance.now()+900;paint();track.scrollTo({left:lane.offsetLeft-(track.clientWidth-lane.offsetWidth)/2,behavior:reduced?'instant':'smooth'});};
   track.scrollLeft=styleView.positions[mode];
   lanes.forEach(lane=>{const scroller=lane.querySelector('.style-lane-scroll');scroller.scrollTop=styleView.lanes[mode+lane.dataset.styleLane]||0;scroller.addEventListener('scroll',()=>{styleView.lanes[mode+lane.dataset.styleLane]=scroller.scrollTop;},{passive:true});});
   track.addEventListener('scroll',()=>{if(!frame)frame=requestAnimationFrame(paint);},{passive:true});
@@ -62,5 +62,6 @@ function mountStyleBrowser() {
   track.addEventListener('pointerup',end);track.addEventListener('pointercancel',end);track.addEventListener('lostpointercapture',end);
   track.addEventListener('click',e=>{if(suppressClick){e.preventDefault();e.stopImmediatePropagation();}},true);
   track.addEventListener('dragstart',e=>e.preventDefault());
+  track.addEventListener('click',e=>{const save=e.target.closest('.style-save');if(save)queueMicrotask(()=>{const saved=world.saved.some(x=>x.kind==='product'&&x.id===save.dataset.id);save.classList.toggle('is-saved',saved);save.setAttribute('aria-pressed',String(saved));});});
   paint();
 }

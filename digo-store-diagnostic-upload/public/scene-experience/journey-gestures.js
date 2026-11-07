@@ -30,9 +30,9 @@ function mountJourneyGestures() {
   function move(surface, axis, step, focus = false) {
     if (overlayOpen() || !surface.isConnected) return false;
     if (surface.matches('.closet-garments')) {
-      if (closetRecords().length < 2) return false;
-      closetMove(step);
-      if (focus) document.querySelector('.closet-garments')?.focus({ preventScroll: true });
+      if (Number(surface.dataset?.count ?? closetRecords().length) < 2) return false;
+      closetMove(step, Number(surface.dataset?.row || 0));
+      if (focus) surface.focus({ preventScroll: true });
       return true;
     }
     if (axis === 'y') {
@@ -116,7 +116,7 @@ function mountJourneyGestures() {
     if (!axis) return;
     const time = now();
     // Stable keys survive a render: inertial tails cannot advance the replacement page.
-    const key = surface.node.matches('.closet-garments') ? 'wardrobe' : 'pages';
+    const key = surface.node.matches('.closet-garments') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
     if (wheel.key !== key || time - wheel.time > 220) wheel = { key, x: 0, y: 0, time, fired: false };
     wheel.time = time;
     if (wheel.fired) return;

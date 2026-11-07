@@ -1,0 +1,212 @@
+/* Clear controls sit over the scene or textile, with just enough edge to locate them. */
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) {
+  --clear-edge: 1px solid rgb(255 255 255 / .50);
+  --clear-shadow: inset 0 1px 0 #ffffff45, 0 2px 9px #12171918;
+  --clear-face: linear-gradient(125deg, #ffffff20, #ffffff03 52%, #ffffff12), #1e20252b;
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) .life-header {
+  color: white; background: linear-gradient(180deg, #12191e41, #12191e17);
+  border-bottom: 1px solid #ffffff42; backdrop-filter: blur(3px);
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) .life-header :is(.brand, .brand-line) {
+  color: white; text-shadow: 0 1px 4px #0009;
+}
+.life-header .brand-line { font: italic clamp(14px, 1.4vw, 21px) Georgia, serif; }
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) :is(.life-header .icon-btn, nav.life-nav > a) {
+  color: white; background: var(--clear-face); border: var(--clear-edge); box-shadow: var(--clear-shadow);
+  text-shadow: 0 1px 3px #000a; backdrop-filter: blur(5px);
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav {
+  border: 0; background: transparent; backdrop-filter: none; box-shadow: none;
+  pointer-events: none; justify-content: center;
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav > a {
+  pointer-events: auto; border-radius: 9px; max-width: 124px;
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav > a[aria-current=page] {
+  background-color: #141a233b; border-color: #fffd;
+}
+body:is(.journey-feed, .style-browsing, :has(.closet-page)) :is(a,button,select):focus-visible {
+  outline: 2px solid white; outline-offset: -3px; box-shadow: 0 0 0 2px #252a31;
+}
+
+/* Extend the actual Discover photograph behind its controls. */
+.journey-feed .life-header { position: fixed; inset: 0 0 auto; }
+.journey-feed .life-main.moment-feed { height: 100dvh; padding: 0; }
+.journey-feed .moment-feed .life-scene { border: 0; border-radius: 0; }
+.journey-feed .life-scene .life-rail { top: calc(var(--journey-header) + 24px); }
+.journey-feed .life-scene .scene-quick { top: calc(var(--journey-header) + 20px); }
+.journey-feed .life-scene :is(.life-scene-copy,.scene-index) { bottom: calc(var(--journey-nav) + 18px); }
+.journey-feed .life-scene :is(.scene-static-label,.style-refine-entry) { top: calc(var(--journey-header) + 14px); }
+.journey-feed .reference-scene .life-rail,
+.journey-feed .life-scene .life-rail button,
+.journey-feed .life-scene :is(.scene-quick button, .scene-step, .scene-static-label, .life-btn, .scene-wide-view) {
+  color: white; border: var(--clear-edge); background: var(--clear-face); box-shadow: var(--clear-shadow);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); text-shadow: 0 1px 3px #000a;
+}
+.journey-feed .life-scene .life-rail :is(span,small) { color: white; }
+.journey-feed .reference-scene .life-rail img.reference-product-photo { background: transparent; }
+
+/* A continuous photographic fabric column is visible through every product. */
+body.style-browsing { --lane-width: 33.333333%; color: white; }
+.style-browsing #app { isolation: isolate; }
+.style-textiles { display: flex; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.style-textiles i {
+  flex: 0 0 var(--lane-width); height: 100%; background: var(--tone) url(assets/textile-weave.webp) center / cover;
+  background-blend-mode: multiply;
+}
+.style-textiles [data-fabric=red] { background-image: url(assets/textile-red.webp); background-blend-mode: normal; }
+.style-textiles [data-fabric=blue] { background-image: url(assets/textile-blue.webp); background-blend-mode: normal; }
+.style-textiles [data-fabric=ivory] { background-image: url(assets/textile-ivory.webp); background-blend-mode: normal; }
+.life-main.style-browser { padding: 0; max-width: none; color: white; touch-action: auto; background: transparent; }
+.style-heading { padding: 12px clamp(16px, 3vw, 52px) 0; }
+.style-heading h1, .closet-top h1 {
+  font: 400 clamp(31px, 3vw, 48px)/1 Georgia, serif; letter-spacing: -.045em;
+  margin: 0; text-shadow: 0 1px 6px #0005;
+}
+.style-filter-row { margin: 7px 0 0; padding: 0 clamp(16px, 3vw, 52px); }
+.style-browser :is(.style-mode button,.style-jumps button,.style-arrows button,.style-save),
+.closet-page :is(.closet-status button,.closet-categories button,.closet-views button,.closet-add,.closet-collection select,.closet-collection button,.shelf-arrow,.cabinet-meta button) {
+  background: var(--clear-face); border: var(--clear-edge); box-shadow: var(--clear-shadow); color: #fff;
+  text-shadow: 0 1px 3px #000a; backdrop-filter: blur(3px);
+}
+.style-browser .style-jumps button[aria-pressed=true],
+.style-browser .style-mode button[aria-selected=true],
+.style-browser .style-save.is-saved,
+.closet-page :is(.closet-status,.closet-categories,.closet-views) button:is([aria-pressed=true],[aria-current=true]) {
+  background: #27303a55; border-color: #fffd; color: #fff; text-decoration: underline; text-underline-offset: 4px;
+}
+.style-browser .style-cylinder::before, .style-browser .style-cylinder::after { display: none; }
+.style-browser .style-track { gap: 0; padding: 0; perspective: none; scrollbar-width: none; }
+.style-browser .style-track .style-lane {
+  flex: 0 0 var(--lane-width); min-width: 0; box-sizing: border-box; transform: none;
+  padding: 0 clamp(12px, 2.7vw, 46px); border: 0; box-shadow: none; border-radius: 0;
+  --lane-ink: white; --lane-shadow: 0 1px 4px #000a;
+}
+.style-lane:is([data-style-lane=ivory], [data-style-lane="15"], [data-style-lane="20"], [data-style-lane="10"]) {
+  --lane-ink: #24201e !important; --lane-shadow: 0 1px 3px #fffb !important;
+}
+.style-track .style-lane > header { padding: 6px 0; margin: 3px 0; min-height: 40px; border: 0; }
+.style-lane > header h2 { font: 400 clamp(19px, 1.65vw, 28px) Georgia, serif; color: var(--lane-ink); text-shadow: var(--lane-shadow); }
+.style-lane > header i { width: 11px; height: 11px; border: 1px solid currentColor; color: var(--lane-ink); }
+.style-lane > header > small { color: var(--lane-ink); text-shadow: var(--lane-shadow); }
+.style-browser .style-piece {
+  position: relative; margin: 0 0 12px; border: 1px solid #ffffff75; border-radius: 12px;
+  color: var(--lane-ink); background: linear-gradient(115deg,#ffffff12,transparent 56%,#ffffff08);
+  box-shadow: inset 0 1px 0 #ffffff52, 0 4px 14px #161a2017; overflow: hidden;
+}
+.style-browser .style-piece-visual, .style-browser .style-piece-open { background: transparent; }
+.style-browser .style-piece-open {
+  height: clamp(140px, calc((100dvh - 345px) / 2), 295px); aspect-ratio: auto; padding: 9px 18px 0;
+}
+.style-browser .style-save { color: white; top: 8px; right: 8px; }
+.style-browser .style-piece-copy { padding: 3px 13px 9px; gap: 1px; text-shadow: var(--lane-shadow); }
+.style-browser .style-piece-copy > :is(span,small,button) { color: inherit; }
+.style-browser .style-piece-copy > button { font-size: 13px; line-height: 1.2; }
+.style-browser .style-piece-copy > span { font-size: 8px; letter-spacing: .11em; }
+.style-browser .style-lane-scroll { flex: 1; }
+.style-piece-open img[src*="edit-arc-"], .cabinet-tube img[src*="edit-arc-"] {
+  --studio-mask: radial-gradient(ellipse 54% 62%, black 68%, transparent 100%);
+}
+
+/* The room is a single plane behind both shelves, including their side controls. */
+body:has(.closet-page) { background: #534534 url(assets/cabinet-courtyard.webp) center / cover fixed; }
+.life-main.closet-page {
+  max-width: none; color: white; padding: 0 clamp(12px, 3.2vw, 52px) calc(var(--journey-nav) + 12px);
+  background: transparent;
+}
+.closet-page .closet-top { margin: 0; padding: 12px 0 8px; justify-content: flex-start; gap: 15px; }
+.closet-top .closet-add { margin-left: auto; }
+.closet-page .closet-subnav { border-color: #fff3; padding-bottom: 5px; }
+.closet-page .closet-views { background: transparent; }
+.closet-page .closet-collection { padding: 4px 0; }
+.closet-page .closet-collection option { color: #211e1c; background: #faf8f3; }
+.closet-page .closet-footer { color: white; border-color: #fff4; text-shadow: 0 1px 4px #000; }
+.closet-page .closet-empty { min-height: 43vh; }
+.closet-page .closet-empty p { color: white; text-shadow: 0 1px 4px #000; }
+.closet-page .closet-grid, .closet-page .version-grid { padding: 18px; background: #f8f4ece8; color: #241e18; border-radius: 10px; }
+.cabinet-meta { min-height: 27px; display: flex; justify-content: space-between; align-items: center; padding: 0 3px; }
+.cabinet-meta span { font-size: 11px; text-shadow: 0 1px 3px #000; }
+.cabinet-meta button { border-radius: 20px; padding: 4px 12px; font-size: 11px; }
+.cabinet-shelf { position: relative; display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px;
+  column-gap: 9px; align-items: center; margin: 3px 0 4px; }
+.cabinet-window.closet-garments {
+  height: clamp(145px, calc((100dvh - 355px) / 2), 365px); perspective: none; overflow: clip;
+}
+.cabinet-track { height: 100%; position: relative; }
+.cabinet-tube {
+  --tube-width: 26%; position: absolute; top: 2%; height: 95%; width: var(--tube-width); left: 50%;
+  transform: translateX(calc(-50% + var(--slot) * (100% + 12px)));
+  border: 1px solid rgb(250 247 223 / .72); border-radius: 50% / 6%;
+  background: linear-gradient(90deg,#fffbda48,transparent 3%,#fff2 5%,transparent 10%,transparent 87%,#fff1 92%,#fff5 96%,#c7c6af16);
+  box-shadow: inset 1px 0 2px #fff8, inset -2px 0 3px #fff5, 0 5px 9px #17140e35;
+}
+.cabinet-tube::before, .cabinet-tube::after {
+  content: ''; position: absolute; z-index: 1; left: -1px; right: -1px; height: 11%; border-radius: 50%;
+  border: 1px solid #fff9; pointer-events: none;
+}
+.cabinet-tube::before { top: -1px; background: #ffffff06; }
+.cabinet-tube::after { bottom: -1px; background: linear-gradient(transparent,#fff2); box-shadow: 0 1px 1px #fff9; }
+.cabinet-tube .closet-garment-art {
+  top: 7%; bottom: 7%; height: auto; left: 10%; right: 10%; mix-blend-mode: normal;
+  filter: drop-shadow(2px 5px 3px #0004);
+}
+.cabinet-tube .closet-garment-art img { object-fit: contain; background: transparent; }
+.cabinet-tube .closet-missing { background: #29231e38; color: white; border: 0; }
+.cabinet-shelf::after { content: ''; grid-column: 2; grid-row: 2; align-self: start; height: 5px;
+  border-radius: 50%; background: linear-gradient(#fff9,#b8b8ad4d,#fffd); box-shadow: 0 3px 4px #28231948; pointer-events: none; }
+.shelf-arrow { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; }
+.shelf-arrow svg, .shelf-caption svg { width: 17px; height: 17px; }
+.shelf-arrow:disabled { visibility: hidden; }
+.shelf-caption { grid-column: 2; grid-row: 2; display: flex; justify-content: center; align-items: center; gap: 9px;
+  min-height: 25px; padding-top: 5px; color: white; font-size: 11px; text-shadow: 0 1px 3px #000; }
+.shelf-caption button { color: inherit; text-shadow: inherit; }
+@media(max-width: 850px) {
+  body.style-browsing { --lane-width: 46%; }
+  .cabinet-tube { --tube-width: 34%; }
+}
+@media(max-width: 640px) {
+  body.style-browsing { --lane-width: 76%; }
+  .style-heading { padding: 10px 14px 0; }
+  .style-filter-row { padding: 0 12px; gap: 4px; margin: 5px 0 0; }
+  .style-browser .style-track .style-lane { padding-inline: 12px; }
+  .style-browser .style-arrows button { width: 32px; height: 36px; }
+  .style-track .style-lane > header { flex-wrap: nowrap; min-height: 32px; }
+  .style-browser .style-piece-open { height: clamp(138px, calc((100dvh - 325px) / 2), 265px); }
+  .closet-page .closet-top { gap: 6px; padding: 8px 0; }
+  .closet-top h1 { width: 100%; font-size: 29px; }
+  .closet-page .closet-subnav { padding-right: 82px; }
+  .closet-page .closet-categories { margin: 0; padding: 0; }
+  .closet-page .closet-collection { gap: 5px; }
+  .cabinet-shelf { grid-template-columns: 30px minmax(0,1fr) 30px; column-gap: 2px; }
+  .cabinet-tube { --tube-width: 57%; }
+  .cabinet-window.closet-garments { height: clamp(144px, calc((100dvh - 367px) / 2), 320px); }
+  .shelf-arrow { width: 30px; height: 40px; }
+  .shelf-caption { min-height: 23px; font-size: 10px; }
+  .journey-feed .life-scene .life-rail { top: calc(var(--journey-header) + 12px); }
+}
+@media(prefers-reduced-motion: reduce) {
+  .style-piece-open img { transition: none; }
+}
+.style-browser .style-filter-row .style-jumps button[aria-pressed=true] {
+  background: var(--clear-face); color: white; border-color: #fffd; text-decoration: underline;
+}
+.cabinet-meta { justify-content: flex-end; gap: 7px; }
+.cabinet-meta span { margin-right: auto; }
+.cabinet:has(.cabinet-shelf:only-of-type) .cabinet-window {
+  height: clamp(230px, calc(100dvh - 355px), 540px);
+}
+@media(min-height: 640px) {
+  .life-main.closet-page:has(.cabinet) {
+    height: calc(100dvh - var(--journey-header) - var(--journey-nav) - env(safe-area-inset-bottom,0px));
+    min-height: 0; display: flex; flex-direction: column; padding-bottom: 0;
+  }
+  .closet-page:has(.cabinet) > :not(.cabinet) { flex: none; }
+  .closet-page:has(.cabinet) .closet-footer { padding: 3px 0; }
+  .cabinet { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .cabinet-shelf { flex: 1; grid-template-rows: minmax(0,1fr) 24px; min-height: 0; }
+  .cabinet .cabinet-shelf .cabinet-window { height: 100%; min-height: 0; }
+}
+.journey-feed .life-scene .scene-topline { top: calc(var(--journey-header) + 10px); }
+.journey-feed .life-scene .life-rail,
+.journey-feed .life-scene .scene-quick { top: calc(var(--journey-header) + 53px); }

@@ -1,5 +1,5 @@
-/* An image-based hanging rail. Product identities and saved records stay unchanged. */
-let closetSelection = '', closetView = 'rail', closetQuery = '', closetLimit = 18, closetSwipedUntil = 0;
+/* The cabinet displays existing wardrobe records, with a separate browse-only preview. */
+let closetSelection = '', closetView = 'rail', closetQuery = '', closetLimit = 18;
 function closetProduct(record) { return record.type === 'own' ? record : itemInfo(record); }
 function closetRecords() {
   let rows = wardrobeStatus === 'Owned'
@@ -31,14 +31,99 @@ function closetArt(x) {
   const image=safeImage(p?.image_url||p?.image);
   return image?`<img src="${esc(image)}" alt="${esc(p.name)}" draggable="false">`:`<div class="closet-missing">${icon('image')}<span>${esc(p?.material||p?.name||'Your piece')}</span><small>Photo pending</small></div>`;
 }
+const shelfSelections = new Map();
+let cabinetTimer = 0;
+let browsingCabinetPreview = false;
+let cabinetPaused = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function cabinetPreview() {
+  return styleProducts()
+    .filter(p => p.category === 'Wear' && p.image?.includes('/edit-lp-'))
+    .slice(0, 12)
+    .map(p => ({ kind:'product', type:'concept', id:p.id, closetKey:'preview:' + p.id, preview:true }));
+}
+function cabinetShelves(rows) {
+  if (rows.length < 4) return [rows];
+  return [rows.filter((_, i) => i % 2 === 0), rows.filter((_, i) => i % 2 === 1)];
+}
+function shelfMarkup(items, row, context) {
+  const selection = shelfSelections.get(context + row) || closetSelection;
+  const index = Math.max(0, items.findIndex(x => x.closetKey === selection));
+  const current = items[index];
+  const radius = Math.min(3, Math.floor(items.length / 2));
+  const tubes = [];
+  for (let offset = -radius; offset <= radius; offset++) {
+    const item = items[(index + offset + items.length) % items.length];
+    const name = closetProduct(item).name;
+    tubes.push(`<button class="cabinet-tube" data-closet="detail" data-key="${esc(item.closetKey)}"
+      tabindex="${offset === 0 ? 0 : -1}" style="--slot:${offset}" aria-label="View ${esc(name)}">
+      <span class="closet-garment-art">${closetArt(item)}</span></button>`);
+  }
+  const details = !current.preview && current.kind !== 'own'
+    ? `<button data-closet="manage" data-key="${esc(current.closetKey)}" aria-label="Organize ${esc(closetProduct(current).name)}">${icon('grid')}</button>` : '';
+  return `<section class="cabinet-shelf" data-row="${row}" aria-label="Shelf ${row + 1}">
+    <button class="shelf-arrow" data-closet="previous" aria-label="Previous piece on shelf ${row + 1}" ${items.length < 2 ? 'disabled' : ''}>${icon('left')}</button>
+    <div class="closet-garments cabinet-window" data-row="${row}" data-count="${items.length}" tabindex="0" aria-label="Shelf ${row + 1}. Use left and right arrows.">
+      <div class="cabinet-track">${tubes.join('')}</div>
+    </div>
+    <button class="shelf-arrow" data-closet="next" aria-label="Next piece on shelf ${row + 1}" ${items.length < 2 ? 'disabled' : ''}>${icon('right')}</button>
+    <div class="shelf-caption"><button data-closet="detail" data-key="${esc(current.closetKey)}">${esc(closetProduct(current).name)}</button>${details}</div>
+  </section>`;
+}
+function cabinetContext(preview) {
+  return [wardrobeStatus, groupFilter, preview ? 'preview' : 'collection'].join('/') + '/';
+}
 function closetRail(rows) {
-  let index=rows.findIndex(x=>x.closetKey===closetSelection);
-  if(index<0){index=rows.findIndex(x=>x.type==='concept'||safeImage(closetProduct(x)?.image_url));if(index<0)index=0;closetSelection=rows[index].closetKey;}
-  const selected=rows[index], p=closetProduct(selected);
-  return `<section class="closet-stage" aria-label="Hanging wardrobe"><div class="closet-rail-line" aria-hidden="true"></div><div class="closet-garments" tabindex="0" aria-label="Clothing rail. Use the left and right arrow keys.">${rows.map((x,i)=>{
-    let offset=i-index;if(offset>rows.length/2)offset-=rows.length;if(offset<-rows.length/2)offset+=rows.length;const visible=Math.abs(offset)<=3;
-    return `<button class="closet-piece ${offset===0?'is-selected':''}" data-closet="select" data-key="${esc(x.closetKey)}" style="--offset:${offset};--depth:${Math.abs(offset)};z-index:${10-Math.abs(offset)}" ${!visible?'hidden':''} aria-label="${esc(closetProduct(x).name)}" aria-pressed="${offset===0}" tabindex="${offset===0?0:-1}">${hanger()}<div class="closet-garment-art">${closetArt(x)}</div></button>`;
-  }).join('')}</div><div class="closet-navigation"><button data-closet="previous" class="closet-arrow" aria-label="Previous piece" ${rows.length<2?'disabled':''}>${icon('left')}</button><span aria-live="polite">${String(index+1).padStart(2,'0')} / ${String(rows.length).padStart(2,'0')}</span><button data-closet="next" class="closet-arrow" aria-label="Next piece" ${rows.length<2?'disabled':''}>${icon('right')}</button></div><div class="closet-focus">${p.reference?`<p class="eyebrow">${esc(p.brand)} <span class="reference-mini-label">Demo</span></p>`:''}${selected.type==='catalog'?`<p>${storeMoney(p.price_cents||0,p.currency)}</p>`:''}<div class="closet-focus-actions"><button class="life-btn subtle" data-closet="detail" data-key="${esc(selected.closetKey)}">View piece ${icon('arrow')}</button>${selected.kind!=='own'?`<button class="icon-btn" data-closet="manage" data-key="${esc(selected.closetKey)}" aria-label="Organize ${esc(p.name)}">${icon('grid')}</button>`:''}</div></div></section>`;
+  const preview = !!rows[0]?.preview;
+  const shelves = cabinetShelves(rows);
+  const canPreview = wardrobeStatus === 'Liked' && !groupFilter && closetRecords().length > 0;
+  const previewSwitch = canPreview ? `<button data-closet="preview">${preview ? 'My pieces' : 'Preview cabinet'}</button>` : '';
+  return `<section class="cabinet" aria-label="Glass wardrobe" data-preview="${preview}">
+    <div class="cabinet-meta"><span>${preview ? 'Wardrobe preview' : ''}</span>${previewSwitch}
+    ${rows.length > 1 ? `<button data-closet="rotation" aria-label="${cabinetPaused ? 'Start' : 'Pause'} shelf rotation">${cabinetPaused ? 'Play' : 'Pause'}</button>` : ''}</div>
+    ${shelves.map((items,i) => shelfMarkup(items,i,cabinetContext(preview))).join('')}
+  </section>`;
+}
+function closetMove(step, row = 0, manual = true) {
+  const stage = document.querySelector('.cabinet');
+  if (!stage) return;
+  const preview = stage.dataset.preview === 'true';
+  const items = cabinetShelves(preview ? cabinetPreview() : closetRecords())[row];
+  const shelf = stage.querySelector(`.cabinet-shelf[data-row="${row}"]`);
+  if (!shelf || !items || items.length < 2) return;
+  const key = cabinetContext(preview);
+  const oldKey = shelf.querySelector('.shelf-caption button').dataset.key;
+  const index = Math.max(0, items.findIndex(x => x.closetKey === oldKey));
+  const next = items[(index + step + items.length) % items.length];
+  shelfSelections.set(key + row, next.closetKey);
+  if (manual && !preview) {
+    closetSelection = next.closetKey;
+    world.closetSelection = closetSelection;
+    writeWorld();
+  }
+  const temp = document.createElement('div');
+  temp.innerHTML = shelfMarkup(items, row, key);
+  const fresh = temp.firstElementChild;
+  // Keep the gesture and arrow targets mounted so focus and pointer capture survive a turn.
+  const track = shelf.querySelector('.cabinet-track');
+  track.innerHTML = fresh.querySelector('.cabinet-track').innerHTML;
+  shelf.querySelector('.shelf-caption').innerHTML = fresh.querySelector('.shelf-caption').innerHTML;
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const stride = shelf.querySelector('.cabinet-tube').offsetWidth + 12;
+    track.animate([{transform:`translateX(${step * stride}px)`}, {transform:'translateX(0)'}],
+      {duration:360,easing:'cubic-bezier(.2,.65,.22,1)'});
+  }
+}
+function mountCabinet() {
+  clearInterval(cabinetTimer);
+  const stage = document.querySelector('.cabinet');
+  if (!stage || cabinetPaused) return;
+  cabinetTimer = setInterval(() => {
+    if (!stage.isConnected || document.hidden || document.querySelector('#overlay-root')?.innerHTML) return;
+    for (const shelf of stage.querySelectorAll('.cabinet-shelf')) {
+      if (!shelf.matches(':hover, :focus-within')) closetMove(1, Number(shelf.dataset.row), false);
+    }
+  }, 7500);
 }
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;
@@ -51,26 +136,11 @@ function closetPage() {
   const rows=closetRecords(),rail=wardrobeFilter==='Clothing'&&closetView==='rail'&&rows.every(x=>['product','own'].includes(x.kind));
   let content;
   if(wardrobeFilter==='Combinations')content=`<div class="version-grid">${Object.values(world.boards).map(b=>`<article><a href="#/edit/${esc(b.id)}">${miniBoard(b)}<h3>${esc(b.title)}</h3></a></article>`).join('')}${Object.values(world.versions).map(v=>`<article>${miniBoard(v)}<h3>${esc(v.title)}</h3>${btn('Edit a copy','version-copy',v.id,'','subtle')}</article>`).join('')}</div>`;
-  else content=rows.length?(rail?closetRail(rows):closetGrid(rows)):closetEmpty();
-  return wrap(`<h1 class="sr-only">Wardrobe</h1><div class="closet-top"><div class="closet-status" aria-label="Wardrobe status">${[['Liked','Saved'],['Ordered','Purchased'],['Owned','Owned']].map(([key,label])=>`<button data-life="wardrobe-status" data-id="${key}" aria-pressed="${wardrobeStatus===key}">${label}</button>`).join('')}</div><button class="life-btn subtle closet-add" data-closet="add">${icon('plus')} Add pieces</button></div><div class="closet-subnav"><div class="closet-categories" aria-label="Wardrobe category">${[['Clothing','Clothing'],['Home','Home'],['Combinations','Looks'],['Moments','Moments'],['Details','Details'],['Recently viewed','Recent']].map(([key,label])=>`<button data-life="wardrobe-filter" data-id="${key}" aria-current="${wardrobeFilter===key}">${label}</button>`).join('')}</div><div class="closet-views"><button data-closet="rail" aria-label="Hanging rail" aria-pressed="${closetView==='rail'}" ${wardrobeFilter!=='Clothing'?'disabled':''}>${icon('shirt')}</button><button data-closet="grid" aria-label="Grid view" aria-pressed="${closetView==='grid'}">${icon('grid')}</button></div></div><div class="closet-collection"><label class="sr-only" for="closet-group">Collection</label><select id="closet-group"><option value="">All collections</option>${world.groups.map(g=>`<option value="${esc(g)}" ${g===groupFilter?'selected':''}>${esc(g)}</option>`).join('')}</select>${btn('New collection','new-group','','','quiet')}</div>${content}<div class="closet-footer">${world.resume?`<a href="#${esc(world.resume.path)}" data-life="resume">${icon('undo')} Continue ${esc(world.resume.label)} ${icon('right')}</a>`:''}<span>On this device</span></div>`,'closet-page');
-}
-function closetMove(step) {
-  const rows=closetRecords(),index=Math.max(0,rows.findIndex(x=>x.closetKey===closetSelection));
-  const next=rows[(index+step+rows.length)%rows.length];
-  if(!next)return;closetSelection=next.closetKey;world.closetSelection=closetSelection;writeWorld();paintClosetSelection();
-}
-function paintClosetSelection() {
-  const stage=$('.closet-stage');if(!stage){render(false);return;}
-  const preview=document.createElement('div');preview.innerHTML=closetRail(closetRecords());
-  const updated=[...preview.querySelectorAll('.closet-piece')];
-  for(const node of stage.querySelectorAll('.closet-piece')){
-    const next=updated.find(x=>x.dataset.key===node.dataset.key);if(!next)continue;
-    node.hidden=next.hidden;node.style.cssText=next.style.cssText;node.className=next.className;
-    node.setAttribute('aria-pressed',next.getAttribute('aria-pressed'));node.tabIndex=next.tabIndex;
-  }
-  stage.querySelector('.closet-navigation span').textContent=preview.querySelector('.closet-navigation span').textContent;
-  for(const action of ['previous','next'])stage.querySelector(`[data-closet="${action}"]`).disabled=preview.querySelector(`[data-closet="${action}"]`).disabled;
-  stage.querySelector('.closet-focus').innerHTML=preview.querySelector('.closet-focus').innerHTML;
+  else if (rail && browsingCabinetPreview && wardrobeStatus === 'Liked' && !groupFilter) content = closetRail(cabinetPreview());
+  else if (rows.length) content = rail ? closetRail(rows) : closetGrid(rows);
+  else if (rail && wardrobeStatus === 'Liked' && !groupFilter) content = closetRail(cabinetPreview());
+  else content = closetEmpty();
+  return wrap(`<div class="closet-top"><h1>Wardrobe</h1><div class="closet-status" aria-label="Wardrobe status">${[['Liked','Saved'],['Ordered','Purchased'],['Owned','Owned']].map(([key,label])=>`<button data-life="wardrobe-status" data-id="${key}" aria-pressed="${wardrobeStatus===key}">${label}</button>`).join('')}</div><button class="life-btn subtle closet-add" data-closet="add">${icon('plus')} Add pieces</button></div><div class="closet-subnav"><div class="closet-categories" aria-label="Wardrobe category">${[['Clothing','Clothing'],['Home','Home'],['Combinations','Looks'],['Moments','Moments'],['Details','Details'],['Recently viewed','Recent']].map(([key,label])=>`<button data-life="wardrobe-filter" data-id="${key}" aria-current="${wardrobeFilter===key}">${label}</button>`).join('')}</div><div class="closet-views"><button data-closet="rail" aria-label="Glass cabinet" aria-pressed="${closetView==='rail'}" ${wardrobeFilter!=='Clothing'?'disabled':''}>${icon('shirt')}</button><button data-closet="grid" aria-label="Grid view" aria-pressed="${closetView==='grid'}">${icon('grid')}</button></div></div><div class="closet-collection"><label class="sr-only" for="closet-group">Collection</label><select id="closet-group"><option value="">All collections</option>${world.groups.map(g=>`<option value="${esc(g)}" ${g===groupFilter?'selected':''}>${esc(g)}</option>`).join('')}</select>${btn('New collection','new-group','','','quiet')}</div>${content}<div class="closet-footer">${world.resume?`<a href="#${esc(world.resume.path)}" data-life="resume">${icon('undo')} Continue ${esc(world.resume.label)} ${icon('right')}</a>`:''}<span>On this device</span></div>`,'closet-page');
 }
 function closetCatalogRows() {
   const q=closetQuery.toLowerCase().trim(),matches=[...referenceProducts,...catalog].filter(p=>[p.name,p.brand,p.category,p.material,p.style_code].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -106,8 +176,17 @@ document.addEventListener('click',async e=>{
     }
   }else if(action==='retry-catalog'){await loadCatalog();if($('#closet-picker'))$('#closet-picker').innerHTML=closetCatalogRows();}
   else if(action==='more'){closetLimit+=18;$('#closet-picker').innerHTML=closetCatalogRows();}
-  else if(action==='select'){if(Date.now()<closetSwipedUntil)return;if(closetSelection===key){if(record)record.type==='own'?ownedClosetDetail(record):showProduct(record.id,record.type);}else{closetSelection=key;world.closetSelection=key;writeWorld();paintClosetSelection();}}
-  else if(action==='previous'||action==='next')closetMove(action==='next'?1:-1);
+  else if(action==='previous'||action==='next')closetMove(action==='next'?1:-1, Number(el.closest('.cabinet-shelf').dataset.row));
+  else if(action==='preview'){browsingCabinetPreview=!browsingCabinetPreview;render(false);}
+  else if(action==='rotation'){
+    cabinetPaused=!cabinetPaused;el.textContent=cabinetPaused?'Play':'Pause';
+    el.setAttribute('aria-label',(cabinetPaused?'Start':'Pause')+' shelf rotation');
+    mountCabinet();
+  }
+  else if(action==='detail'&&key?.startsWith('preview:')){
+    const item=cabinetPreview().find(x=>x.closetKey===key);
+    if(item)showProduct(item.id,item.type);
+  }
   else if(action==='rail'||action==='grid'){closetView=action;render(false);}
   else if(action==='detail'&&record){record.type==='own'?ownedClosetDetail(record):showProduct(record.id,record.type);}
   else if(action==='manage'&&record){overlay(`<h2>${esc(closetProduct(record).name)}</h2>${savedTools(record)}${record.orderIds?.length||record.testOrderIds?.length?'<p>Purchase records remain linked to your order.</p>':''}`,'Organize piece');}

@@ -28,22 +28,31 @@ function styleProductCard(p,index) {
 }
 function styleBrowserPage() {
   const groups=styleGroups(),mode=styleView.mode;
-  return wrap(`<header class="style-heading"><div><p class="eyebrow">THE DISCOVER EDIT</p><h1>Style</h1></div><div class="style-mode" role="tablist" aria-label="Browse pieces by"><button id="style-color-tab" role="tab" aria-selected="${mode==='color'}" aria-controls="style-panel" tabindex="${mode==='color'?0:-1}" data-style-mode="color">Colour</button><button id="style-temperature-tab" role="tab" aria-selected="${mode==='temperature'}" aria-controls="style-panel" tabindex="${mode==='temperature'?0:-1}" data-style-mode="temperature">Temperature</button></div></header><div class="style-filter-row" data-mode="${mode}" data-gesture-ignore><div class="style-jumps" aria-label="${mode==='color'?'Colour':'Temperature'} columns">${groups.map((g,i)=>`<button data-style-jump="${i}" style="--swatch:${g.tone}" aria-label="Browse ${g.name}" aria-pressed="${styleView.active[mode]===i}"><i></i>${g.name}</button>`).join('')}</div><div class="style-arrows"><button data-style-step="-1" aria-label="Previous column">${icon('left')}</button><button data-style-step="1" aria-label="Next column">${icon('right')}</button></div></div><section id="style-panel" class="style-cylinder" data-mode="${mode}" role="tabpanel" aria-labelledby="style-${mode}-tab" data-gesture-ignore><div class="style-track" tabindex="0" aria-label="${mode==='color'?'Colour':'Temperature'} product columns. Swipe horizontally to browse." aria-keyshortcuts="ArrowLeft ArrowRight">${groups.map((g,i)=>`<section class="style-lane" data-style-lane="${g.id}" style="--lane-tone:${g.tone}"><header><div><i></i><h2>${g.name}</h2></div><span>${String(g.items.length).padStart(2,'0')}</span>${mode==='temperature'?`<small>${g.note}</small>`:''}</header><div class="style-lane-scroll" tabindex="0" aria-label="${g.name} pieces">${g.items.length?g.items.map(styleProductCard).join(''):'<p class="style-empty">New pieces, soon.</p>'}</div></section>`).join('')}</div></section><footer class="style-caption"><span>Swipe across · Scroll to explore</span><span>${mode==='color'?'Pieces from Discover':'Layering ideas · Adjust for wind & activity'}</span></footer>`,'style-browser');
+  const backdrops = groups.map(g => `<i data-fabric="${g.id}" style="--tone:${g.tone}"></i>`).join('');
+  return `<div class="style-textiles" aria-hidden="true">${backdrops}</div>` + wrap(`<header class="style-heading"><div><h1>Style</h1></div><div class="style-mode" role="tablist" aria-label="Browse pieces by"><button id="style-color-tab" role="tab" aria-selected="${mode==='color'}" aria-controls="style-panel" tabindex="${mode==='color'?0:-1}" data-style-mode="color">Colour</button><button id="style-temperature-tab" role="tab" aria-selected="${mode==='temperature'}" aria-controls="style-panel" tabindex="${mode==='temperature'?0:-1}" data-style-mode="temperature">Temperature</button></div></header><div class="style-filter-row" data-mode="${mode}" data-gesture-ignore><div class="style-jumps" aria-label="${mode==='color'?'Colour':'Temperature'} columns">${groups.map((g,i)=>`<button data-style-jump="${i}" style="--swatch:${g.tone}" aria-label="Browse ${g.name}" aria-pressed="${styleView.active[mode]===i}"><i></i>${g.name}</button>`).join('')}</div><div class="style-arrows"><button data-style-step="-1" aria-label="Previous column">${icon('left')}</button><button data-style-step="1" aria-label="Next column">${icon('right')}</button></div></div><section id="style-panel" class="style-cylinder" data-mode="${mode}" role="tabpanel" aria-labelledby="style-${mode}-tab" data-gesture-ignore><div class="style-track" tabindex="0" aria-label="${mode==='color'?'Colour':'Temperature'} product columns. Swipe horizontally to browse." aria-keyshortcuts="ArrowLeft ArrowRight">${groups.map((g,i)=>`<section class="style-lane" data-style-lane="${g.id}" style="--lane-tone:${g.tone}"><header><div><i></i><h2>${g.name}</h2></div>${mode==='temperature'?`<small>${g.note}</small>`:''}</header><div class="style-lane-scroll" tabindex="0" aria-label="${g.name} pieces">${g.items.length?g.items.map(styleProductCard).join(''):'<p class="style-empty">New pieces, soon.</p>'}</div></section>`).join('')}</div></section>`,'style-browser');
 }
 function mountStyleBrowser() {
   const track=document.querySelector('.style-track'); if(!track)return;
   const mode=styleView.mode,lanes=[...track.querySelectorAll('.style-lane')];
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   let frame=0,drag=null,suppressClick=false,programmaticUntil=0;
+  const backdrop=document.querySelector('.style-textiles');
   const paint=()=>{
-    frame=0;const center=track.scrollLeft+track.clientWidth/2;let nearest=0,dist=Infinity;
-    lanes.forEach((lane,i)=>{const d=(lane.offsetLeft+lane.offsetWidth/2-center)/track.clientWidth;const bounded=Math.max(-1,Math.min(1,d));lane.style.setProperty('--lane-rotate',`${reduced?0:-bounded*9}deg`);lane.style.setProperty('--lane-shift',`${reduced?0:Math.abs(bounded)*10}px`);if(Math.abs(d)<dist){dist=Math.abs(d);nearest=i;}});
-    styleView.positions[mode]=track.scrollLeft;if(performance.now()>programmaticUntil)styleView.active[mode]=nearest;
+    frame=0;
+    if(!track.isConnected)return;
+    backdrop.style.transform=`translateX(${-track.scrollLeft}px)`;
+    styleView.positions[mode]=track.scrollLeft;
+    if(performance.now()>programmaticUntil){
+      const leading=track.scrollLeft;
+      styleView.active[mode]=lanes.reduce((best,lane,i)=>
+        Math.abs(lane.offsetLeft-leading)<Math.abs(lanes[best].offsetLeft-leading)?i:best,0);
+    }
     document.querySelectorAll('[data-style-jump]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===styleView.active[mode])));
     document.querySelector('[data-style-step="-1"]').disabled=track.scrollLeft<2;
     document.querySelector('[data-style-step="1"]').disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2;
   };
-  const scrollToLane=i=>{const index=Math.max(0,Math.min(lanes.length-1,i));const lane=lanes[index];styleView.active[mode]=index;programmaticUntil=performance.now()+900;paint();track.scrollTo({left:lane.offsetLeft-(track.clientWidth-lane.offsetWidth)/2,behavior:reduced?'instant':'smooth'});};
+  const scrollToLane=i=>{const index=Math.max(0,Math.min(lanes.length-1,i));const lane=lanes[index];styleView.active[mode]=index;programmaticUntil=performance.now()+900;paint();track.scrollTo({left:lane.offsetLeft,behavior:reduced?'instant':'smooth'});};
+  programmaticUntil=performance.now()+900;
   track.scrollLeft=styleView.positions[mode];
   lanes.forEach(lane=>{const scroller=lane.querySelector('.style-lane-scroll');scroller.scrollTop=styleView.lanes[mode+lane.dataset.styleLane]||0;scroller.addEventListener('scroll',()=>{styleView.lanes[mode+lane.dataset.styleLane]=scroller.scrollTop;},{passive:true});});
   track.addEventListener('scroll',()=>{if(!frame)frame=requestAnimationFrame(paint);},{passive:true});

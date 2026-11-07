@@ -1,0 +1,11 @@
+/* Shared by the scene storefront and the shop/checkout shell. */
+:root {
+  --digo-paper: #fff;
+  --digo-surface: #f6f6f6;
+  --digo-well: #eee;
+  --digo-line: #dadada;
+  --digo-muted: #616161;
+  --digo-ink: #191919;
+  --digo-charcoal: #303030;
+  --digo-rim: 0 1px 2px #0000000d, inset 0 1px 1px #fffffff0, inset 0 -1px 1px #00000020;
+}

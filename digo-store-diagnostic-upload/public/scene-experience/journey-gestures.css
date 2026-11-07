@@ -16,7 +16,7 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
 .moment-feed .life-rail { top:72px; max-height:calc(100% - 170px); touch-action:pan-y pinch-zoom; overscroll-behavior:contain; }
 .moment-feed .life-scene-copy { bottom:24px; right:120px; }
 .moment-feed .scene-index { right:20px; bottom:23px; gap:6px; }
-.scene-index .scene-step { width:40px; height:44px; display:grid; place-items:center; font-size:22px; color:inherit; border:1px solid #ffffff60; border-radius:50%; background:#20302720; }
+.scene-index .scene-step { width:40px; height:44px; display:grid; place-items:center; font-size:22px; color:inherit; border:1px solid #ffffff60; border-radius:50%; background:#2c2c2c20; }
 .style-refine-entry { position:absolute; top:22px; left:50%; transform:translateX(-50%); z-index:4; min-height:36px; padding:8px 15px; font-size:11px; }
 .journey-module,.closet-garments,.closet-garments button,.life-nav,.life-nav a { touch-action:pan-y pinch-zoom; }
 .journey-module.moment-feed { touch-action:pinch-zoom; }

@@ -1,24 +1,25 @@
 /* The sheen belongs to interactive surfaces. Campaign and product imagery retain their own palette. */
 :root {
-  --glass-ink: #252729;
-  --glass-muted: #565c60;
-  --glass-line: rgb(35 42 46 / 18%);
+  --glass-ink: #272727;
+  --glass-muted: #5b5b5b;
+  --glass-line: rgb(40 40 40 / 18%);
   --glass-face: rgb(255 255 255 / 80%);
-  --glass-edge: inset 0 1px 1px rgb(255 255 255 / 93%),
-    inset 0 -1px 1px rgb(33 40 44 / 14%), 0 1px 2px rgb(33 40 44 / 6%);
+  --glass-edge: var(--digo-rim);
   --glass-gleam: radial-gradient(ellipse 24px 3px at 9px 0, #fff9, transparent);
-  --glass-active: linear-gradient(150deg, #f8f8f8, #e9eaeb);
+  --glass-active: linear-gradient(150deg, #f8f8f8, #eaeaea);
 }
 
 .life-header, .life-nav { background: #fff; backdrop-filter: none; }
-.life-header .brand { color: #101112; letter-spacing: .075em; }
-.life-header .brand-line { color: #64676a; }
+.life-header .brand { color: #111111; letter-spacing: .075em; }
+.life-header .brand-line { color: #676767; }
 
 :is(.life-header .icon-btn, .life-nav a, .scene-quick button,
     .life-scene-copy .life-btn, .scene-index .scene-step, .life-scene .life-rail :where(button),
     .style-mode button, .style-jumps button, .style-arrows button, .style-save,
     .closet-status button, .closet-categories button, .closet-views button,
-    .closet-collection select, .closet-collection .life-btn, .closet-top .closet-add) {
+    .closet-collection select, .closet-collection .life-btn, .closet-top .closet-add,
+    .life-empty .life-btn, .life-page-head .life-btn, .closet-empty .life-btn,
+    .closet-focus-actions button, .closet-navigation .closet-arrow) {
   color: var(--glass-muted);
   background: var(--glass-gleam), var(--glass-face);
   border: 1px solid var(--glass-line);
@@ -26,7 +27,7 @@
   box-shadow: var(--glass-edge);
 }
 :is(.life-header, .life-nav, .life-main) :is(button, a, select):focus-visible {
-  outline: 2px solid #49585f;
+  outline: 2px solid #555555;
   outline-offset: 2px;
 }
 
@@ -34,15 +35,15 @@
 .life-header .bag-count { background: var(--glass-ink); right: -4px; top: -4px; }
 .life-nav { gap: clamp(6px, 1vw, 16px); }
 .life-nav a { align-self: stretch; max-width: 108px; padding: 4px 4px 8px; gap: 3px; }
-.life-nav a[aria-current="page"]::after { bottom: 3px; background: #151617; }
+.life-nav a[aria-current="page"]::after { bottom: 3px; background: #161616; }
 
 :is(.life-nav a[aria-current="page"], .closet-status button[aria-pressed="true"],
     .closet-categories button[aria-current="true"], .closet-views button[aria-pressed="true"],
     .style-mode button[aria-selected="true"], .style-jumps button[aria-pressed="true"]) {
-  color: #191b1d;
+  color: #1b1b1b;
   font-weight: 600;
   background: var(--glass-gleam), var(--glass-active);
-  border-color: rgb(40 44 46 / 28%);
+  border-color: rgb(42 42 42 / 28%);
 }
 
 /* Two slim optical edges, confined to the joins above and below the scene. */
@@ -56,22 +57,23 @@
   background:
     linear-gradient(90deg, #ffffff70, #ffffffdb 12%, #ffffff44 46%, #ffffffbd 88%, #ffffff60) top / 100% 1px no-repeat,
     linear-gradient(90deg, #ffffff66, #ffffffd9 8%, #ffffff59 70%, #ffffffc2 96%, #ffffff66) bottom / 100% 1px no-repeat;
-  box-shadow: inset 0 2px 1px #24292b38, inset 0 -2px 1px #24292b42;
+  box-shadow: inset 0 2px 1px #28282838, inset 0 -2px 1px #28282842;
 }
+.life-page-head .life-btn:not(.subtle, .quiet), .life-empty .life-btn:not(.subtle, .quiet),
 .life-scene-copy .life-btn.light, .scene-quick button[aria-pressed="true"],
 .style-piece .style-save.is-saved {
-  --glass-face: linear-gradient(155deg, #424446, #27292a 80%);
+  --glass-face: linear-gradient(155deg, #444444, #292929 80%);
   color: #fff;
-  border-color: #6d6e6f;
+  border-color: #6e6e6e;
   text-shadow: none;
 }
 .life-scene-copy .life-btn.glass, .scene-quick button {
-  --glass-face: rgb(252 252 250 / 86%);
+  --glass-face: rgb(252 252 252 / 86%);
   color: var(--glass-ink);
   backdrop-filter: blur(8px);
 }
 .scene-index .scene-step {
-  --glass-face: rgb(29 33 35 / 26%);
+  --glass-face: rgb(32 32 32 / 26%);
   --glass-line: rgb(255 255 255 / 54%);
   width: 42px;
   height: 42px;
@@ -87,16 +89,16 @@
 /* One tinted rim per colour column; the scrollable products stay on a neutral surface. */
 .style-mode { border: none; padding: 0; }
 .style-filter-row[data-mode="color"] .style-jumps button {
-  --glass-line: color-mix(in srgb, var(--swatch) 42%, #efefec);
+  --glass-line: color-mix(in srgb, var(--swatch) 42%, #efefef);
 }
 .style-filter-row[data-mode="color"] .style-jumps button[aria-pressed="true"] {
   background: var(--glass-gleam), color-mix(in srgb, var(--swatch) 11%, white);
-  border-color: color-mix(in srgb, var(--swatch) 65%, #efefec);
+  border-color: color-mix(in srgb, var(--swatch) 65%, #efefef);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 .style-cylinder[data-mode="color"] .style-lane {
-  border-inline: 1px solid color-mix(in srgb, var(--lane-tone) 38%, #efefeb);
+  border-inline: 1px solid color-mix(in srgb, var(--lane-tone) 38%, #efefef);
   box-shadow: inset 1px 0 1px white, inset -1px 0 1px #ffffffe0;
   border-radius: 5px;
   padding-inline: 8px;
@@ -116,8 +118,8 @@
 @media (hover: hover) {
   :is(.life-header .icon-btn, .life-nav a, .style-jumps button,
       .closet-status button, .closet-categories button, .closet-collection .life-btn):hover {
-    border-color: #8c9193;
-    color: #181a1b;
+    border-color: #909090;
+    color: #1a1a1a;
   }
 }
 
@@ -141,3 +143,50 @@
     border-color: Highlight;
   }
 }
+
+/* Platform surfaces stay achromatic, including the spaces between photos and cutouts. */
+.life-empty, .plan-card, .closet-stage {
+  background: var(--digo-surface);
+  border: 1px solid var(--glass-line);
+  border-radius: 8px;
+  box-shadow: var(--glass-edge);
+}
+.life-empty > svg, .closet-navigation { color: var(--digo-muted); }
+.closet-navigation .closet-arrow { --glass-radius: 50%; }
+.life-main .closet-stage { background: linear-gradient(180deg, #fff, #f6f6f6 65%, #fff); }
+.closet-stage .hanger-wood { fill: #999; stroke: #686868; }
+.closet-stage .hanger-line { stroke: #d2d2d2; }
+.closet-stage .closet-garment-art, .style-piece-open img { mix-blend-mode: normal; }
+
+.life-scene .life-rail, .scene-static-label, .room-hotspot span {
+  -webkit-backdrop-filter: grayscale(1) blur(12px);
+  backdrop-filter: grayscale(1) blur(12px);
+}
+.life-scene .scene-static-label, .room-hotspot span, .life-scene .scene-wide-view {
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge);
+  background: rgb(250 250 250 / 94%);
+  color: var(--digo-ink);
+}
+.reference-scene .life-rail, .reference-scene[data-real-room] .life-rail,
+.reference-scene.editorial-scene .life-rail {
+  background: rgb(249 249 249 / 90%);
+  border-color: rgb(255 255 255 / 75%);
+}
+.scene-quick button, .life-scene-copy .life-btn.glass {
+  -webkit-backdrop-filter: grayscale(1) blur(8px);
+  backdrop-filter: grayscale(1) blur(8px);
+}
+.style-piece-visual, .life-scene .life-rail button, .life-product-card .life-art {
+  background-color: var(--digo-surface);
+}
+:is(.style-piece-open, .life-rail button, .closet-garment-art, .closet-grid .life-art) .reference-product-photo {
+  -webkit-mask: var(--studio-mask, none) center / contain no-repeat;
+  mask: var(--studio-mask, none) center / contain no-repeat;
+}
+.closet-stage .closet-garment-art > img { background: transparent; }
+
+.life-btn, .modal, .drawer, .modal .field :is(input, textarea, select) {
+  box-shadow: var(--glass-edge);
+}
+.modal, .drawer { border: 1px solid var(--glass-line); }

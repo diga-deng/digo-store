@@ -1,26 +1,26 @@
 /* Keep official photographs intact, including the original garment silhouette. */
-.reference-product-photo{display:block;width:100%;height:100%;object-fit:contain;background:#e5e2db;user-select:none;-webkit-user-drag:none}
-.reference-scene{background:var(--reference-tone,#807b70)}
+.reference-product-photo{display:block;width:100%;height:100%;object-fit:contain;background:var(--digo-surface);user-select:none;-webkit-user-drag:none}
+.reference-scene{background:var(--reference-tone,#7b7b7b)}
 .reference-scene .life-scene-photo{object-fit:contain;object-position:center;animation:none;filter:none}
 .reference-scene:after{inset:0;background:linear-gradient(0deg,#0005,transparent 20%,transparent 90%,#0002);pointer-events:none}
 
 .reference-scene .life-rail{width:clamp(62px,16vw,112px)}
-.reference-scene .life-rail button{flex-direction:column;gap:8px;background:#f6f4ef;color:#23312b}
+.reference-scene .life-rail button{flex-direction:column;gap:8px;background:var(--digo-paper);color:#2e2e2e}
 .reference-scene .life-rail small{flex-direction:row;gap:5px;align-items:center;padding:5px;font-size:9px}
 .reference-scene .life-rail{overflow-x:hidden;padding:10px}
 .reference-collection{max-width:1180px;margin:20px auto;grid-template-columns:repeat(4,minmax(0,1fr))}
 .reference-scene .life-rail .reference-product-photo{aspect-ratio:2/3;height:auto;max-height:155px;object-fit:contain}
 .scene-static-label{display:flex;gap:12px;align-items:center}
 .reference-mini-label{display:inline-block;font:9px/1.5 Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;border:1px solid currentColor;padding:2px 5px;opacity:.75;vertical-align:middle;margin-left:6px}
-.reference-gallery .product-detail-art{background:#e8e5df;aspect-ratio:auto;width:100%;height:min(65vh,600px)}
+.reference-gallery .product-detail-art{background:var(--digo-surface);aspect-ratio:auto;width:100%;height:min(65vh,600px)}
 .reference-gallery .product-detail-art img{width:100%;height:100%;object-fit:contain}
 .reference-thumbnails{display:flex;gap:9px;padding:12px 0;overflow:auto}
-.reference-thumbnails button{padding:2px;border:1px solid transparent;width:55px;height:76px;flex-shrink:0;background:#e8e5df}
-.reference-thumbnails button[aria-pressed=true]{border-color:#27352e}
+.reference-thumbnails button{padding:2px;border:1px solid transparent;width:55px;height:76px;flex-shrink:0;background:var(--digo-surface)}
+.reference-thumbnails button[aria-pressed=true]{border-color:#323232}
 .reference-thumbnails img{width:100%;height:100%;object-fit:contain}
-.reference-disclosure{font-size:11px;color:#6a6a62}
-.reference-detail .detail-price small{display:block;font-size:10px;margin-top:6px;color:#74746b}
-.reference-detail dl>div{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #ddd9d0;font-size:12px}
+.reference-disclosure{font-size:11px;color:#696969}
+.reference-detail .detail-price small{display:block;font-size:10px;margin-top:6px;color:#737373}
+.reference-detail dl>div{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #d9d9d9;font-size:12px}
 .reference-detail dd{text-align:right;max-width:70%;margin:0}
 .reference-source{margin:18px 0 0;text-decoration:none}
 .reference-sheet .reference-detail .life-actions{margin-top:20px}
@@ -31,17 +31,17 @@
 
 /* The room is the main experience; thumbnails and numbered hotspots share identities. */
 .reference-scene[data-real-room] .life-scene-photo{width:100%;left:0;object-fit:cover}
-.reference-scene[data-real-room] .life-rail{left:24px;top:70px;width:96px;padding:7px;gap:7px;background:#f7f5edb8;z-index:3;max-height:calc(100% - 170px)}
+.reference-scene[data-real-room] .life-rail{left:24px;top:70px;width:96px;padding:7px;gap:7px;background:#f5f5f5b8;z-index:3;max-height:calc(100% - 170px)}
 .reference-scene[data-real-room] .life-rail>span{font-size:7px;letter-spacing:1px;text-align:center;padding:3px 0}
 .reference-scene[data-real-room] .life-rail button{gap:0;min-height:0;border-radius:2px;overflow:hidden}
-.reference-scene[data-real-room] .life-rail .reference-product-photo{height:clamp(55px,12dvh,116px);aspect-ratio:auto;background:#f4f3ee}
+.reference-scene[data-real-room] .life-rail .reference-product-photo{height:clamp(55px,12dvh,116px);aspect-ratio:auto;background:var(--digo-surface)}
 .reference-scene[data-real-room] .life-rail small{justify-content:space-between;width:100%;padding:5px 7px;font-size:8px}
 .reference-scene[data-real-room] .scene-quick{right:24px}
 .scene-hotspot-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
 .scene-hotspot-lines line{stroke:#fff9;stroke-width:1;vector-effect:non-scaling-stroke}
 .room-hotspot{width:44px;height:44px;transform:translate(-50%,-50%);background:transparent;border:0;backdrop-filter:none;padding:7px;z-index:2}
 .room-hotspot[hidden]{display:none}
-.room-hotspot span{display:grid;place-items:center;width:30px;height:30px;border:1px solid #fff9;background:#f8f6efeb;color:#25342e;box-shadow:0 2px 12px #0002;border-radius:50%;font:10px/1 Arial,sans-serif;transition:transform .18s,background .18s}
+.room-hotspot span{display:grid;place-items:center;width:30px;height:30px;border:1px solid #fff9;background:#f6f6f6eb;color:#303030;box-shadow:0 2px 12px #0002;border-radius:50%;font:10px/1 Arial,sans-serif;transition:transform .18s,background .18s}
 .room-hotspot:hover span,.room-hotspot:focus-visible span{transform:scale(1.14);background:white}
 @media(max-width:640px){
 .reference-scene[data-real-room] .life-rail{left:10px;top:62px;width:18%;padding:4px;gap:6px}
@@ -53,23 +53,23 @@
 
 /* Screen moments keep the real frame and separate clothes and objects in the rail. */
 .screen-scene .life-rail .reference-product-photo{padding:4px;object-fit:contain}
-.scene-wide-view{position:absolute;right:24px;bottom:90px;display:flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;background:#f7f5efee;color:#24332d;font-size:10px;border:1px solid #fff8;border-radius:3px;z-index:4}
+.scene-wide-view{position:absolute;right:24px;bottom:90px;display:flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;background:#f5f5f5ee;color:#2f2f2f;font-size:10px;border:1px solid #fff8;border-radius:3px;z-index:4}
 .scene-wide-view svg{width:16px;height:16px}
-.screen-extracted-art{background:#efeee8;border-radius:3px;height:min(55vh,530px)}
+.screen-extracted-art{background:#eeeeee;border-radius:3px;height:min(55vh,530px)}
 .screen-extracted-art .reference-product-photo{background:transparent;padding:14px}
-.screen-extraction-note{font-size:10px!important;color:#73756e;line-height:1.5!important}
-.screen-reference-detail dl>div{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid #ddd9d0;font-size:12px}
+.screen-extraction-note{font-size:10px!important;color:#747474;line-height:1.5!important}
+.screen-reference-detail dl>div{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid #d9d9d9;font-size:12px}
 .screen-reference-detail dd{margin:0;text-align:right}
 .screen-origin{display:block;position:relative;width:100%;padding:0;margin:22px 0 5px;overflow:hidden;border-radius:3px}
 .screen-origin img{display:block;width:100%;height:auto}
 .screen-origin-dot{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border:2px solid white;box-shadow:0 0 0 4px #0002;border-radius:50%;background:#fff4}
 .full-scene-sheet{width:min(1120px,96vw);max-height:92dvh;padding:32px;overflow:auto}
-.screen-full-frame{position:relative;width:100%;background:#242923;overflow:hidden}
+.screen-full-frame{position:relative;width:100%;background:#282828;overflow:hidden}
 .screen-full-frame>img{display:block;width:100%;height:100%;object-fit:contain}
 .screen-full-frame .room-hotspot{position:absolute}
 .screen-full-pieces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}
 .screen-full-pieces button{padding:0;text-align:left}
-.screen-full-pieces img{height:120px;object-fit:contain;background:#eeede7;padding:7px}
+.screen-full-pieces img{height:120px;object-fit:contain;background:#ededed;padding:7px}
 .screen-full-pieces span{display:block;font-size:11px;line-height:1.5;margin-top:8px}
 @media(max-width:640px){
 .screen-scene .scene-topline{left:12px;right:12px}

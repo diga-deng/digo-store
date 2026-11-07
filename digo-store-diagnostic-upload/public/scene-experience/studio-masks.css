@@ -1,0 +1,25 @@
+/* Per-product CSS silhouettes mask only the connected studio background. Source photography stays intact. */
+.reference-product-photo[src$="/edit-lp-0.jpg"] { --studio-mask: url("assets/masks/edit-lp-0.webp"); }
+.reference-product-photo[src$="/edit-lp-1.jpg"] { --studio-mask: url("assets/masks/edit-lp-1.webp"); }
+.reference-product-photo[src$="/edit-lp-14.jpg"] { --studio-mask: url("assets/masks/edit-lp-14.webp"); }
+.reference-product-photo[src$="/edit-lp-16.jpg"] { --studio-mask: url("assets/masks/edit-lp-16.webp"); }
+.reference-product-photo[src$="/edit-lp-17.jpg"] { --studio-mask: url("assets/masks/edit-lp-17.webp"); }
+.reference-product-photo[src$="/edit-lp-2.jpg"] { --studio-mask: url("assets/masks/edit-lp-2.webp"); }
+.reference-product-photo[src$="/edit-lp-21.jpg"] { --studio-mask: url("assets/masks/edit-lp-21.webp"); }
+.reference-product-photo[src$="/edit-lp-23.jpg"] { --studio-mask: url("assets/masks/edit-lp-23.webp"); }
+.reference-product-photo[src$="/edit-lp-25.jpg"] { --studio-mask: url("assets/masks/edit-lp-25.webp"); }
+.reference-product-photo[src$="/edit-lp-26.jpg"] { --studio-mask: url("assets/masks/edit-lp-26.webp"); }
+.reference-product-photo[src$="/edit-lp-30.jpg"] { --studio-mask: url("assets/masks/edit-lp-30.webp"); }
+.reference-product-photo[src$="/edit-lp-33.jpg"] { --studio-mask: url("assets/masks/edit-lp-33.webp"); }
+.reference-product-photo[src$="/edit-lp-34.jpg"] { --studio-mask: url("assets/masks/edit-lp-34.webp"); }
+.reference-product-photo[src$="/edit-lp-4.jpg"] { --studio-mask: url("assets/masks/edit-lp-4.webp"); }
+.reference-product-photo[src$="/edit-lp-8.jpg"] { --studio-mask: url("assets/masks/edit-lp-8.webp"); }
+.reference-product-photo[src$="/ferm-arum-portable-lamp-stainless-steel.webp"] { --studio-mask: url("assets/masks/ferm-arum-portable-lamp-stainless-steel.webp"); }
+.reference-product-photo[src$="/ferm-cilla-tapestry-blanket-off-white-dark-grape.webp"] { --studio-mask: url("assets/masks/ferm-cilla-tapestry-blanket-off-white-dark-grape.webp"); }
+.reference-product-photo[src$="/ferm-elysia-candelabra-brushed-stainless-steel.webp"] { --studio-mask: url("assets/masks/ferm-elysia-candelabra-brushed-stainless-steel.webp"); }
+.reference-product-photo[src$="/ferm-insert-side-table-stone-sand.webp"] { --studio-mask: url("assets/masks/ferm-insert-side-table-stone-sand.webp"); }
+.reference-product-photo[src$="/ferm-mara-washable-rug-elm-green-warm-sand.webp"] { --studio-mask: url("assets/masks/ferm-mara-washable-rug-elm-green-warm-sand.webp"); }
+.reference-product-photo[src$="/ferm-pear-bean-bag-elm-green.webp"] { --studio-mask: url("assets/masks/ferm-pear-bean-bag-elm-green.webp"); }
+.reference-product-photo[src$="/ferm-tukki-trolley-natural.webp"] { --studio-mask: url("assets/masks/ferm-tukki-trolley-natural.webp"); }
+.reference-product-photo[src$="/ferm-tydra-bowl-h10-mirror-polished.webp"] { --studio-mask: url("assets/masks/ferm-tydra-bowl-h10-mirror-polished.webp"); }
+.reference-product-photo[src$="/ferm-tydra-bowl-h7-mirror-polished.webp"] { --studio-mask: url("assets/masks/ferm-tydra-bowl-h7-mirror-polished.webp"); }

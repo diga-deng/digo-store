@@ -733,3 +733,8 @@ body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
 .purchase-mode button, .purchase-options button, .service-preview select {
   box-shadow: var(--digo-rim);
 }
+.journey-store-nav.digo-stage-nav a {
+  min-height: 48px;
+  justify-content: center;
+  padding: 5px 8px;
+}

@@ -31,7 +31,7 @@ function header() {
 }
 function bottomNavigation() {
   const r = route();
-  return `<nav class="life-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/scene'))}${navLink('/style','Style','spark',r==='/style'||r.startsWith('/edit'))}${navLink('/wardrobe','Wardrobe','shirt',['/wardrobe','/world','/recent','/interests'].includes(r))}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
+  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/scene'))}${navLink('/style','Style','spark',r==='/style'||r.startsWith('/edit'))}${navLink('/wardrobe','Wardrobe','shirt',['/wardrobe','/world','/recent','/interests'].includes(r))}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
 }
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';

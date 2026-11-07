@@ -9,11 +9,11 @@
   --glass-active: linear-gradient(150deg, #f8f8f8, #eaeaea);
 }
 
-.life-header, .life-nav { background: #fff; backdrop-filter: none; }
+.life-header { background: #fff; backdrop-filter: none; }
 .life-header .brand { color: #111111; letter-spacing: .075em; }
 .life-header .brand-line { color: #676767; }
 
-:is(.life-header .icon-btn, .life-nav a, .scene-quick button,
+:is(.life-header .icon-btn, .scene-quick button,
     .life-scene-copy .life-btn, .scene-index .scene-step, .life-scene .life-rail :where(button),
     .style-mode button, .style-jumps button, .style-arrows button, .style-save,
     .closet-status button, .closet-categories button, .closet-views button,
@@ -35,9 +35,9 @@
 .life-header .bag-count { background: var(--glass-ink); right: -4px; top: -4px; }
 .life-nav { gap: clamp(6px, 1vw, 16px); }
 .life-nav a { align-self: stretch; max-width: 108px; padding: 4px 4px 8px; gap: 3px; }
-.life-nav a[aria-current="page"]::after { bottom: 3px; background: #161616; }
+.life-nav a[aria-current="page"]::after { bottom: 3px; background: currentColor; }
 
-:is(.life-nav a[aria-current="page"], .closet-status button[aria-pressed="true"],
+:is(.closet-status button[aria-pressed="true"],
     .closet-categories button[aria-current="true"], .closet-views button[aria-pressed="true"],
     .style-mode button[aria-selected="true"], .style-jumps button[aria-pressed="true"]) {
   color: #1b1b1b;
@@ -116,7 +116,7 @@
 .closet-top .closet-add { border-radius: 24px; color: var(--glass-ink); }
 
 @media (hover: hover) {
-  :is(.life-header .icon-btn, .life-nav a, .style-jumps button,
+  :is(.life-header .icon-btn, .style-jumps button,
       .closet-status button, .closet-categories button, .closet-collection .life-btn):hover {
     border-color: #909090;
     color: #1a1a1a;
@@ -177,9 +177,10 @@
   -webkit-backdrop-filter: grayscale(1) blur(8px);
   backdrop-filter: grayscale(1) blur(8px);
 }
-.style-piece-visual, .life-scene .life-rail button, .life-product-card .life-art {
+.life-scene .life-rail button {
   background-color: var(--digo-surface);
 }
+.style-piece-visual, .life-product-card .life-art { background-color: var(--digo-paper); }
 :is(.style-piece-open, .life-rail button, .closet-garment-art, .closet-grid .life-art) .reference-product-photo {
   -webkit-mask: var(--studio-mask, none) center / contain no-repeat;
   mask: var(--studio-mask, none) center / contain no-repeat;
@@ -190,3 +191,13 @@
   box-shadow: var(--glass-edge);
 }
 .modal, .drawer { border: 1px solid var(--glass-line); }
+
+/* Reduce glare in the open margins without adding a tint to products. */
+body:has(.life-nav [aria-current="page"]) {
+  background-color: var(--stage-surround, #f9f9f9);
+}
+body:has(.life-nav [href="#/style"][aria-current="page"]) { --stage-surround: #f1f1f1; }
+body:has(.life-nav [href="#/wardrobe"][aria-current="page"]) { --stage-surround: #eaeaea; }
+body:has(.life-nav [href="#/plans"][aria-current="page"]) { --stage-surround: #e3e3e3; }
+.style-cylinder { --life-paper: var(--stage-surround, var(--digo-paper)); }
+.style-piece-open img.reference-product-photo { background-color: transparent; }

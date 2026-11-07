@@ -4,3 +4,26 @@ function fixture(){const context=vm.createContext({document:{addEventListener(){
 test('active Discover worlds use sourced outdoor and architecture assets and preserve saved scene identities',()=>{const run=fixture();const data=JSON.parse(run('JSON.stringify({scenes:baseScenes,old:archivedScenes,products:products})'));assert.equal(data.scenes.filter(s=>s.editorial).length,10);assert.ok(!data.scenes.some(s=>s.screenScene));assert.ok(data.old.some(s=>s.id==='screen-bigbang-evening'));for(const s of data.scenes){assert.ok(fs.existsSync(path.join(root,s.image.replace('/scene-experience/',''))));for(const id of s.items)assert.ok(data.products.find(p=>p.id===id));}});
 test('colour columns partition Discover pieces by their own colour without duplicates or unrelated products',()=>{const run=fixture();const groups=JSON.parse(run("JSON.stringify(styleGroups('color'))"));assert.ok(groups.every(g=>g.items.length>=2));const ids=groups.flatMap(g=>g.items.map(p=>p.id));assert.equal(new Set(ids).size,ids.length);for(const g of groups)for(const p of g.items){assert.equal(p.styleColor,g.id);assert.ok(fs.existsSync(path.join(root,'assets',path.basename(p.image))));}assert.equal(ids.length,run('styleProducts().length'));});
 test('temperature columns use contiguous five-degree bands and exclude household objects',()=>{const run=fixture();const groups=JSON.parse(run("JSON.stringify(styleGroups('temperature'))"));assert.deepEqual(groups.map(g=>Number(g.id)),[0,5,10,15,20,25]);for(const g of groups){assert.ok(g.items.length>=3);assert.ok(g.items.every(p=>p.category==='Wear'&&p.styleTemperatures.includes(Number(g.id))));}});
+
+test('each colour has its own local textile and references products in that colour', () => {
+  const run = fixture();
+  const groups = JSON.parse(run("JSON.stringify(styleGroups('color'))"));
+  assert.equal(groups.length, 8);
+  for (const group of groups) {
+    assert.ok(fs.existsSync(path.join(root, 'assets', 'textile-' + group.id + '.webp')));
+  }
+  assert.ok(groups.find(group => group.id === 'burgundy').items.every(p => p.color === 'Burgundy'));
+});
+
+test('each colour, including the last, has a distinct reachable snap stop at both viewport sizes', () => {
+  const run = fixture();
+  for (const [viewport, fraction] of [[1440, .30], [390, .76]]) {
+    const width = viewport * fraction;
+    const lanes = Array.from({length: 8}, (_, i) => ({offsetLeft: i * width, offsetWidth: width}));
+    const total = 8 * width;
+    const stops = JSON.parse(run(`JSON.stringify(styleSnapStops(${JSON.stringify(lanes)}, ${viewport}, ${total}))`));
+    assert.equal(stops[0], 0);
+    assert.equal(stops.at(-1), total - viewport);
+    assert.ok(stops.every((stop, i) => !i || stop > stops[i - 1]));
+  }
+});

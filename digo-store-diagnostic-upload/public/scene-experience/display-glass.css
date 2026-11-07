@@ -48,16 +48,24 @@ body:is(.journey-feed, .style-browsing, :has(.closet-page)) :is(a,button,select)
 .journey-feed .reference-scene .life-rail img.reference-product-photo { background: transparent; }
 
 /* A continuous photographic fabric column is visible through every product. */
-body.style-browsing { --lane-width: 33.333333%; color: white; }
+body.style-browsing { --lane-width: 30%; color: white; }
 .style-browsing #app { isolation: isolate; }
 .style-textiles { display: flex; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 .style-textiles i {
-  flex: 0 0 var(--lane-width); height: 100%; background: var(--tone) url(assets/textile-weave.webp) center / cover;
-  background-blend-mode: multiply;
+  position: relative; flex: 0 0 var(--lane-width); height: 100%; overflow: hidden; background: var(--tone);
 }
-.style-textiles [data-fabric=red] { background-image: url(assets/textile-red.webp); background-blend-mode: normal; }
-.style-textiles [data-fabric=blue] { background-image: url(assets/textile-blue.webp); background-blend-mode: normal; }
-.style-textiles [data-fabric=ivory] { background-image: url(assets/textile-ivory.webp); background-blend-mode: normal; }
+.style-textiles i::before {
+  content: ''; position: absolute; inset: 0 -8px; pointer-events: none;
+  background: var(--tone) var(--fabric, url(assets/textile-weave.webp)) center / cover;
+  background-blend-mode: var(--blend, normal);
+  transform: translateX(var(--drift, 0px));
+}
+.style-browsing:has(.style-filter-row[data-mode=temperature]) .style-textiles { --blend: multiply; }
+.style-browser .style-track { scroll-snap-type: x mandatory; }
+.style-browser .style-track.is-dragging { scroll-snap-type: none; }
+.style-track .style-lane { scroll-snap-align: start; }
+.style-position { align-self: center; white-space: nowrap; padding: 0 5px; font: 11px/1.3 Arial,sans-serif;
+  font-variant-numeric: tabular-nums; color:white; text-shadow: 0 1px 3px #000; }
 .life-main.style-browser { padding: 0; max-width: none; color: white; touch-action: auto; background: transparent; }
 .style-heading { padding: 12px clamp(16px, 3vw, 52px) 0; }
 .style-heading h1, .closet-top h1 {

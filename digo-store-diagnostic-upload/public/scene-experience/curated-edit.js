@@ -6,7 +6,7 @@ const curatedProducts = [
     "name": "Loro Piana Royal Lightness® Dress",
     "sku": "FRW0040_P0DG",
     "color": "Burgundy",
-    "styleColor": "red",
+    "styleColor": "burgundy",
     "styleTemperatures": [
       15,
       20,
@@ -72,7 +72,7 @@ const curatedProducts = [
     "name": "Paige Dress",
     "sku": "FAP0016_P0DG",
     "color": "Burgundy",
-    "styleColor": "red",
+    "styleColor": "burgundy",
     "styleTemperatures": [
       15,
       20

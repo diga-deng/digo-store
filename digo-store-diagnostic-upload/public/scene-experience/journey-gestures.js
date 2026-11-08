@@ -4,7 +4,7 @@ function mountJourneyGestures() {
   const feed = !!document.querySelector('.moment-feed');
   document.documentElement.classList.remove('scene-scroll');
   document.body.classList.toggle('journey-feed', feed);
-  main?.classList.toggle('journey-module', ['/', '/style', '/wardrobe', '/world', '/plans'].includes(route()) || feed);
+  main?.classList.toggle('journey-module', ['/', '/style', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
   if (journeyDirection && main) {
     main.classList.add('journey-enter-' + journeyDirection);
     journeyDirection = '';
@@ -21,7 +21,12 @@ function mountJourneyGestures() {
   function surfaceFor(target) {
     if (target.closest(editable) || overlayOpen()) return null;
     const horizontal = target.closest('.closet-garments,.life-nav');
-    if (horizontal) return { node: horizontal, axis: 'x' };
+    if (horizontal) {
+      const source = horizontal.matches('.life-nav') && document.querySelector('.moment-feed,.scene-series');
+      return { node: source || horizontal, axis: 'x' };
+    }
+    const card = target.closest('.series-piece');
+    if (card) return { node: card.closest('.scene-series'), axis: 'x' };
     if (target.closest('button,a,.life-rail,.closet-categories,#circle-canvas,[data-gesture-ignore]')) return null;
     const main = target.closest('.journey-module');
     return main ? { node: main, axis: main.matches('.moment-feed') ? 'both' : 'x' } : null;
@@ -39,6 +44,14 @@ function mountJourneyGestures() {
       const changed = moveJourneyScene(step);
       if (changed && focus) document.querySelector('.moment-feed .life-scene')?.focus({ preventScroll: true });
       return changed;
+    }
+    if (surface.matches('.moment-feed')) {
+      const id = surface.querySelector('.life-scene')?.dataset.scene;
+      return step === -1 && !!id && openSceneSeries(id);
+    }
+    if (surface.matches('.scene-series')) {
+      const id = surface.querySelector('[data-series-scene]')?.dataset.seriesScene;
+      return step === 1 && !!id && leaveSceneSeries(id);
     }
     const nav = document.querySelector('.life-nav');
     const links = [...(nav?.querySelectorAll('a[href]') || [])];
@@ -128,12 +141,15 @@ function mountJourneyGestures() {
 
   document.addEventListener('keydown', event => {
     if (event.altKey || event.metaKey || event.ctrlKey || event.target.closest(editable) || overlayOpen()) return;
-    const surface = surfaceFor(event.target) || (event.target === document.body && document.querySelector('.moment-feed') ? { node: document.querySelector('.moment-feed'), axis: 'both' } : null);
+    const page = event.target === document.body && document.querySelector('.moment-feed,.scene-series');
+    const surface = surfaceFor(event.target) || (page ? { node: page, axis: page.matches('.moment-feed') ? 'both' : 'x' } : null);
     if (!surface) return;
     const key = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['y', -1], ArrowDown: ['y', 1] }[event.key];
     if (!key || (surface.axis !== 'both' && surface.axis !== key[0])) return;
     event.preventDefault();
-    move(surface.node, key[0], key[1], true);
+    // Arrow keys name the finger direction on a scene; wheel deltas name the scroll direction.
+    const contextPage = surface.node.matches('.moment-feed') || surface.node.matches('.scene-series');
+    move(surface.node, key[0], key[0] === 'x' && contextPage ? -key[1] : key[1], true);
   });
   mountJourneyGestures();
 })();

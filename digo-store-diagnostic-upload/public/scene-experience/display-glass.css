@@ -218,3 +218,53 @@ body:has(.closet-page) { background: #534534 url(assets/cabinet-courtyard.webp) 
 .journey-feed .life-scene .scene-topline { top: calc(var(--journey-header) + 10px); }
 .journey-feed .life-scene .life-rail,
 .journey-feed .life-scene .scene-quick { top: calc(var(--journey-header) + 53px); }
+
+/* The collection keeps the photograph that led into it. */
+body:has(.scene-series) { background: #19252b; }
+body:has(.scene-series) .life-header {
+  position: relative; color: white; background: linear-gradient(#12191e60,#12191e20);
+  border-bottom: 1px solid #ffffff48; backdrop-filter: blur(4px);
+}
+body:has(.scene-series) .life-header :is(.brand,.brand-line,.icon-btn) { color: white; }
+body:has(.scene-series) .life-header .icon-btn { background: #18252c55; border: 1px solid #ffffff66; }
+body:has(.scene-series) nav.life-nav { background: #142027dd; border-color: #ffffff3a; }
+body:has(.scene-series) nav.life-nav > a { background: #23333baa; border-color: #ffffff75; color: white; }
+.life-main.scene-series { max-width: none; padding: 0; background: transparent; color: white; touch-action: pan-y pinch-zoom; }
+.series-cover { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.series-cover img { width: 100%; height: 100%; object-fit: cover; }
+.series-cover::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg,#0f1d2422 8%,#0a1a2240 24%,#0a1924bc 53%,#0b1822ef 100%); }
+.series-content { width: min(100%, 1450px); margin: auto; padding: 20px clamp(18px,4vw,70px) calc(var(--journey-nav) + 45px); }
+.series-back { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 13px;
+  border: 1px solid #ffffff80; border-radius: 8px; background: #18232d6b; backdrop-filter: blur(4px); color: white; font-size: 13px; }
+.series-back svg { width: 15px; height: 15px; }
+.series-heading { margin: clamp(54px,12vh,140px) 0 clamp(24px,4vh,44px); text-shadow: 0 2px 12px #14212d90; }
+.series-heading p,.series-piece-copy small { margin: 0; text-transform: uppercase; font: 600 11px/1.3 Arial,sans-serif; letter-spacing: .12em; }
+.series-heading h1 { margin: 7px 0; color: white; font: 400 clamp(44px,6vw,84px)/1 Georgia,serif; letter-spacing: -.045em; }
+.series-heading h1:focus { outline: none; }
+.series-heading span { font: italic 18px/1.5 Georgia,serif; }
+.series-content h2,.series-more summary { color: white; font: 400 20px/1.4 Georgia,serif; margin: 0 0 12px; }
+.series-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,195px),1fr)); gap: 12px; }
+.series-piece { min-width: 0; padding: 0; overflow: hidden; text-align: left; color: white;
+  border: 1px solid #ffffff66; border-radius: 10px; background: #18232c5c; backdrop-filter: blur(5px); }
+.series-piece-photo { display: grid; place-items: center; height: clamp(145px,19vh,220px); overflow: hidden; padding: 9px 0 0; }
+.series-piece-photo img.reference-product-photo { height: 100%; width: 100%; object-fit: contain; background: transparent; }
+.series-piece-photo .product-photo { height: 100%; aspect-ratio: 1; }
+.series-piece-copy { display: grid; gap: 4px; padding: 12px; background: linear-gradient(transparent,#0a18218f); }
+.series-piece-copy small { font-size: 10px; }
+.series-piece-copy strong { font: 450 16px/1.25 Georgia,serif; }
+.series-piece-copy span { font-size: 12px; color: #f0f3f4; }
+.series-more { margin-top: 25px; border-top: 1px solid #ffffff60; padding-top: 12px; }
+.series-more summary { cursor: pointer; padding: 9px 0; }
+.scene-series :is(a,button,summary):focus-visible { outline: 2px solid white; outline-offset: 2px; }
+@media(max-width:640px) {
+  .series-content { padding-top: 12px; }
+  .series-heading { margin: clamp(30px,8vh,70px) 0 23px; }
+  .series-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .series-piece-photo { height: clamp(120px,34vw,178px); }
+}
+body:has(.scene-series) #app { isolation: isolate; }
+.scene-series.journey-enter-right { animation: none; }
+@media(prefers-reduced-motion:no-preference) {
+  .scene-series.journey-enter-right .series-content { animation: journey-right .32s ease-out; }
+}

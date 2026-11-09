@@ -9,9 +9,9 @@ function fixture() {
   const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], navigation: [], scenes: [] };
   let active = 0, count = 3, clock = 1000;
   const makeSurface = kind => ({
-    kind, isConnected: true, clientWidth: 900,
+    kind, get dataset() { return {count, row: 0}; }, isConnected: true, clientWidth: 900,
     classList: { add() {}, remove() {}, toggle() {} }, setPointerCapture() {}, focus() {},
-    matches(selector) { return selector === (kind === 'wardrobe' ? '.closet-garments' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
+    matches(selector) { return selector === (kind === 'wardrobe' ? '.fitting-options' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
     querySelector(selector) {
       if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id}};
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
@@ -26,7 +26,7 @@ function fixture() {
   const series = Object.assign(makeSurface('series'), {id:'b'});
   const target = (surface, ignored = false) => ({ closest(selector) {
     if (ignored && /input|button/.test(selector)) return {};
-    if (selector.includes('.closet-garments') && surface.kind === 'wardrobe') return surface;
+    if (selector.includes('.fitting-options') && surface.kind === 'wardrobe') return surface;
     if (selector.includes('.life-nav') && surface.kind === 'nav') return surface;
     if (selector === '.journey-module' && surface.kind === 'series') return surface;
     if (['.journey-module','.moment-feed'].includes(selector) && surface.kind === 'scene') return surface;
@@ -35,13 +35,13 @@ function fixture() {
   const document = {
     documentElement: { classList: { toggle() {}, remove() {} } }, body: { classList: { toggle() {} } },
     addEventListener(name, fn) { (handlers[name] ||= []).push(fn); },
-    querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '.closet-garments' ? wardrobe : selector === '.life-nav' ? nav : null; },
+    querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '.fitting-options' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
   vm.runInNewContext(source, {
     document, window: { addEventListener() {} }, performance: { now: () => clock },
     journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
-    closetRecords: () => Array.from({ length: count }), closetMove: step => calls.wardrobe.push(step),
+    moveFittingPiece: step => calls.wardrobe.push(step),
     openSceneSeries: id => { calls.navigation.push('/series/' + id); return true; },
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
     navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }

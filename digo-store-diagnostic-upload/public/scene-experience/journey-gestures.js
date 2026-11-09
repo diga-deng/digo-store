@@ -20,7 +20,7 @@ function mountJourneyGestures() {
 
   function surfaceFor(target) {
     if (target.closest(editable) || overlayOpen()) return null;
-    const horizontal = target.closest('.closet-garments,.life-nav');
+    const horizontal = target.closest('.fitting-options,.life-nav');
     if (horizontal) {
       const source = horizontal.matches('.life-nav') && document.querySelector('.moment-feed,.scene-series');
       return { node: source || horizontal, axis: 'x' };
@@ -34,9 +34,9 @@ function mountJourneyGestures() {
 
   function move(surface, axis, step, focus = false) {
     if (overlayOpen() || !surface.isConnected) return false;
-    if (surface.matches('.closet-garments')) {
-      if (Number(surface.dataset?.count ?? closetRecords().length) < 2) return false;
-      closetMove(step, Number(surface.dataset?.row || 0));
+    if (surface.matches('.fitting-options')) {
+      if (Number(surface.dataset.count) < 2) return false;
+      moveFittingPiece(step, Number(surface.dataset?.row || 0));
       if (focus) surface.focus({ preventScroll: true });
       return true;
     }
@@ -129,7 +129,7 @@ function mountJourneyGestures() {
     if (!axis) return;
     const time = now();
     // Stable keys survive a render: inertial tails cannot advance the replacement page.
-    const key = surface.node.matches('.closet-garments') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
+    const key = surface.node.matches('.fitting-options') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
     if (wheel.key !== key || time - wheel.time > 220) wheel = { key, x: 0, y: 0, time, fired: false };
     wheel.time = time;
     if (wheel.fired) return;

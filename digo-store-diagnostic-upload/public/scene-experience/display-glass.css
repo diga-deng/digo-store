@@ -1,32 +1,32 @@
 /* Clear controls sit over the scene or textile, with just enough edge to locate them. */
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) {
+body:is(.journey-feed, .style-browsing) {
   --clear-edge: 1px solid rgb(255 255 255 / .50);
   --clear-shadow: inset 0 1px 0 #ffffff45, 0 2px 9px #12171918;
   --clear-face: linear-gradient(125deg, #ffffff20, #ffffff03 52%, #ffffff12), #1e20252b;
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) .life-header {
+body:is(.journey-feed, .style-browsing) .life-header {
   color: white; background: linear-gradient(180deg, #12191e41, #12191e17);
   border-bottom: 1px solid #ffffff42; backdrop-filter: blur(3px);
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) .life-header :is(.brand, .brand-line) {
+body:is(.journey-feed, .style-browsing) .life-header :is(.brand, .brand-line) {
   color: white; text-shadow: 0 1px 4px #0009;
 }
 .life-header .brand-line { font: italic clamp(14px, 1.4vw, 21px) Georgia, serif; }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) :is(.life-header .icon-btn, nav.life-nav > a) {
+body:is(.journey-feed, .style-browsing) :is(.life-header .icon-btn, nav.life-nav > a) {
   color: white; background: var(--clear-face); border: var(--clear-edge); box-shadow: var(--clear-shadow);
   text-shadow: 0 1px 3px #000a; backdrop-filter: blur(5px);
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav {
+body:is(.journey-feed, .style-browsing) nav.life-nav {
   border: 0; background: transparent; backdrop-filter: none; box-shadow: none;
   pointer-events: none; justify-content: center;
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav > a {
+body:is(.journey-feed, .style-browsing) nav.life-nav > a {
   pointer-events: auto; border-radius: 9px; max-width: 124px;
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) nav.life-nav > a[aria-current=page] {
+body:is(.journey-feed, .style-browsing) nav.life-nav > a[aria-current=page] {
   background-color: #141a233b; border-color: #fffd;
 }
-body:is(.journey-feed, .style-browsing, :has(.closet-page)) :is(a,button,select):focus-visible {
+body:is(.journey-feed, .style-browsing) :is(a,button,select):focus-visible {
   outline: 2px solid white; outline-offset: -3px; box-shadow: 0 0 0 2px #252a31;
 }
 
@@ -68,20 +68,18 @@ body.style-browsing { --lane-width: 30%; color: white; }
   font-variant-numeric: tabular-nums; color:white; text-shadow: 0 1px 3px #000; }
 .life-main.style-browser { padding: 0; max-width: none; color: white; touch-action: auto; background: transparent; }
 .style-heading { padding: 12px clamp(16px, 3vw, 52px) 0; }
-.style-heading h1, .closet-top h1 {
+.style-heading h1 {
   font: 400 clamp(31px, 3vw, 48px)/1 Georgia, serif; letter-spacing: -.045em;
   margin: 0; text-shadow: 0 1px 6px #0005;
 }
 .style-filter-row { margin: 7px 0 0; padding: 0 clamp(16px, 3vw, 52px); }
-.style-browser :is(.style-mode button,.style-jumps button,.style-arrows button,.style-save),
-.closet-page :is(.closet-status button,.closet-categories button,.closet-views button,.closet-add,.closet-collection select,.closet-collection button,.shelf-arrow,.cabinet-meta button) {
+.style-browser :is(.style-mode button,.style-jumps button,.style-arrows button,.style-save) {
   background: var(--clear-face); border: var(--clear-edge); box-shadow: var(--clear-shadow); color: #fff;
   text-shadow: 0 1px 3px #000a; backdrop-filter: blur(3px);
 }
 .style-browser .style-jumps button[aria-pressed=true],
 .style-browser .style-mode button[aria-selected=true],
-.style-browser .style-save.is-saved,
-.closet-page :is(.closet-status,.closet-categories,.closet-views) button:is([aria-pressed=true],[aria-current=true]) {
+.style-browser .style-save.is-saved {
   background: #27303a55; border-color: #fffd; color: #fff; text-decoration: underline; text-underline-offset: 4px;
 }
 .style-browser .style-cylinder::before, .style-browser .style-cylinder::after { display: none; }
@@ -113,65 +111,12 @@ body.style-browsing { --lane-width: 30%; color: white; }
 .style-browser .style-piece-copy > button { font-size: 13px; line-height: 1.2; }
 .style-browser .style-piece-copy > span { font-size: 8px; letter-spacing: .11em; }
 .style-browser .style-lane-scroll { flex: 1; }
-.style-piece-open img[src*="edit-arc-"], .cabinet-tube img[src*="edit-arc-"] {
+.style-piece-open img[src*="edit-arc-"] {
   --studio-mask: radial-gradient(ellipse 54% 62%, black 68%, transparent 100%);
 }
 
-/* The room is a single plane behind both shelves, including their side controls. */
-body:has(.closet-page) { background: #534534 url(assets/cabinet-courtyard.webp) center / cover fixed; }
-.life-main.closet-page {
-  max-width: none; color: white; padding: 0 clamp(12px, 3.2vw, 52px) calc(var(--journey-nav) + 12px);
-  background: transparent;
-}
-.closet-page .closet-top { margin: 0; padding: 12px 0 8px; justify-content: flex-start; gap: 15px; }
-.closet-top .closet-add { margin-left: auto; }
-.closet-page .closet-subnav { border-color: #fff3; padding-bottom: 5px; }
-.closet-page .closet-views { background: transparent; }
-.closet-page .closet-collection { padding: 4px 0; }
-.closet-page .closet-collection option { color: #211e1c; background: #faf8f3; }
-.closet-page .closet-footer { color: white; border-color: #fff4; text-shadow: 0 1px 4px #000; }
-.closet-page .closet-empty { min-height: 43vh; }
-.closet-page .closet-empty p { color: white; text-shadow: 0 1px 4px #000; }
-.closet-page .closet-grid, .closet-page .version-grid { padding: 18px; background: #f8f4ece8; color: #241e18; border-radius: 10px; }
-.cabinet-meta { min-height: 27px; display: flex; justify-content: space-between; align-items: center; padding: 0 3px; }
-.cabinet-meta span { font-size: 11px; text-shadow: 0 1px 3px #000; }
-.cabinet-meta button { border-radius: 20px; padding: 4px 12px; font-size: 11px; }
-.cabinet-shelf { position: relative; display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px;
-  column-gap: 9px; align-items: center; margin: 3px 0 4px; }
-.cabinet-window.closet-garments {
-  height: clamp(145px, calc((100dvh - 355px) / 2), 365px); perspective: none; overflow: clip;
-}
-.cabinet-track { height: 100%; position: relative; }
-.cabinet-tube {
-  --tube-width: 26%; position: absolute; top: 2%; height: 95%; width: var(--tube-width); left: 50%;
-  transform: translateX(calc(-50% + var(--slot) * (100% + 12px)));
-  border: 1px solid rgb(250 247 223 / .72); border-radius: 50% / 6%;
-  background: linear-gradient(90deg,#fffbda48,transparent 3%,#fff2 5%,transparent 10%,transparent 87%,#fff1 92%,#fff5 96%,#c7c6af16);
-  box-shadow: inset 1px 0 2px #fff8, inset -2px 0 3px #fff5, 0 5px 9px #17140e35;
-}
-.cabinet-tube::before, .cabinet-tube::after {
-  content: ''; position: absolute; z-index: 1; left: -1px; right: -1px; height: 11%; border-radius: 50%;
-  border: 1px solid #fff9; pointer-events: none;
-}
-.cabinet-tube::before { top: -1px; background: #ffffff06; }
-.cabinet-tube::after { bottom: -1px; background: linear-gradient(transparent,#fff2); box-shadow: 0 1px 1px #fff9; }
-.cabinet-tube .closet-garment-art {
-  top: 7%; bottom: 7%; height: auto; left: 10%; right: 10%; mix-blend-mode: normal;
-  filter: drop-shadow(2px 5px 3px #0004);
-}
-.cabinet-tube .closet-garment-art img { object-fit: contain; background: transparent; }
-.cabinet-tube .closet-missing { background: #29231e38; color: white; border: 0; }
-.cabinet-shelf::after { content: ''; grid-column: 2; grid-row: 2; align-self: start; height: 5px;
-  border-radius: 50%; background: linear-gradient(#fff9,#b8b8ad4d,#fffd); box-shadow: 0 3px 4px #28231948; pointer-events: none; }
-.shelf-arrow { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; }
-.shelf-arrow svg, .shelf-caption svg { width: 17px; height: 17px; }
-.shelf-arrow:disabled { visibility: hidden; }
-.shelf-caption { grid-column: 2; grid-row: 2; display: flex; justify-content: center; align-items: center; gap: 9px;
-  min-height: 25px; padding-top: 5px; color: white; font-size: 11px; text-shadow: 0 1px 3px #000; }
-.shelf-caption button { color: inherit; text-shadow: inherit; }
 @media(max-width: 850px) {
   body.style-browsing { --lane-width: 46%; }
-  .cabinet-tube { --tube-width: 34%; }
 }
 @media(max-width: 640px) {
   body.style-browsing { --lane-width: 76%; }
@@ -181,16 +126,6 @@ body:has(.closet-page) { background: #534534 url(assets/cabinet-courtyard.webp) 
   .style-browser .style-arrows button { width: 32px; height: 36px; }
   .style-track .style-lane > header { flex-wrap: nowrap; min-height: 32px; }
   .style-browser .style-piece-open { height: clamp(138px, calc((100dvh - 325px) / 2), 265px); }
-  .closet-page .closet-top { gap: 6px; padding: 8px 0; }
-  .closet-top h1 { width: 100%; font-size: 29px; }
-  .closet-page .closet-subnav { padding-right: 82px; }
-  .closet-page .closet-categories { margin: 0; padding: 0; }
-  .closet-page .closet-collection { gap: 5px; }
-  .cabinet-shelf { grid-template-columns: 30px minmax(0,1fr) 30px; column-gap: 2px; }
-  .cabinet-tube { --tube-width: 57%; }
-  .cabinet-window.closet-garments { height: clamp(144px, calc((100dvh - 367px) / 2), 320px); }
-  .shelf-arrow { width: 30px; height: 40px; }
-  .shelf-caption { min-height: 23px; font-size: 10px; }
   .journey-feed .life-scene .life-rail { top: calc(var(--journey-header) + 12px); }
 }
 @media(prefers-reduced-motion: reduce) {
@@ -198,22 +133,6 @@ body:has(.closet-page) { background: #534534 url(assets/cabinet-courtyard.webp) 
 }
 .style-browser .style-filter-row .style-jumps button[aria-pressed=true] {
   background: var(--clear-face); color: white; border-color: #fffd; text-decoration: underline;
-}
-.cabinet-meta { justify-content: flex-end; gap: 7px; }
-.cabinet-meta span { margin-right: auto; }
-.cabinet:has(.cabinet-shelf:only-of-type) .cabinet-window {
-  height: clamp(230px, calc(100dvh - 355px), 540px);
-}
-@media(min-height: 640px) {
-  .life-main.closet-page:has(.cabinet) {
-    height: calc(100dvh - var(--journey-header) - var(--journey-nav) - env(safe-area-inset-bottom,0px));
-    min-height: 0; display: flex; flex-direction: column; padding-bottom: 0;
-  }
-  .closet-page:has(.cabinet) > :not(.cabinet) { flex: none; }
-  .closet-page:has(.cabinet) .closet-footer { padding: 3px 0; }
-  .cabinet { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .cabinet-shelf { flex: 1; grid-template-rows: minmax(0,1fr) 24px; min-height: 0; }
-  .cabinet .cabinet-shelf .cabinet-window { height: 100%; min-height: 0; }
 }
 .journey-feed .life-scene .scene-topline { top: calc(var(--journey-header) + 10px); }
 .journey-feed .life-scene .life-rail,
@@ -269,3 +188,56 @@ body:has(.scene-series) #app { isolation: isolate; }
   .scene-series.journey-enter-left .series-content { animation: series-from-right .32s cubic-bezier(.22,.65,.3,1); }
   @keyframes series-from-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 }
+
+/* White studio and personal wardrobe */
+body:has(.closet-page) { background: #fff; --stage-surround: #fff; }
+body:has(.closet-page) .life-header { background: #fff; border-bottom-color: #e4e4e1; }
+.life-main.closet-page {
+  max-width: 1360px; margin: auto; min-height: calc(100dvh - var(--journey-header));
+  background: white; color: #242524; padding: 0 clamp(18px,5vw,78px) calc(var(--journey-nav) + 20px);
+}
+.closet-page .closet-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+  margin: 0; padding: 22px 0 18px; border-bottom: 1px solid #dededb; }
+.closet-page .closet-top h1 { width: auto; margin: 0; color: #20231f; font: 400 clamp(34px,3.5vw,53px)/1 Georgia,serif; letter-spacing: -.045em; text-shadow: none; }
+.fitting-tabs { display: flex; align-items: center; gap: clamp(14px,2vw,30px); }
+.fitting-tabs a { display: flex; align-items: center; min-height: 42px; padding: 0 1px; color: #62635f; font: 14px/1.2 Arial,sans-serif; }
+.fitting-tabs a[aria-current=page] { color: #1d211d; box-shadow: inset 0 -2px #242824; }
+.fitting-room { width: min(100%,1080px); margin: 0 auto; display: grid; grid-template-columns: 47% minmax(0,1fr);
+  align-items: center; column-gap: clamp(22px,5vw,88px); }
+.fitting-figure { margin: 0; height: clamp(430px,66vh,680px); display: grid; place-items: center; background: white; }
+.fitting-model { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.fitting-controls { padding-block: 26px 20px; }
+.fitting-intro { font: 600 10px/1.4 Arial,sans-serif; text-transform: uppercase; letter-spacing: .15em; color: #666861; margin: 0 0 16px; }
+.fitting-row { border-top: 1px solid #e1e1df; padding-top: 14px; margin: 0 0 22px; }
+.fitting-row h2 { font: 400 clamp(22px,2.2vw,31px)/1.2 Georgia,serif; letter-spacing: -.035em; margin: 0 0 8px; }
+.fitting-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px;
+  touch-action: pan-y pinch-zoom; overscroll-behavior-x: contain; }
+.fitting-options button { display: grid; grid-template-rows: auto 1fr; gap: 4px; align-items: end; min-width: 0;
+  color: #555650; background: white; border: 0; border-bottom: 2px solid #e8e8e5; padding: 3px 2px 8px; text-align: center; touch-action: pan-y pinch-zoom; }
+.fitting-options button[aria-pressed=true] { border-bottom-color: #272c27; color: #171a17; font-weight: 600; }
+.fitting-options img { display: block; width: 100%; height: clamp(73px,10vh,112px); object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.fitting-options span { font: inherit; font-size: 12px; line-height: 1.3; }
+.fitting-caption { margin: 0; color: #454941; font: italic 15px/1.4 Georgia,serif; }
+.closet-page .closet-library-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 0; }
+.closet-page .closet-subnav { padding-right: 0; }
+.closet-page .closet-categories { margin: 0; }
+.closet-page :is(.closet-add,.closet-collection button,.closet-collection select) { color: #242424; background: white; border: 1px solid #d7d7d4; box-shadow: none; }
+.closet-page :is(button,a,[tabindex="0"]):focus-visible { outline: 2px solid #333; outline-offset: 2px; }
+@media(max-width:720px) {
+  .closet-page .closet-top { padding: 14px 0 10px; gap: 8px; }
+  .closet-page .closet-top h1 { font-size: 34px; }
+  .fitting-tabs { gap: 14px; }
+  .fitting-tabs a { font-size: 12px; }
+  .fitting-room { display: flex; flex-direction: column; gap: 0; }
+  .fitting-figure { width: 100%; height: clamp(190px,33dvh,320px); margin: 8px 0; }
+  .fitting-controls { width: min(100%,545px); padding: 0; }
+  .fitting-intro { margin: 0 0 6px; font-size: 9px; }
+  .fitting-row { margin-bottom: 10px; padding-top: 7px; }
+  .fitting-row h2 { margin: 0; font-size: 20px; }
+  .fitting-options { gap: 8px; }
+  .fitting-options img { height: clamp(42px,7dvh,76px); }
+  .fitting-options button { padding-bottom: 5px; }
+  .fitting-options span { font-size: 11px; }
+  .fitting-caption { font-size: 12px; }
+}
+body:has(.closet-page) #app { min-height: 100dvh; background: white; }

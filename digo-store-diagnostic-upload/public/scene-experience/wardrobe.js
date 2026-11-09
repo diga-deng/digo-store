@@ -1,5 +1,5 @@
-/* The cabinet displays existing wardrobe records, with a separate browse-only preview. */
-let closetSelection = '', closetView = 'rail', closetQuery = '', closetLimit = 18;
+/* The fitting room displays studio samples separately from personal wardrobe records. */
+let closetQuery = '', closetLimit = 18;
 function closetProduct(record) { return record.type === 'own' ? record : itemInfo(record); }
 function closetRecords() {
   let rows = wardrobeStatus === 'Owned'
@@ -31,99 +31,59 @@ function closetArt(x) {
   const image=safeImage(p?.image_url||p?.image);
   return image?`<img src="${esc(image)}" alt="${esc(p.name)}" draggable="false">`:`<div class="closet-missing">${icon('image')}<span>${esc(p?.material||p?.name||'Your piece')}</span><small>Photo pending</small></div>`;
 }
-const shelfSelections = new Map();
-let cabinetTimer = 0;
-let browsingCabinetPreview = false;
-let cabinetPaused = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function cabinetPreview() {
-  return styleProducts()
-    .filter(p => p.category === 'Wear' && p.image?.includes('/edit-lp-'))
-    .slice(0, 12)
-    .map(p => ({ kind:'product', type:'concept', id:p.id, closetKey:'preview:' + p.id, preview:true }));
+const fittingRows = [
+  { title: 'Tops', pieces: ['Ivory rib knit', 'Indigo overshirt', 'Olive shell'] },
+  { title: 'Trousers', pieces: ['Indigo jeans', 'Sand pleats', 'Black tailored'] }
+];
+const fittingAssetRoot = '/scene-experience/assets/fitting/';
+const fittingStorageKey = 'digo-fitting-look-v1';
+function readFittingLook() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(fittingStorageKey)); } catch { /* Use the first studio look. */ }
+  return fittingRows.map((row, i) => Number.isInteger(saved?.[i]) && row.pieces[saved[i]] ? saved[i] : 0);
 }
-function cabinetShelves(rows) {
-  if (rows.length < 4) return [rows];
-  return [rows.filter((_, i) => i % 2 === 0), rows.filter((_, i) => i % 2 === 1)];
+let fittingLook = readFittingLook();
+function fittingLookName() {
+  return fittingRows.map((row, i) => row.pieces[fittingLook[i]]).join(' · ');
 }
-function shelfMarkup(items, row, context) {
-  const selection = shelfSelections.get(context + row) || closetSelection;
-  const index = Math.max(0, items.findIndex(x => x.closetKey === selection));
-  const current = items[index];
-  const radius = Math.min(3, Math.floor(items.length / 2));
-  const tubes = [];
-  for (let offset = -radius; offset <= radius; offset++) {
-    const item = items[(index + offset + items.length) % items.length];
-    const name = closetProduct(item).name;
-    tubes.push(`<button class="cabinet-tube" data-closet="detail" data-key="${esc(item.closetKey)}"
-      tabindex="${offset === 0 ? 0 : -1}" style="--slot:${offset}" aria-label="View ${esc(name)}">
-      <span class="closet-garment-art">${closetArt(item)}</span></button>`);
-  }
-  const details = !current.preview && current.kind !== 'own'
-    ? `<button data-closet="manage" data-key="${esc(current.closetKey)}" aria-label="Organize ${esc(closetProduct(current).name)}">${icon('grid')}</button>` : '';
-  return `<section class="cabinet-shelf" data-row="${row}" aria-label="Shelf ${row + 1}">
-    <button class="shelf-arrow" data-closet="previous" aria-label="Previous piece on shelf ${row + 1}" ${items.length < 2 ? 'disabled' : ''}>${icon('left')}</button>
-    <div class="closet-garments cabinet-window" data-row="${row}" data-count="${items.length}" tabindex="0" aria-label="Shelf ${row + 1}. Use left and right arrows.">
-      <div class="cabinet-track">${tubes.join('')}</div>
-    </div>
-    <button class="shelf-arrow" data-closet="next" aria-label="Next piece on shelf ${row + 1}" ${items.length < 2 ? 'disabled' : ''}>${icon('right')}</button>
-    <div class="shelf-caption"><button data-closet="detail" data-key="${esc(current.closetKey)}">${esc(closetProduct(current).name)}</button>${details}</div>
-  </section>`;
+function fittingPhoto() {
+  return fittingAssetRoot + 'look-' + fittingLook.join('-') + '.webp';
 }
-function cabinetContext(preview) {
-  return [wardrobeStatus, groupFilter, preview ? 'preview' : 'collection'].join('/') + '/';
+function fittingOptions(row, rowIndex) {
+  return `<section class="fitting-row"><h2>${row.title}</h2>
+    <div class="fitting-options" role="group" aria-label="${row.title}" aria-keyshortcuts="ArrowLeft ArrowRight"
+      data-row="${rowIndex}" data-count="${row.pieces.length}" tabindex="0">
+      ${row.pieces.map((piece, i) => `<button type="button" data-closet="try-piece" data-row="${rowIndex}" data-option="${i}"
+        aria-label="${piece}" aria-pressed="${i === fittingLook[rowIndex]}">
+        <img src="${fittingAssetRoot}option-${rowIndex}-${i}.webp" alt="" draggable="false"><span>${piece}</span></button>`).join('')}
+    </div></section>`;
 }
-function closetRail(rows) {
-  const preview = !!rows[0]?.preview;
-  const shelves = cabinetShelves(rows);
-  const canPreview = wardrobeStatus === 'Liked' && !groupFilter && closetRecords().length > 0;
-  const previewSwitch = canPreview ? `<button data-closet="preview">${preview ? 'My pieces' : 'Preview cabinet'}</button>` : '';
-  return `<section class="cabinet" aria-label="Glass wardrobe" data-preview="${preview}">
-    <div class="cabinet-meta"><span>${preview ? 'Wardrobe preview' : ''}</span>${previewSwitch}
-    ${rows.length > 1 ? `<button data-closet="rotation" aria-label="${cabinetPaused ? 'Start' : 'Pause'} shelf rotation">${cabinetPaused ? 'Play' : 'Pause'}</button>` : ''}</div>
-    ${shelves.map((items,i) => shelfMarkup(items,i,cabinetContext(preview))).join('')}
-  </section>`;
+function fittingRoom() {
+  return `<div class="fitting-room"><figure class="fitting-figure">
+    <img class="fitting-model" src="${fittingPhoto()}" alt="Headless ceramic mannequin wearing ${fittingLookName()}" fetchpriority="high">
+    </figure><div class="fitting-controls">
+      <p class="fitting-intro">Studio samples</p>
+      ${fittingRows.map(fittingOptions).join('')}
+      <p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
+    </div></div>`;
 }
-function closetMove(step, row = 0, manual = true) {
-  const stage = document.querySelector('.cabinet');
-  if (!stage) return;
-  const preview = stage.dataset.preview === 'true';
-  const items = cabinetShelves(preview ? cabinetPreview() : closetRecords())[row];
-  const shelf = stage.querySelector(`.cabinet-shelf[data-row="${row}"]`);
-  if (!shelf || !items || items.length < 2) return;
-  const key = cabinetContext(preview);
-  const oldKey = shelf.querySelector('.shelf-caption button').dataset.key;
-  const index = Math.max(0, items.findIndex(x => x.closetKey === oldKey));
-  const next = items[(index + step + items.length) % items.length];
-  shelfSelections.set(key + row, next.closetKey);
-  if (manual && !preview) {
-    closetSelection = next.closetKey;
-    world.closetSelection = closetSelection;
-    writeWorld();
-  }
-  const temp = document.createElement('div');
-  temp.innerHTML = shelfMarkup(items, row, key);
-  const fresh = temp.firstElementChild;
-  // Keep the gesture and arrow targets mounted so focus and pointer capture survive a turn.
-  const track = shelf.querySelector('.cabinet-track');
-  track.innerHTML = fresh.querySelector('.cabinet-track').innerHTML;
-  shelf.querySelector('.shelf-caption').innerHTML = fresh.querySelector('.shelf-caption').innerHTML;
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const stride = shelf.querySelector('.cabinet-tube').offsetWidth + 12;
-    track.animate([{transform:`translateX(${step * stride}px)`}, {transform:'translateX(0)'}],
-      {duration:360,easing:'cubic-bezier(.2,.65,.22,1)'});
-  }
+function chooseFittingPiece(row, option) {
+  if (!fittingRows[row]?.pieces[option] || fittingLook[row] === option) return;
+  fittingLook[row] = option;
+  try { localStorage.setItem(fittingStorageKey, JSON.stringify(fittingLook)); } catch { /* Keep the current selection in memory. */ }
+  const room = document.querySelector('.fitting-room');
+  if (!room) return;
+  room.querySelectorAll(`.fitting-options[data-row="${row}"] button`).forEach(button => {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.option) === option));
+  });
+  const model = room.querySelector('.fitting-model');
+  model.src = fittingPhoto();
+  model.alt = 'Headless ceramic mannequin wearing ' + fittingLookName();
+  room.querySelector('.fitting-caption').textContent = fittingLookName();
 }
-function mountCabinet() {
-  clearInterval(cabinetTimer);
-  const stage = document.querySelector('.cabinet');
-  if (!stage || cabinetPaused) return;
-  cabinetTimer = setInterval(() => {
-    if (!stage.isConnected || document.hidden || document.querySelector('#overlay-root')?.innerHTML) return;
-    for (const shelf of stage.querySelectorAll('.cabinet-shelf')) {
-      if (!shelf.matches(':hover, :focus-within')) closetMove(1, Number(shelf.dataset.row), false);
-    }
-  }, 7500);
+function moveFittingPiece(step, row) {
+  const count = fittingRows[row].pieces.length;
+  chooseFittingPiece(row, (fittingLook[row] + step + count) % count);
 }
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;
@@ -133,14 +93,18 @@ function closetEmpty() {
   return `<div class="closet-empty"><div class="empty-rail" aria-hidden="true">${hanger()}${hanger()}${hanger()}</div><p>${ordered?'Purchased pieces appear here after payment is confirmed.':owned?'Your own pieces will live here.':'A little space for your next favourite.'}</p>${!ordered&&!owned?`<button class="life-btn subtle" data-closet="add">Add DIGO pieces ${icon('plus')}</button>`:`<a class="life-btn subtle" href="${owned?'#/edit/amalfi':'/shop'}">${owned?'Add an owned piece':'Explore pieces'} ${icon('arrow')}</a>`}</div>`;
 }
 function closetPage() {
-  const rows=closetRecords(),rail=wardrobeFilter==='Clothing'&&closetView==='rail'&&rows.every(x=>['product','own'].includes(x.kind));
+  const fitting = route() === '/wardrobe' && !location.hash.includes('tab=purchased');
+  const tabs = `<nav class="fitting-tabs" aria-label="Wardrobe views">
+    <a href="#/wardrobe" ${fitting ? 'aria-current="page"' : ''}>Fitting room</a>
+    <a href="#/wardrobe/pieces" ${!fitting ? 'aria-current="page"' : ''}>My pieces</a></nav>`;
+  const heading = `<div class="closet-top"><h1>Wardrobe</h1>${tabs}</div>`;
+  if (fitting) return wrap(heading + fittingRoom(), 'closet-page');
+  const rows = closetRecords();
   let content;
   if(wardrobeFilter==='Combinations')content=`<div class="version-grid">${Object.values(world.boards).map(b=>`<article><a href="#/edit/${esc(b.id)}">${miniBoard(b)}<h3>${esc(b.title)}</h3></a></article>`).join('')}${Object.values(world.versions).map(v=>`<article>${miniBoard(v)}<h3>${esc(v.title)}</h3>${btn('Edit a copy','version-copy',v.id,'','subtle')}</article>`).join('')}</div>`;
-  else if (rail && browsingCabinetPreview && wardrobeStatus === 'Liked' && !groupFilter) content = closetRail(cabinetPreview());
-  else if (rows.length) content = rail ? closetRail(rows) : closetGrid(rows);
-  else if (rail && wardrobeStatus === 'Liked' && !groupFilter) content = closetRail(cabinetPreview());
+  else if (rows.length) content = closetGrid(rows);
   else content = closetEmpty();
-  return wrap(`<div class="closet-top"><h1>Wardrobe</h1><div class="closet-status" aria-label="Wardrobe status">${[['Liked','Saved'],['Ordered','Purchased'],['Owned','Owned']].map(([key,label])=>`<button data-life="wardrobe-status" data-id="${key}" aria-pressed="${wardrobeStatus===key}">${label}</button>`).join('')}</div><button class="life-btn subtle closet-add" data-closet="add">${icon('plus')} Add pieces</button></div><div class="closet-subnav"><div class="closet-categories" aria-label="Wardrobe category">${[['Clothing','Clothing'],['Home','Home'],['Combinations','Looks'],['Moments','Moments'],['Details','Details'],['Recently viewed','Recent']].map(([key,label])=>`<button data-life="wardrobe-filter" data-id="${key}" aria-current="${wardrobeFilter===key}">${label}</button>`).join('')}</div><div class="closet-views"><button data-closet="rail" aria-label="Glass cabinet" aria-pressed="${closetView==='rail'}" ${wardrobeFilter!=='Clothing'?'disabled':''}>${icon('shirt')}</button><button data-closet="grid" aria-label="Grid view" aria-pressed="${closetView==='grid'}">${icon('grid')}</button></div></div><div class="closet-collection"><label class="sr-only" for="closet-group">Collection</label><select id="closet-group"><option value="">All collections</option>${world.groups.map(g=>`<option value="${esc(g)}" ${g===groupFilter?'selected':''}>${esc(g)}</option>`).join('')}</select>${btn('New collection','new-group','','','quiet')}</div>${content}<div class="closet-footer">${world.resume?`<a href="#${esc(world.resume.path)}" data-life="resume">${icon('undo')} Continue ${esc(world.resume.label)} ${icon('right')}</a>`:''}<span>On this device</span></div>`,'closet-page');
+  return wrap(`${heading}<div class="closet-library-head"><div class="closet-status" aria-label="Wardrobe status">${[['Liked','Saved'],['Ordered','Purchased'],['Owned','Owned']].map(([key,label])=>`<button data-life="wardrobe-status" data-id="${key}" aria-pressed="${wardrobeStatus===key}">${label}</button>`).join('')}</div><button class="life-btn subtle closet-add" data-closet="add">${icon('plus')} Add pieces</button></div><div class="closet-subnav"><div class="closet-categories" aria-label="Wardrobe category">${[['Clothing','Clothing'],['Home','Home'],['Combinations','Looks'],['Moments','Moments'],['Details','Details'],['Recently viewed','Recent']].map(([key,label])=>`<button data-life="wardrobe-filter" data-id="${key}" aria-current="${wardrobeFilter===key}">${label}</button>`).join('')}</div></div><div class="closet-collection"><label class="sr-only" for="closet-group">Collection</label><select id="closet-group"><option value="">All collections</option>${world.groups.map(g=>`<option value="${esc(g)}" ${g===groupFilter?'selected':''}>${esc(g)}</option>`).join('')}</select>${btn('New collection','new-group','','','quiet')}</div>${content}<div class="closet-footer">${world.resume?`<a href="#${esc(world.resume.path)}" data-life="resume">${icon('undo')} Continue ${esc(world.resume.label)} ${icon('right')}</a>`:''}<span>On this device</span></div>`,'closet-page');
 }
 function closetCatalogRows() {
   const q=closetQuery.toLowerCase().trim(),matches=[...referenceProducts,...catalog].filter(p=>[p.name,p.brand,p.category,p.material,p.style_code].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -167,32 +131,21 @@ function importWardrobeOrders() {
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-closet]');if(!el)return;e.preventDefault();
   const action=el.dataset.closet,key=el.dataset.key,record=closetRecords().find(x=>x.closetKey===key);
-  if(action==='add')closetAddModal();
+  if(action==='try-piece')chooseFittingPiece(Number(el.dataset.row), Number(el.dataset.option));
+  else if(action==='add')closetAddModal();
   else if(action==='save'){
     const p=productFor(key)||referenceProducts.find(p=>p.id===key);if(!p)return;
     if(saveRecord({kind:'product',id:p.id,type:p.reference?'concept':'catalog',title:p.name,snapshot:p.reference?undefined:p,savedManually:true})){
-      wardrobeStatus='Liked';wardrobeFilter=J.category({},p);closetSelection='product:'+p.id;world.closetSelection=closetSelection;writeWorld();render(false);
+      wardrobeStatus='Liked';wardrobeFilter=J.category({},p);world.closetSelection='product:'+p.id;writeWorld();render(false);
       $('#closet-picker').innerHTML=closetCatalogRows();
     }
   }else if(action==='retry-catalog'){await loadCatalog();if($('#closet-picker'))$('#closet-picker').innerHTML=closetCatalogRows();}
   else if(action==='more'){closetLimit+=18;$('#closet-picker').innerHTML=closetCatalogRows();}
-  else if(action==='previous'||action==='next')closetMove(action==='next'?1:-1, Number(el.closest('.cabinet-shelf').dataset.row));
-  else if(action==='preview'){browsingCabinetPreview=!browsingCabinetPreview;render(false);}
-  else if(action==='rotation'){
-    cabinetPaused=!cabinetPaused;el.textContent=cabinetPaused?'Play':'Pause';
-    el.setAttribute('aria-label',(cabinetPaused?'Start':'Pause')+' shelf rotation');
-    mountCabinet();
-  }
-  else if(action==='detail'&&key?.startsWith('preview:')){
-    const item=cabinetPreview().find(x=>x.closetKey===key);
-    if(item)showProduct(item.id,item.type);
-  }
-  else if(action==='rail'||action==='grid'){closetView=action;render(false);}
   else if(action==='detail'&&record){record.type==='own'?ownedClosetDetail(record):showProduct(record.id,record.type);}
   else if(action==='manage'&&record){overlay(`<h2>${esc(closetProduct(record).name)}</h2>${savedTools(record)}${record.orderIds?.length||record.testOrderIds?.length?'<p>Purchase records remain linked to your order.</p>':''}`,'Organize piece');}
 });
 function ownedClosetDetail(record) { overlay(`<div class="product-detail-art">${closetArt(record)}</div><h2>${esc(record.name)}</h2><p>${esc(record.brand||'Your own piece')}</p>${btn('Care & services','care',record.id,'','subtle')}`,'Owned piece'); }
 document.addEventListener('input',e=>{if(e.target.id==='closet-search'){closetQuery=e.target.value;closetLimit=18;$('#closet-picker').innerHTML=closetCatalogRows();}});
 document.addEventListener('change',e=>{if(e.target.id==='closet-group'){groupFilter=e.target.value;render(false);}});
-window.addEventListener('storage',e=>{if(e.key==='digo-wardrobe-orders-v1'){importWardrobeOrders();if(route()==='/wardrobe'&&!$('#overlay-root').innerHTML)render(false);}});
-window.addEventListener('digo-wardrobe-orders',()=>{importWardrobeOrders();if(route()==='/wardrobe')render(false);});
+window.addEventListener('storage',e=>{if(e.key==='digo-wardrobe-orders-v1'){importWardrobeOrders();if(route().startsWith('/wardrobe')&&!$('#overlay-root').innerHTML)render(false);}});
+window.addEventListener('digo-wardrobe-orders',()=>{importWardrobeOrders();if(route().startsWith('/wardrobe'))render(false);});

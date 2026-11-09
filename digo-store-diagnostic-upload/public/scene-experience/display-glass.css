@@ -209,8 +209,13 @@ body:has(.closet-page) .life-header { background: #fff; border-bottom-color: #e4
   padding: clamp(12px,2.4vh,28px) 0;
 }
 .fitting-figure { display: grid; justify-items: center; align-content: center; min-width: 0; margin: 0; }
+.fitting-carousel {
+  --model-width: min(100%,clamp(146px,calc((100dvh - 360px) * .4258),290px));
+  --peek-hit: 54px;
+  width: 100%; position: relative;
+}
 .fitting-stage {
-  width: min(100%,clamp(146px,calc((100dvh - 360px) * .4258),290px));
+  width: var(--model-width); margin-inline: auto;
   aspect-ratio: 218 / 512; position: relative; background: #fff; isolation: isolate;
 }
 .fitting-model { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
@@ -245,7 +250,7 @@ body:has(.closet-page) .life-header { background: #fff; border-bottom-color: #e4
   .fitting-tabs { gap: 14px; }
   .fitting-tabs a { font-size: 12px; }
   .fitting-room { --rail-width: clamp(57px,16vw,80px); gap: clamp(3px,1vw,10px); padding-block: 18px; }
-  .fitting-stage { width: min(100%,clamp(150px,calc((100dvh - 270px) * .4258),255px)); }
+  .fitting-carousel { --model-width: min(100%,clamp(150px,calc((100dvh - 270px) * .4258),255px)); --peek-hit: 44px; }
   .fitting-rail h2 { font-size: clamp(15px,3.8vw,19px); margin-bottom: 6px; }
   .fitting-options { gap: 5px; }
   .fitting-options button { padding: 3px 2px; }
@@ -265,11 +270,35 @@ html:has(.fitting-room) { overscroll-behavior-x: none; }
   .fit-touch-hint { display: none; }
   .fit-desktop-hint { display: inline; }
   .fitting-zone { cursor: ew-resize; }
-  .fitting-zone:hover:not(.is-gesture-dragging)::before,
-  .fitting-zone:hover:not(.is-gesture-dragging)::after {
-    content: ''; position: absolute; top: 50%; z-index: 1; width: 7px; height: 7px;
-    border: solid #555b54; border-width: 0 1px 1px 0; pointer-events: none;
-  }
-  .fitting-zone:hover::before { left: 3px; transform: rotate(135deg); }
-  .fitting-zone:hover::after { right: 3px; transform: rotate(-45deg); }
+}
+
+/* The inner edge of each neighboring garment shows the direction of travel
+   even before a pointer enters the mannequin, including on touchscreens. */
+.fitting-peek {
+  --inset: max(0px,calc((100% - var(--model-width)) / 2 - var(--peek-hit) + 8px));
+  position: absolute; z-index: 1; width: var(--peek-hit); padding: 0;
+  display: flex; align-items: center; justify-content: flex-start; gap: 6px;
+  background: transparent; color: #515950; border: 0; box-shadow: none;
+  transform: translateY(-50%); touch-action: pan-y pinch-zoom; cursor: pointer; user-select: none;
+}
+.fitting-peek[data-row="0"] { top: calc(var(--hem) / 2); }
+.fitting-peek[data-row="1"] { top: calc(50% + var(--hem) / 2); }
+.fitting-peek[data-step="-1"] { left: var(--inset); }
+.fitting-peek[data-step="1"] { right: var(--inset); flex-direction: row-reverse; }
+.fitting-peek-edge { position: relative; overflow: hidden; width: 35px; height: clamp(94px,15vh,149px); }
+.fitting-peek[data-row="1"] .fitting-peek-edge { height: clamp(120px,21vh,207px); }
+.fitting-peek-edge img { position: absolute; top: 0; height: 100%; width: auto; max-width: none; opacity: .78; pointer-events: none; }
+.fitting-peek[data-step="-1"] .fitting-peek-edge { mask-image: linear-gradient(to right,transparent,#000 42%); }
+.fitting-peek[data-step="1"] .fitting-peek-edge { mask-image: linear-gradient(to left,transparent,#000 42%); }
+.fitting-peek[data-step="-1"] img { right: 0; }
+.fitting-peek[data-step="1"] img { left: 0; }
+.fitting-peek::after { content: ''; flex: 0 0 8px; height: 8px; box-sizing: border-box; border: solid currentColor; border-width: 0 1.5px 1.5px 0; }
+.fitting-peek[data-step="-1"]::after { transform: rotate(135deg); }
+.fitting-peek[data-step="1"]::after { transform: rotate(-45deg); }
+.fitting-peek:is(:hover,:focus-visible) img { opacity: 1; }
+@media (max-width:720px) {
+  .fitting-peek { gap: 3px; }
+  .fitting-peek-edge { width: clamp(14px,4.3vw,23px); height: 70px; }
+  .fitting-peek[data-row="1"] .fitting-peek-edge { height: 90px; }
+  .fitting-peek::after { flex-basis: 6px; height: 6px; }
 }

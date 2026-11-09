@@ -72,6 +72,22 @@ function fittingOptions(row, rowIndex) {
         <img src="${fittingAssetRoot}option-${rowIndex}-${i}.webp" alt="" draggable="false"><span>${piece}</span></button>`).join('')}
     </div></section>`;
 }
+function fittingNeighbor(row, step) {
+  const pieces = fittingRows[row].pieces;
+  const option = (fittingLook[row] + step + pieces.length) % pieces.length;
+  const direction = step < 0 ? 'Previous' : 'Next';
+  return {
+    option, image: `${fittingAssetRoot}option-${row}-${option}.webp`,
+    label: `${direction} ${row === 0 ? 'top' : 'trousers'}: ${pieces[option]}`
+  };
+}
+function fittingPeek(row, step) {
+  const next = fittingNeighbor(row, step);
+  return `<button class="fitting-peek" type="button" data-closet="try-piece" data-fitting-swipe
+    data-row="${row}" data-step="${step}" data-option="${next.option}" data-count="${fittingRows[row].pieces.length}"
+    aria-label="${next.label}" title="${next.label}">
+    <span class="fitting-peek-edge"><img src="${next.image}" alt="" draggable="false"></span></button>`;
+}
 function fittingRoom() {
   const zones = fittingRows.map((row, i) => `<div class="fitting-zone" data-fitting-swipe data-row="${i}"
     data-count="${row.pieces.length}" role="group" tabindex="0" aria-label="Change ${row.title.toLowerCase()} on the mannequin"
@@ -79,9 +95,12 @@ function fittingRoom() {
   return `<div class="fitting-room">
     ${fittingOptions(fittingRows[0], 0)}
     <figure class="fitting-figure">
-      <div class="fitting-stage" style="--hem:${fittingHems[fittingLook[0]] * 100}%">
-        <img class="fitting-model" src="${fittingPhoto()}" alt="Headless ceramic mannequin wearing ${fittingLookName()}" draggable="false" fetchpriority="high">
-        ${zones}
+      <div class="fitting-carousel" style="--hem:${fittingHems[fittingLook[0]] * 100}%">
+        <div class="fitting-stage">
+          <img class="fitting-model" src="${fittingPhoto()}" alt="Headless ceramic mannequin wearing ${fittingLookName()}" draggable="false" fetchpriority="high">
+          ${zones}
+        </div>
+        ${fittingRows.map((_, row) => fittingPeek(row, -1) + fittingPeek(row, 1)).join('')}
       </div>
       <figcaption><p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
       <p id="fitting-hint"><span class="fit-touch-hint">Swipe the top or trousers left or right.</span><span class="fit-desktop-hint">Drag a garment sideways, or swipe with two fingers on your trackpad.</span></p></figcaption>
@@ -142,7 +161,14 @@ function chooseFittingPiece(row, option, animate = false) {
   const model = room.querySelector('.fitting-model');
   model.src = fittingPhoto();
   model.alt = 'Headless ceramic mannequin wearing ' + fittingLookName();
-  model.parentElement.style.setProperty('--hem', (fittingHems[fittingLook[0]] * 100) + '%');
+  model.closest('.fitting-carousel').style.setProperty('--hem', (fittingHems[fittingLook[0]] * 100) + '%');
+  room.querySelectorAll(`.fitting-peek[data-row="${row}"]`).forEach(button => {
+    const next = fittingNeighbor(row, Number(button.dataset.step));
+    button.dataset.option = next.option;
+    button.title = next.label;
+    button.setAttribute('aria-label', next.label);
+    button.querySelector('img').src = next.image;
+  });
   room.querySelector('.fitting-caption').textContent = fittingLookName();
 }
 function moveFittingPiece(step, row, animate = false) {

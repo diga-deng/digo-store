@@ -43,7 +43,7 @@ test('every choice and every combination has its own loadable image', () => {
   assert.equal(images.size, 9);
   const markup = run('fittingRoom()');
   const thumbs = [...markup.matchAll(/src="([^"]+\/option-[^"]+)"/g)];
-  assert.equal(thumbs.length, 6);
+  assert.equal(new Set(thumbs.map(match => match[1])).size, 6);
   thumbs.forEach(match => assert.ok(fs.existsSync(path.join(root, match[1]))));
 });
 
@@ -52,4 +52,22 @@ test('a stale or invalid stored option recovers independently of the other garme
   assert.equal(fitting(storage)('fittingLookName()'), 'Ivory rib knit · Black tailored');
   storage.set('digo-fitting-look-v1', 'bad JSON');
   assert.equal(fitting(storage)('fittingLookName()'), 'Ivory rib knit · Indigo jeans');
+});
+
+test('both garments advertise the previous and next actual piece before interaction', () => {
+  const run = fitting();
+  const cases = [
+    [0,-1,2,'Previous top: Olive shell'], [0,1,1,'Next top: Indigo overshirt'],
+    [1,-1,2,'Previous trousers: Black tailored'], [1,1,1,'Next trousers: Sand pleats']
+  ];
+  for (const [row,step,option,label] of cases) {
+    const peek = run(`fittingPeek(${row}, ${step})`);
+    assert.ok(peek.includes(`aria-label="${label}"`));
+    assert.ok(peek.includes(`data-option="${option}"`));
+    assert.ok(peek.includes(`option-${row}-${option}.webp`));
+  }
+  run('moveFittingPiece(1,0)');
+  assert.equal(run('fittingNeighbor(0,-1).option'), 0);
+  assert.equal(run('fittingNeighbor(0,1).option'), 2);
+  assert.equal(run('fittingNeighbor(1,-1).option'), 2);
 });

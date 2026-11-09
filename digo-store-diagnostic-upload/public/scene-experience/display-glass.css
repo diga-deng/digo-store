@@ -264,7 +264,8 @@ body:has(.scene-series) nav.life-nav > a { background: #23333baa; border-color: 
   .series-piece-photo { height: clamp(120px,34vw,178px); }
 }
 body:has(.scene-series) #app { isolation: isolate; }
-.scene-series.journey-enter-right { animation: none; }
+.scene-series.journey-enter-left { animation: none; overflow-x: clip; }
 @media(prefers-reduced-motion:no-preference) {
-  .scene-series.journey-enter-right .series-content { animation: journey-right .32s ease-out; }
+  .scene-series.journey-enter-left .series-content { animation: series-from-right .32s cubic-bezier(.22,.65,.3,1); }
+  @keyframes series-from-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 }

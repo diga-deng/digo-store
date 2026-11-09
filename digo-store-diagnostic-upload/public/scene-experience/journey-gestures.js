@@ -4,7 +4,7 @@ function mountJourneyGestures() {
   const feed = !!document.querySelector('.moment-feed');
   document.documentElement.classList.remove('scene-scroll');
   document.body.classList.toggle('journey-feed', feed);
-  main?.classList.toggle('journey-module', ['/', '/style', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
+  main?.classList.toggle('journey-module', ['/', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
   if (journeyDirection && main) {
     main.classList.add('journey-enter-' + journeyDirection);
     journeyDirection = '';
@@ -47,11 +47,11 @@ function mountJourneyGestures() {
     }
     if (surface.matches('.moment-feed')) {
       const id = surface.querySelector('.life-scene')?.dataset.scene;
-      return step === -1 && !!id && openSceneSeries(id);
+      return step === 1 && !!id && openSceneSeries(id);
     }
     if (surface.matches('.scene-series')) {
       const id = surface.querySelector('[data-series-scene]')?.dataset.seriesScene;
-      return step === 1 && !!id && leaveSceneSeries(id);
+      return step === -1 && !!id && leaveSceneSeries(id);
     }
     const nav = document.querySelector('.life-nav');
     const links = [...(nav?.querySelectorAll('a[href]') || [])];

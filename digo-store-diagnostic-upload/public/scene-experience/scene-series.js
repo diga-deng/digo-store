@@ -44,7 +44,7 @@ function openSceneSeries(id) {
   if (!sceneFor(id)) return false;
   const origin = route();
   closeOverlay();
-  journeyDirection = 'right';
+  journeyDirection = 'left';
   history.pushState({seriesOrigin: origin}, '', '#/series/' + encodeURIComponent(id));
   render();
   document.querySelector('.series-heading h1')?.focus({preventScroll: true});
@@ -53,7 +53,7 @@ function openSceneSeries(id) {
 
 function leaveSceneSeries(id) {
   const origin = history.state?.seriesOrigin;
-  journeyDirection = 'left';
+  journeyDirection = 'right';
   if (origin === '/' || origin === '/scene/' + id) {
     if (origin === '/') {
       world.browse = {...world.browse, discover: id};

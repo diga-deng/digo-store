@@ -17,7 +17,7 @@ function fixture() {
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
       return null;
     },
-    querySelectorAll() { return ['/', '/style', '/wardrobe', '/plans'].map((p, i) => ({ getAttribute: key => key === 'href' ? '#' + p : i === active ? 'page' : null })); },
+    querySelectorAll() { return ['/', '/wardrobe', '/plans'].map((p, i) => ({ getAttribute: key => key === 'href' ? '#' + p : i === active ? 'page' : null })); },
     scrollIntoView() { calls.scenes.push(this.id); }
   });
   const wardrobe = makeSurface('wardrobe');
@@ -44,7 +44,7 @@ function fixture() {
     closetRecords: () => Array.from({ length: count }), closetMove: step => calls.wardrobe.push(step),
     openSceneSeries: id => { calls.navigation.push('/series/' + id); return true; },
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
-    navigate: p => { calls.navigation.push(p); active = ['/', '/style', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
+    navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
   });
   return {
     calls, overlay, wardrobe, scenes, series, target, nav: () => nav,
@@ -94,26 +94,28 @@ test('dialogs, editable controls and empty rails are protected', () => {
   f.setCount(0);f.drag(f.wardrobe, -150);
   assert.deepEqual(f.calls.wardrobe, []);
 });
-test('vertical swipes change moments; only a rightward swipe opens the visible scene’s series', () => {
+test('vertical swipes change moments; only a leftward swipe opens the visible scene’s series', () => {
   const f = fixture();f.drag(f.scenes[0], 0, -150);f.drag(f.scenes[1], 0, 150);
   f.drag(f.scenes[0], 0, -150, 'touch');
   assert.deepEqual(f.calls.scenes, [1, -1, 1]);
-  f.drag(f.scenes[0], -150);
+  f.drag(f.scenes[0], 150);
   assert.deepEqual(f.calls.navigation, []);
-  f.drag(f.scenes[1], 140, 3, 'touch');
+  f.drag(f.scenes[1], -140, 3, 'touch');
   assert.deepEqual(f.calls.navigation, ['/series/b']);
   f.drag(f.series, -120, 2, 'touch');
+  assert.deepEqual(f.calls.navigation, ['/series/b']);
+  f.drag(f.series, 120, 2, 'touch');
   assert.deepEqual(f.calls.navigation, ['/series/b','/scene/b']);
 });
 test('arrow keys and a trackpad enter the current series and return to its source', () => {
   const f = fixture();
-  f.event('keydown',f.scenes[2],{key:'ArrowRight'});
-  f.event('keydown',f.series,{key:'ArrowLeft'});
-  f.event('wheel',f.scenes[1],{deltaX:-92,deltaY:2});
-  f.event('wheel',f.series,{deltaX:-92,deltaY:2});
+  f.event('keydown',f.scenes[2],{key:'ArrowLeft'});
+  f.event('keydown',f.series,{key:'ArrowRight'});
+  f.event('wheel',f.scenes[1],{deltaX:92,deltaY:2});
+  f.event('wheel',f.series,{deltaX:92,deltaY:2});
   assert.deepEqual(f.calls.navigation,['/series/c','/scene/b','/series/b']);
   f.tick(300);
-  f.event('wheel',f.series,{deltaX:94});
+  f.event('wheel',f.series,{deltaX:-94});
   assert.deepEqual(f.calls.navigation.at(-1),'/scene/b');
   assert.equal(f.event('wheel',f.series,{deltaY:110}).prevented,undefined);
 });
@@ -134,12 +136,12 @@ test('horizontal trackpad momentum moves once; vertical wheels and zoom remain n
   f.tick(250);f.event('wheel', f.wardrobe, { deltaY: -90, shiftKey: true });
   assert.deepEqual(f.calls.wardrobe, [1, -1]);
 });
-test('navigation swipes use the four visible destinations without momentum skipping across replacement DOM', () => {
+test('navigation swipes use the three visible destinations without momentum skipping across replacement DOM', () => {
   const f = fixture();f.drag(f.nav(), -140);
-  assert.deepEqual(f.calls.navigation, ['/style']);
+  assert.deepEqual(f.calls.navigation, ['/wardrobe']);
   f.tick(250);
   for (let n = 0; n < 8; n++) { f.tick(20);f.event('wheel', f.nav(), { deltaX: 80 }); }
-  assert.deepEqual(f.calls.navigation, ['/style', '/wardrobe']);
+  assert.deepEqual(f.calls.navigation, ['/wardrobe', '/plans']);
   f.tick(250);f.event('keydown', f.nav(), { key: 'ArrowLeft' });
-  assert.deepEqual(f.calls.navigation, ['/style', '/wardrobe', '/style']);
+  assert.deepEqual(f.calls.navigation, ['/wardrobe', '/plans', '/wardrobe']);
 });

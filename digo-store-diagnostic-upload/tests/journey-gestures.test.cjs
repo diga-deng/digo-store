@@ -6,12 +6,14 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../public/scene-experience/journey-gestures.js'), 'utf8');
 
 function fixture() {
-  const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], navigation: [], scenes: [] };
+  const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], bodyRows: [], previewRows: [], navigation: [], scenes: [] };
   let active = 0, count = 3, clock = 1000;
-  const makeSurface = kind => ({
-    kind, get dataset() { return {count, row: 0}; }, isConnected: true, clientWidth: 900,
+  const makeSurface = (kind, row = 0) => ({
+    kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 900,
     classList: { add() {}, remove() {}, toggle() {} }, setPointerCapture() {}, focus() {},
-    matches(selector) { return selector === (kind === 'wardrobe' ? '.fitting-options' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
+    matches(selector) {
+      if (kind === 'bodyZone') return ['[data-fitting-swipe]', '.fitting-zone'].includes(selector);
+      return selector === (kind === 'wardrobe' ? '[data-fitting-swipe]' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
     querySelector(selector) {
       if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id}};
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
@@ -26,7 +28,7 @@ function fixture() {
   const series = Object.assign(makeSurface('series'), {id:'b'});
   const target = (surface, ignored = false) => ({ closest(selector) {
     if (ignored && /input|button/.test(selector)) return {};
-    if (selector.includes('.fitting-options') && surface.kind === 'wardrobe') return surface;
+    if (selector.includes('[data-fitting-swipe]') && ['wardrobe','bodyZone'].includes(surface.kind)) return surface;
     if (selector.includes('.life-nav') && surface.kind === 'nav') return surface;
     if (selector === '.journey-module' && surface.kind === 'series') return surface;
     if (['.journey-module','.moment-feed'].includes(selector) && surface.kind === 'scene') return surface;
@@ -35,19 +37,21 @@ function fixture() {
   const document = {
     documentElement: { classList: { toggle() {}, remove() {} } }, body: { classList: { toggle() {} } },
     addEventListener(name, fn) { (handlers[name] ||= []).push(fn); },
-    querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '.fitting-options' ? wardrobe : selector === '.life-nav' ? nav : null; },
+    querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '[data-fitting-swipe]' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
   vm.runInNewContext(source, {
     document, window: { addEventListener() {} }, performance: { now: () => clock },
     journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
-    moveFittingPiece: step => calls.wardrobe.push(step),
+    moveFittingPiece(step, row) { calls.wardrobe.push(step); calls.bodyRows.push(row); },
+    dragFittingGarment(zone) { calls.previewRows.push(zone.dataset.row); },
+    settleFittingGarment() {},
     openSceneSeries: id => { calls.navigation.push('/series/' + id); return true; },
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
     navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
   });
   return {
-    calls, overlay, wardrobe, scenes, series, target, nav: () => nav,
+    calls, overlay, wardrobe, scenes, series, target, bodyZone: row => makeSurface('bodyZone', row), nav: () => nav,
     tick: n => clock += n, setCount: n => count = n,
     event(name, surface = wardrobe, extra = {}) {
       const e = { target: target(surface), isPrimary: true, pointerId: 1, pointerType: 'mouse', button: 0,
@@ -144,4 +148,15 @@ test('navigation swipes use the three visible destinations without momentum skip
   assert.deepEqual(f.calls.navigation, ['/wardrobe', '/plans']);
   f.tick(250);f.event('keydown', f.nav(), { key: 'ArrowLeft' });
   assert.deepEqual(f.calls.navigation, ['/wardrobe', '/plans', '/wardrobe']);
+});
+
+test('upper and lower mannequin swipes move only the slot where the drag started', () => {
+  const f = fixture();
+  f.drag(f.bodyZone(0), -110, 6, 'touch');
+  f.drag(f.bodyZone(1), 120, -3, 'touch');
+  f.drag(f.bodyZone(0), 4, 115, 'touch');
+  assert.deepEqual(f.calls.previewRows, [0, 1]);
+  assert.deepEqual(f.calls.wardrobe, [1, -1]);
+  assert.deepEqual(f.calls.bodyRows, [0, 1]);
+  assert.deepEqual(f.calls.navigation, []);
 });

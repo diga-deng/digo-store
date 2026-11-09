@@ -20,7 +20,7 @@ function mountJourneyGestures() {
 
   function surfaceFor(target) {
     if (target.closest(editable) || overlayOpen()) return null;
-    const horizontal = target.closest('.fitting-options,.life-nav');
+    const horizontal = target.closest('[data-fitting-swipe],.life-nav');
     if (horizontal) {
       const source = horizontal.matches('.life-nav') && document.querySelector('.moment-feed,.scene-series');
       return { node: source || horizontal, axis: 'x' };
@@ -29,12 +29,13 @@ function mountJourneyGestures() {
     if (card) return { node: card.closest('.scene-series'), axis: 'x' };
     if (target.closest('button,a,.life-rail,.closet-categories,#circle-canvas,[data-gesture-ignore]')) return null;
     const main = target.closest('.journey-module');
+    if (main?.querySelector('.fitting-room')) return null;
     return main ? { node: main, axis: main.matches('.moment-feed') ? 'both' : 'x' } : null;
   }
 
   function move(surface, axis, step, focus = false) {
     if (overlayOpen() || !surface.isConnected) return false;
-    if (surface.matches('.fitting-options')) {
+    if (surface.matches('[data-fitting-swipe]')) {
       if (Number(surface.dataset.count) < 2) return false;
       moveFittingPiece(step, Number(surface.dataset?.row || 0));
       if (focus) surface.focus({ preventScroll: true });
@@ -65,6 +66,7 @@ function mountJourneyGestures() {
   }
 
   function reset() {
+    if (drag?.node.matches('.fitting-zone')) settleFittingGarment(drag.node, 0);
     drag?.node.classList.remove('is-gesture-dragging');
     drag = null;
   }
@@ -90,16 +92,19 @@ function mountJourneyGestures() {
       drag.node.setPointerCapture(event.pointerId);
       drag.node.classList.add('is-gesture-dragging');
     }
+    if (drag.node.matches('.fitting-zone')) dragFittingGarment(drag.node, event.clientX - drag.x);
     if (event.cancelable) event.preventDefault();
   }, { passive: false });
   document.addEventListener('pointerup', event => {
     if (!drag || event.pointerId !== drag.id) return;
     const current = drag;
     const distance = current.axis === 'x' ? event.clientX - current.x : event.clientY - current.y;
+    const passed = current.locked && !current.rejected && Math.abs(distance) >= (current.axis === 'x' ? 48 : 64);
+    const step = distance < 0 ? 1 : -1;
+    if (passed && current.node.matches('.fitting-zone')) settleFittingGarment(current.node, step);
     reset();
     if (Math.max(Math.abs(event.clientX - current.x), Math.abs(event.clientY - current.y)) > 12) blockedUntil = now() + 400;
-    if (!current.locked || current.rejected) return;
-    if (Math.abs(distance) >= (current.axis === 'x' ? 48 : 64)) move(current.node, current.axis, distance < 0 ? 1 : -1);
+    if (passed) move(current.node, current.axis, step);
   });
   document.addEventListener('pointercancel', reset);
   document.addEventListener('lostpointercapture', reset);
@@ -129,7 +134,7 @@ function mountJourneyGestures() {
     if (!axis) return;
     const time = now();
     // Stable keys survive a render: inertial tails cannot advance the replacement page.
-    const key = surface.node.matches('.fitting-options') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
+    const key = surface.node.matches('[data-fitting-swipe]') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
     if (wheel.key !== key || time - wheel.time > 220) wheel = { key, x: 0, y: 0, time, fired: false };
     wheel.time = time;
     if (wheel.fired) return;

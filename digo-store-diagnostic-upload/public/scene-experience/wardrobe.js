@@ -46,12 +46,26 @@ let fittingLook = readFittingLook();
 function fittingLookName() {
   return fittingRows.map((row, i) => row.pieces[fittingLook[i]]).join(' · ');
 }
-function fittingPhoto() {
-  return fittingAssetRoot + 'look-' + fittingLook.join('-') + '.webp';
+function fittingPhoto(look = fittingLook) {
+  return fittingAssetRoot + 'look-' + look.join('-') + '.webp';
+}
+// These fractions place the interaction boundary at the hem in each studio photograph.
+const fittingHems = [0.37, 0.44, 0.43];
+let fittingPhotosWarmed = false;
+function warmFittingPhotos() {
+  if (fittingPhotosWarmed) return;
+  fittingPhotosWarmed = true;
+  for (let top = 0; top < fittingRows[0].pieces.length; top++) {
+    for (let trousers = 0; trousers < fittingRows[1].pieces.length; trousers++) {
+      const photo = new Image();
+      photo.fetchPriority = 'low';
+      photo.src = fittingPhoto([top, trousers]);
+    }
+  }
 }
 function fittingOptions(row, rowIndex) {
-  return `<section class="fitting-row"><h2>${row.title}</h2>
-    <div class="fitting-options" role="group" aria-label="${row.title}" aria-keyshortcuts="ArrowLeft ArrowRight"
+  return `<section class="fitting-rail"><h2>${row.title}</h2>
+    <div class="fitting-options" data-fitting-swipe role="group" aria-label="${row.title}" aria-keyshortcuts="ArrowLeft ArrowRight"
       data-row="${rowIndex}" data-count="${row.pieces.length}" tabindex="0">
       ${row.pieces.map((piece, i) => `<button type="button" data-closet="try-piece" data-row="${rowIndex}" data-option="${i}"
         aria-label="${piece}" aria-pressed="${i === fittingLook[rowIndex]}">
@@ -59,13 +73,53 @@ function fittingOptions(row, rowIndex) {
     </div></section>`;
 }
 function fittingRoom() {
-  return `<div class="fitting-room"><figure class="fitting-figure">
-    <img class="fitting-model" src="${fittingPhoto()}" alt="Headless ceramic mannequin wearing ${fittingLookName()}" fetchpriority="high">
-    </figure><div class="fitting-controls">
-      <p class="fitting-intro">Studio samples</p>
-      ${fittingRows.map(fittingOptions).join('')}
-      <p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
-    </div></div>`;
+  const zones = fittingRows.map((row, i) => `<div class="fitting-zone" data-fitting-swipe data-row="${i}"
+    data-count="${row.pieces.length}" role="group" tabindex="0" aria-label="Change ${row.title.toLowerCase()} on the mannequin"
+    aria-describedby="fitting-hint" aria-keyshortcuts="ArrowLeft ArrowRight"></div>`).join('');
+  return `<div class="fitting-room">
+    ${fittingOptions(fittingRows[0], 0)}
+    <figure class="fitting-figure">
+      <div class="fitting-stage" style="--hem:${fittingHems[fittingLook[0]] * 100}%">
+        <img class="fitting-model" src="${fittingPhoto()}" alt="Headless ceramic mannequin wearing ${fittingLookName()}" draggable="false" fetchpriority="high">
+        ${zones}
+      </div>
+      <figcaption><p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
+      <p id="fitting-hint">Swipe the top or trousers to change them.</p></figcaption>
+    </figure>
+    ${fittingOptions(fittingRows[1], 1)}
+  </div>`;
+}
+function dragFittingGarment(zone, distance) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let strip = zone.firstElementChild;
+  if (!strip || strip.dataset.settling) {
+    strip = document.createElement('div');
+    strip.className = 'fitting-strip';
+    strip.setAttribute('aria-hidden', 'true');
+    const row = Number(zone.dataset.row);
+    const count = fittingRows[row].pieces.length;
+    for (const offset of [-1, 0, 1]) {
+      const look = [...fittingLook];
+      look[row] = (look[row] + offset + count) % count;
+      const photo = new Image();
+      photo.alt = '';
+      photo.src = fittingPhoto(look);
+      photo.style.left = (offset * 100) + '%';
+      strip.append(photo);
+    }
+    strip.style.setProperty('--photo-height', zone.parentElement.clientHeight + 'px');
+    zone.replaceChildren(strip);
+  }
+  const dx = Math.max(-zone.clientWidth, Math.min(zone.clientWidth, distance));
+  strip.style.transform = `translateX(${dx}px)`;
+}
+function settleFittingGarment(zone, step) {
+  const strip = zone.firstElementChild;
+  if (!strip || strip.dataset.settling) return;
+  strip.dataset.settling = 'true';
+  const motion = strip.animate([ {transform: strip.style.transform},
+    {transform: `translateX(${-step * zone.clientWidth}px)`} ], {duration: 150, easing: 'ease-out', fill: 'forwards'});
+  motion.onfinish = () => strip.remove();
 }
 function chooseFittingPiece(row, option) {
   if (!fittingRows[row]?.pieces[option] || fittingLook[row] === option) return;
@@ -79,6 +133,7 @@ function chooseFittingPiece(row, option) {
   const model = room.querySelector('.fitting-model');
   model.src = fittingPhoto();
   model.alt = 'Headless ceramic mannequin wearing ' + fittingLookName();
+  model.parentElement.style.setProperty('--hem', (fittingHems[fittingLook[0]] * 100) + '%');
   room.querySelector('.fitting-caption').textContent = fittingLookName();
 }
 function moveFittingPiece(step, row) {
@@ -98,7 +153,10 @@ function closetPage() {
     <a href="#/wardrobe" ${fitting ? 'aria-current="page"' : ''}>Fitting room</a>
     <a href="#/wardrobe/pieces" ${!fitting ? 'aria-current="page"' : ''}>My pieces</a></nav>`;
   const heading = `<div class="closet-top"><h1>Wardrobe</h1>${tabs}</div>`;
-  if (fitting) return wrap(heading + fittingRoom(), 'closet-page');
+  if (fitting) {
+    requestAnimationFrame(warmFittingPhotos);
+    return wrap(heading + fittingRoom(), 'closet-page');
+  }
   const rows = closetRecords();
   let content;
   if(wardrobeFilter==='Combinations')content=`<div class="version-grid">${Object.values(world.boards).map(b=>`<article><a href="#/edit/${esc(b.id)}">${miniBoard(b)}<h3>${esc(b.title)}</h3></a></article>`).join('')}${Object.values(world.versions).map(v=>`<article>${miniBoard(v)}<h3>${esc(v.title)}</h3>${btn('Edit a copy','version-copy',v.id,'','subtle')}</article>`).join('')}</div>`;

@@ -84,7 +84,7 @@ function fittingRoom() {
         ${zones}
       </div>
       <figcaption><p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
-      <p id="fitting-hint">Swipe the top or trousers to change them.</p></figcaption>
+      <p id="fitting-hint"><span class="fit-touch-hint">Swipe the top or trousers left or right.</span><span class="fit-desktop-hint">Drag a garment sideways, or swipe with two fingers on your trackpad.</span></p></figcaption>
     </figure>
     ${fittingOptions(fittingRows[1], 1)}
   </div>`;
@@ -121,8 +121,17 @@ function settleFittingGarment(zone, step) {
     {transform: `translateX(${-step * zone.clientWidth}px)`} ], {duration: 150, easing: 'ease-out', fill: 'forwards'});
   motion.onfinish = () => strip.remove();
 }
-function chooseFittingPiece(row, option) {
+function chooseFittingPiece(row, option, animate = false) {
   if (!fittingRows[row]?.pieces[option] || fittingLook[row] === option) return;
+  if (animate) {
+    const zone = document.querySelector(`.fitting-zone[data-row="${row}"]`);
+    if (zone) {
+      const count = fittingRows[row].pieces.length;
+      const step = (option - fittingLook[row] + count) % count === 1 ? 1 : -1;
+      dragFittingGarment(zone, 0);
+      settleFittingGarment(zone, step);
+    }
+  }
   fittingLook[row] = option;
   try { localStorage.setItem(fittingStorageKey, JSON.stringify(fittingLook)); } catch { /* Keep the current selection in memory. */ }
   const room = document.querySelector('.fitting-room');
@@ -136,9 +145,9 @@ function chooseFittingPiece(row, option) {
   model.parentElement.style.setProperty('--hem', (fittingHems[fittingLook[0]] * 100) + '%');
   room.querySelector('.fitting-caption').textContent = fittingLookName();
 }
-function moveFittingPiece(step, row) {
+function moveFittingPiece(step, row, animate = false) {
   const count = fittingRows[row].pieces.length;
-  chooseFittingPiece(row, (fittingLook[row] + step + count) % count);
+  chooseFittingPiece(row, (fittingLook[row] + step + count) % count, animate);
 }
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;
@@ -189,7 +198,7 @@ function importWardrobeOrders() {
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-closet]');if(!el)return;e.preventDefault();
   const action=el.dataset.closet,key=el.dataset.key,record=closetRecords().find(x=>x.closetKey===key);
-  if(action==='try-piece')chooseFittingPiece(Number(el.dataset.row), Number(el.dataset.option));
+  if(action==='try-piece')chooseFittingPiece(Number(el.dataset.row), Number(el.dataset.option), true);
   else if(action==='add')closetAddModal();
   else if(action==='save'){
     const p=productFor(key)||referenceProducts.find(p=>p.id===key);if(!p)return;

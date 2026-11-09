@@ -37,7 +37,7 @@ function mountJourneyGestures() {
     if (overlayOpen() || !surface.isConnected) return false;
     if (surface.matches('[data-fitting-swipe]')) {
       if (Number(surface.dataset.count) < 2) return false;
-      moveFittingPiece(step, Number(surface.dataset?.row || 0));
+      moveFittingPiece(step, Number(surface.dataset.row), focus);
       if (focus) surface.focus({ preventScroll: true });
       return true;
     }
@@ -65,8 +65,51 @@ function mountJourneyGestures() {
     return true;
   }
 
+  function garmentZone(node) {
+    if (node.matches('.fitting-zone')) return node;
+    if (!node.matches('[data-fitting-swipe]')) return null;
+    return document.querySelector(`.fitting-zone[data-row="${node.dataset.row}"]`);
+  }
+
+  function garmentThreshold(zone) {
+    return Math.max(20, Math.min(40, zone.clientWidth * 0.14));
+  }
+
+  // A trackpad sends wheel deltas (including an inertial tail), not pointer drags.
+  // Show each delta on the garment and commit at most one piece per gesture.
+  let garmentScroll = null;
+  function endGarmentScroll() {
+    if (!garmentScroll) return;
+    clearTimeout(garmentScroll.timer);
+    if (!garmentScroll.done) settleFittingGarment(garmentScroll.zone, 0);
+    garmentScroll = null;
+  }
+  function scrollGarment(zone, dx) {
+    const time = now();
+    if (!garmentScroll || !garmentScroll.zone.isConnected || time - garmentScroll.time > 190) {
+      endGarmentScroll();
+      garmentScroll = {zone, distance: 0, time, done: false, timer: 0};
+    }
+    const scroll = garmentScroll;
+    // Keep the first garment for this entire two-finger swipe, even across the waist.
+    zone = scroll.zone;
+    scroll.time = time;
+    clearTimeout(scroll.timer);
+    scroll.timer = setTimeout(endGarmentScroll, 190);
+    if (scroll.done) return;
+    scroll.distance += dx;
+    const threshold = garmentThreshold(zone);
+    const preview = Math.min(threshold, Math.abs(scroll.distance));
+    dragFittingGarment(zone, -Math.sign(scroll.distance) * preview);
+    if (Math.abs(scroll.distance) < threshold) return;
+    scroll.done = true;
+    const step = Math.sign(scroll.distance);
+    settleFittingGarment(zone, step);
+    moveFittingPiece(step, Number(zone.dataset.row));
+  }
+
   function reset() {
-    if (drag?.node.matches('.fitting-zone')) settleFittingGarment(drag.node, 0);
+    if (drag?.zone) settleFittingGarment(drag.zone, 0);
     drag?.node.classList.remove('is-gesture-dragging');
     drag = null;
   }
@@ -76,14 +119,16 @@ function mountJourneyGestures() {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const surface = surfaceFor(event.target);
     if (!surface) return;
-    drag = { ...surface, id: event.pointerId, x: event.clientX, y: event.clientY, locked: false };
+    endGarmentScroll();
+    drag = { ...surface, zone: garmentZone(surface.node), id: event.pointerId,
+      x: event.clientX, y: event.clientY, started: now(), locked: false };
   });
   document.addEventListener('pointermove', event => {
     if (!drag || event.pointerId !== drag.id || drag.rejected) return;
     if (overlayOpen() || !drag.node.isConnected) { reset(); return; }
     const dx = Math.abs(event.clientX - drag.x), dy = Math.abs(event.clientY - drag.y);
     if (!drag.locked) {
-      if (Math.max(dx, dy) < 12) return;
+      if (Math.max(dx, dy) < (drag.zone ? 5 : 12)) return;
       const axis = dx > dy * 1.25 ? 'x' : dy > dx * 1.25 ? 'y' : null;
       if (!axis) return;
       if (drag.axis !== 'both' && drag.axis !== axis) { drag.rejected = true; return; }
@@ -92,25 +137,32 @@ function mountJourneyGestures() {
       drag.node.setPointerCapture(event.pointerId);
       drag.node.classList.add('is-gesture-dragging');
     }
-    if (drag.node.matches('.fitting-zone')) dragFittingGarment(drag.node, event.clientX - drag.x);
+    if (drag.zone) dragFittingGarment(drag.zone, event.clientX - drag.x);
     if (event.cancelable) event.preventDefault();
   }, { passive: false });
   document.addEventListener('pointerup', event => {
     if (!drag || event.pointerId !== drag.id) return;
     const current = drag;
     const distance = current.axis === 'x' ? event.clientX - current.x : event.clientY - current.y;
-    const passed = current.locked && !current.rejected && Math.abs(distance) >= (current.axis === 'x' ? 48 : 64);
+    const threshold = current.zone ? garmentThreshold(current.zone) : (current.axis === 'x' ? 48 : 64);
+    const quickFlick = current.zone && now() - current.started < 180 && Math.abs(distance) >= 16;
+    const passed = current.locked && !current.rejected && (Math.abs(distance) >= threshold || quickFlick);
     const step = distance < 0 ? 1 : -1;
-    if (passed && current.node.matches('.fitting-zone')) settleFittingGarment(current.node, step);
+    if (passed && current.zone) settleFittingGarment(current.zone, step);
     reset();
     if (Math.max(Math.abs(event.clientX - current.x), Math.abs(event.clientY - current.y)) > 12) blockedUntil = now() + 400;
     if (passed) move(current.node, current.axis, step);
   });
   document.addEventListener('pointercancel', reset);
-  document.addEventListener('lostpointercapture', reset);
+  document.addEventListener('lostpointercapture', event => {
+    // Touch starts with implicit capture on a thumbnail. Transferring it to the rail
+    // must not cancel the in-progress drag.
+    if (drag && event.pointerId === drag.id && event.target === drag.node) reset();
+  });
   document.addEventListener('touchstart', event => { if (event.touches.length > 1) reset(); }, { passive: true });
-  window.addEventListener('blur', reset);
-  window.addEventListener('hashchange', reset);
+  function cancelGestures() { reset(); endGarmentScroll(); }
+  window.addEventListener('blur', cancelGestures);
+  window.addEventListener('hashchange', cancelGestures);
   document.addEventListener('dragstart', event => { if (surfaceFor(event.target)) event.preventDefault(); });
   document.addEventListener('click', event => {
     if (event.detail !== 0 && now() < blockedUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
@@ -132,6 +184,11 @@ function mountJourneyGestures() {
     if (surface.axis === 'x' && axis !== 'x') return;
     if (event.cancelable) event.preventDefault();
     if (!axis) return;
+    const zone = garmentZone(surface.node);
+    if (zone) {
+      if (!drag && axis === 'x') scrollGarment(zone, dx);
+      return;
+    }
     const time = now();
     // Stable keys survive a render: inertial tails cannot advance the replacement page.
     const key = surface.node.matches('[data-fitting-swipe]') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';

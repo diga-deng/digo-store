@@ -255,3 +255,21 @@ body:has(.closet-page) .life-header { background: #fff; border-bottom-color: #e4
   #fitting-hint { font-size: 11px; }
 }
 body:has(.closet-page) #app { min-height: 100dvh; background: white; }
+
+/* Keep the ceramic neck and feet still while clothing slides past them. */
+.fitting-zone[data-row="0"] { clip-path: inset(10% 0 0); }
+.fitting-zone[data-row="1"] { clip-path: inset(0 0 8%); }
+html:has(.fitting-room) { overscroll-behavior-x: none; }
+.fit-desktop-hint { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .fit-touch-hint { display: none; }
+  .fit-desktop-hint { display: inline; }
+  .fitting-zone { cursor: ew-resize; }
+  .fitting-zone:hover:not(.is-gesture-dragging)::before,
+  .fitting-zone:hover:not(.is-gesture-dragging)::after {
+    content: ''; position: absolute; top: 50%; z-index: 1; width: 7px; height: 7px;
+    border: solid #555b54; border-width: 0 1px 1px 0; pointer-events: none;
+  }
+  .fitting-zone:hover::before { left: 3px; transform: rotate(135deg); }
+  .fitting-zone:hover::after { right: 3px; transform: rotate(-45deg); }
+}

@@ -6,7 +6,7 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../public/scene-experience/journey-gestures.js'), 'utf8');
 
 function fixture() {
-  const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], bodyRows: [], previewRows: [], navigation: [], scenes: [] };
+  const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], bodyRows: [], previewRows: [], offsets: [], settled: [], navigation: [], scenes: [] };
   let active = 0, count = 3, clock = 1000;
   const makeSurface = (kind, row = 0) => ({
     kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 900,
@@ -23,6 +23,9 @@ function fixture() {
     scrollIntoView() { calls.scenes.push(this.id); }
   });
   const wardrobe = makeSurface('wardrobe');
+  const zones = [makeSurface('bodyZone', 0), makeSurface('bodyZone', 1)];
+  const timers = new Map();
+  let nextTimer = 0;
   let nav = makeSurface('nav');
   const scenes = ['a', 'b', 'c'].map(id => Object.assign(makeSurface('scene'), { id }));
   const series = Object.assign(makeSurface('series'), {id:'b'});
@@ -37,22 +40,33 @@ function fixture() {
   const document = {
     documentElement: { classList: { toggle() {}, remove() {} } }, body: { classList: { toggle() {} } },
     addEventListener(name, fn) { (handlers[name] ||= []).push(fn); },
-    querySelector(selector) { return selector === '#overlay-root' ? overlay : selector === '[data-fitting-swipe]' ? wardrobe : selector === '.life-nav' ? nav : null; },
+    querySelector(selector) {
+      const zone = zones.find(z => selector === `.fitting-zone[data-row="${z.dataset.row}"]`);
+      if (zone) return zone;
+      return selector === '#overlay-root' ? overlay : selector === '[data-fitting-swipe]' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
   vm.runInNewContext(source, {
     document, window: { addEventListener() {} }, performance: { now: () => clock },
     journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
     moveFittingPiece(step, row) { calls.wardrobe.push(step); calls.bodyRows.push(row); },
-    dragFittingGarment(zone) { calls.previewRows.push(zone.dataset.row); },
-    settleFittingGarment() {},
+    dragFittingGarment(zone, offset) { calls.previewRows.push(zone.dataset.row); calls.offsets.push(offset); },
+    settleFittingGarment(zone, step) { calls.settled.push([zone.dataset.row, step]); },
+    setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, {fn, at: clock + delay}); return id; },
+    clearTimeout(id) { timers.delete(id); },
     openSceneSeries: id => { calls.navigation.push('/series/' + id); return true; },
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
     navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
   });
   return {
-    calls, overlay, wardrobe, scenes, series, target, bodyZone: row => makeSurface('bodyZone', row), nav: () => nav,
-    tick: n => clock += n, setCount: n => count = n,
+    calls, overlay, wardrobe, scenes, series, target, bodyZone: row => zones[row], nav: () => nav,
+    tick(n) {
+      clock += n;
+      for (const [id,timer] of timers) {
+        if (timer.at <= clock) { timers.delete(id); timer.fn(); }
+      }
+    },
+    setCount: n => count = n,
     event(name, surface = wardrobe, extra = {}) {
       const e = { target: target(surface), isPrimary: true, pointerId: 1, pointerType: 'mouse', button: 0,
         clientX: 400, clientY: 400, cancelable: true, detail: 1, deltaX: 0, deltaY: 0, deltaMode: 0,
@@ -158,5 +172,39 @@ test('upper and lower mannequin swipes move only the slot where the drag started
   assert.deepEqual(f.calls.previewRows, [0, 1]);
   assert.deepEqual(f.calls.wardrobe, [1, -1]);
   assert.deepEqual(f.calls.bodyRows, [0, 1]);
+  assert.deepEqual(f.calls.navigation, []);
+});
+
+test('trackpad deltas preview the upper garment before committing once, even with momentum', () => {
+  const f = fixture(), top = f.bodyZone(0);
+  f.event('wheel',top,{deltaX:12, deltaY:1});
+  assert.deepEqual(f.calls.offsets, [-12]);
+  assert.deepEqual(f.calls.bodyRows, []);
+  f.event('wheel',top,{deltaX:18});
+  f.event('wheel',top,{deltaX:16});
+  for (let i=0;i<8;i++) { f.tick(15); f.event('wheel',i<4 ? top : f.bodyZone(1),{deltaX:17}); }
+  assert.deepEqual(f.calls.wardrobe, [1]);
+  assert.deepEqual(f.calls.bodyRows, [0]);
+  assert.deepEqual(f.calls.settled, [[0,1]]);
+  f.tick(300);
+  f.event('wheel',f.bodyZone(1),{deltaX:-55});
+  assert.deepEqual(f.calls.wardrobe, [1,-1]);
+  assert.deepEqual(f.calls.bodyRows, [0,1]);
+});
+
+test('a small trackpad nudge snaps back, vertical scrolling and pinch zoom are native', () => {
+  const f = fixture(), trousers = f.bodyZone(1);
+  f.event('wheel',trousers,{deltaX:14});
+  f.tick(250);
+  assert.deepEqual(f.calls.settled, [[1,0]]);
+  assert.deepEqual(f.calls.wardrobe, []);
+  assert.equal(f.event('wheel',trousers,{deltaX:4,deltaY:100}).prevented, undefined);
+  assert.equal(f.event('wheel',trousers,{deltaX:105,ctrlKey:true}).prevented, undefined);
+});
+
+test('dragging a side thumbnail also visibly slides the corresponding garment', () => {
+  const f=fixture(); f.drag(f.wardrobe, -25, 1, 'touch');
+  assert.deepEqual(f.calls.previewRows, [0]);
+  assert.deepEqual(f.calls.wardrobe, [1]);
   assert.deepEqual(f.calls.navigation, []);
 });

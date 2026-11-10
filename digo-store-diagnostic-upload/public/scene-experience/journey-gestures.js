@@ -15,6 +15,7 @@ function mountJourneyGestures() {
 (function () {
   let drag = null, blockedUntil = 0;
   let consumedPointer = null, wheel = null;
+  const wheelIdleMs = 180;
   const editable = 'input,textarea,select,[contenteditable=true]';
   const overlayOpen = () => !!document.querySelector('#overlay-root')?.innerHTML;
   const now = () => performance.now();
@@ -24,7 +25,8 @@ function mountJourneyGestures() {
     const horizontal = target.closest('[data-fitting-swipe],.life-nav');
     if (horizontal) {
       const source = horizontal.matches('.life-nav') && document.querySelector('.moment-feed,.scene-series');
-      return { node: source || horizontal, axis: 'x' };
+      if (source) return { node: source, axis: source.matches('.moment-feed') ? 'both' : 'x' };
+      return { node: horizontal, axis: 'x' };
     }
     if (target.closest('.life-rail,.closet-categories,#circle-canvas,[data-gesture-ignore]')) return null;
     const main = target.closest('.journey-module');
@@ -209,6 +211,9 @@ function mountJourneyGestures() {
 
   document.addEventListener('wheel', event => {
     if (event.ctrlKey || event.metaKey || overlayOpen()) return;
+    const time = event.timeStamp;
+    if (event.momentum === true || (wheel && time - wheel.time >= wheelIdleMs)) wheel = null;
+    if (wheel) wheel.time = time;
     const surface = surfaceFor(event.target);
     if (!surface) return;
     const factor = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? surface.node.clientHeight : 1;
@@ -223,27 +228,21 @@ function mountJourneyGestures() {
       if (!drag && axis === 'x') scrollGarment(zone, dx);
       return;
     }
+    // Inertial events can speed up again or arrive after a long dispatch gap.
+    // Only fresh contact can begin another page after the browser marks inertia.
+    if (event.momentum === true) return;
     const delta = axis === 'x' ? dx : dy;
-    const amount = Math.abs(delta);
     const direction = Math.sign(delta);
-    const time = now();
-    const gap = wheel ? time - wheel.time : Infinity;
-
-    // Browsers report trackpad contact and inertia as one wheel stream. A new
-    // push can reverse direction or accelerate out of the previous fading tail.
-    if (wheel && (axis !== wheel.axis || direction !== wheel.direction) && amount < 5 && gap < 90) return;
-    const renewedPush = wheel?.fired && wheel.last <= wheel.peak * 0.55 &&
-      amount >= Math.max(8, wheel.last * 1.5);
-    const mouseTick = event.deltaMode !== 0 ||
-      (gap >= 45 && amount >= 50 && amount === wheel?.last && Number.isInteger(amount));
-    if (!wheel || gap >= 90 || wheel.axis !== axis || wheel.direction !== direction || renewedPush || mouseTick) {
-      wheel = {axis, direction, total: 0, peak: 0, fired: false};
+    const series = surface.node.matches('.scene-series');
+    const changedHeading = wheel && (axis !== wheel.axis || direction !== wheel.direction);
+    // Without a momentum flag, keep the entire wheel burst latched, including
+    // line/page units. A deliberate return on the newly opened series is separate.
+    if (!wheel || (changedHeading && (!wheel.fired || series !== wheel.series))) {
+      wheel = {axis, direction, series, time, total: 0, fired: false};
     }
-    wheel.time = time;
-    wheel.last = amount;
-    wheel.peak = Math.max(wheel.peak, amount);
-    wheel.total += amount;
-    if (wheel.fired || (wheel.total < 28 && event.deltaMode === 0)) return;
+    if (wheel.fired) return;
+    wheel.total += Math.abs(delta);
+    if (wheel.total < 28 && event.deltaMode === 0) return;
     wheel.fired = true;
     move(surface.node, axis, direction);
   }, { passive: false });

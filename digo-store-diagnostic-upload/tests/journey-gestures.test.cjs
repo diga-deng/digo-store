@@ -7,7 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, '../public/scene-experience/
 
 function fixture() {
   const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], bodyRows: [], previewRows: [], offsets: [], settled: [], navigation: [], scenes: [] };
-  let active = 0, count = 3, clock = 1000;
+  let active = 0, count = 3, clock = 1000, currentPage = null;
   const makeSurface = (kind, row = 0) => ({
     kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 200,
     classList: { add() {}, remove() {}, toggle() {} }, replaceChildren() {}, setPointerCapture() {}, focus() {},
@@ -43,6 +43,7 @@ function fixture() {
     querySelector(selector) {
       const zone = zones.find(z => selector === `.fitting-zone[data-row="${z.dataset.row}"]`);
       if (zone) return zone;
+      if (selector === '.moment-feed,.scene-series') return currentPage;
       return selector === '#overlay-root' ? overlay : selector === '[data-fitting-swipe]' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
@@ -68,9 +69,10 @@ function fixture() {
       }
     },
     setCount: n => count = n,
+    showPage: page => currentPage = page,
     event(name, surface = wardrobe, extra = {}) {
       const e = { target: target(surface), isPrimary: true, pointerId: 1, pointerType: 'mouse', button: 0,
-        clientX: 400, clientY: 400, cancelable: true, detail: 1, deltaX: 0, deltaY: 0, deltaMode: 0,
+        clientX: 400, clientY: 400, cancelable: true, detail: 1, deltaX: 0, deltaY: 0, deltaMode: 0, timeStamp: clock,
         preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; }, ...extra };
       for (const fn of handlers[name] || []) fn(e);
       return e;
@@ -154,21 +156,43 @@ test('Discover commits during a drag, stays on that frame until release and acce
     assert.deepEqual(f.calls.scenes, [1, 1]);
   }
 });
-test('trackpad tails stay on one scene, a renewed push and a reversal each move one', () => {
+test('a long wheel stroke stays on one scene through surges, stalls and jitter in all delta modes', () => {
+  for (const deltaMode of [0, 1, 2]) {
+    const f = fixture(), feed = f.scenes[0];
+    feed.clientHeight = 850;
+    for (const [gap, deltaY] of [[0,40],[16,180],[16,22],[16,98],[50,98],[100,100],[18,-40],[16,150]]) {
+      f.tick(gap);
+      f.event('wheel', feed, {deltaY, deltaMode});
+    }
+    assert.deepEqual(f.calls.scenes, [1]);
+    f.tick(200);
+    f.event('wheel', feed, {deltaY: -35, deltaMode});
+    assert.deepEqual(f.calls.scenes, [1,-1]);
+  }
+});
+test('marked trackpad inertia never pages; fresh contact immediately accepts a second swipe', () => {
   const f = fixture(), feed = f.scenes[0];
-  const send = deltaY => {
-    f.tick(12);
-    assert.equal(f.event('wheel', feed, {deltaY}).prevented, true);
-  };
-  [9, 32, 111, 180, 140, 70, 42, 22, 10, 5].forEach(send);
+  f.event('wheel', feed, {deltaY: 42, momentum: false});
+  for (const [gap, deltaY] of [[20,180],[12,16],[12,75],[320,130]]) {
+    f.tick(gap);
+    f.event('wheel', feed, {deltaY, momentum: true});
+  }
   assert.deepEqual(f.calls.scenes, [1]);
-  [11, 23, 48, 22, 5].forEach(send);
-  assert.deepEqual(f.calls.scenes, [1, 1]);
-  [-12, -30, -55, -8].forEach(send);
-  assert.deepEqual(f.calls.scenes, [1, 1, -1]);
-  f.tick(100);
-  send(1200);
-  assert.deepEqual(f.calls.scenes, [1, 1, -1, 1]);
+  f.tick(1);
+  f.event('wheel', feed, {deltaY: 45, momentum: false});
+  assert.deepEqual(f.calls.scenes, [1,1]);
+});
+test('a swipe from a bottom navigation link pages Discover just once', () => {
+  const f = fixture();
+  f.showPage(f.scenes[0]);
+  f.event('pointerdown', f.nav(), {pointerType: 'touch', clientY: 840});
+  for (const clientY of [810, 650, 320, 30]) {
+    f.event('pointermove', f.nav(), {pointerType: 'touch', clientY});
+  }
+  f.event('pointerup', f.nav(), {pointerType: 'touch', clientY: 30});
+  assert.deepEqual(f.calls.scenes, [1]);
+  f.drag(f.scenes[0], 0, -35, 'touch');
+  assert.deepEqual(f.calls.scenes, [1,1]);
 });
 test('rightward trackpad return works during the entry tail and vertical paging resumes immediately', () => {
   const f = fixture();

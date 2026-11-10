@@ -54,6 +54,6 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
 @media(prefers-reduced-motion:reduce) { [class*="journey-enter-"] { animation:none!important; } }
 
 /* The scene stays aligned to the viewport while a gesture is being recognised. */
-.moment-feed .life-scene { touch-action: pinch-zoom; }
+.moment-feed .life-scene, .journey-feed .life-nav, .journey-feed .life-nav a { touch-action: pinch-zoom; }
 html:has(.moment-feed, .scene-series) { overscroll-behavior-x: none; }
 .moment-feed.journey-enter-right { animation: none; }

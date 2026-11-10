@@ -9,12 +9,13 @@ function fixture() {
   const handlers = {}, overlay = { innerHTML: '' }, calls = { wardrobe: [], bodyRows: [], previewRows: [], offsets: [], settled: [], navigation: [], scenes: [] };
   let active = 0, count = 3, clock = 1000;
   const makeSurface = (kind, row = 0) => ({
-    kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 900,
-    classList: { add() {}, remove() {}, toggle() {} }, setPointerCapture() {}, focus() {},
+    kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 200,
+    classList: { add() {}, remove() {}, toggle() {} }, replaceChildren() {}, setPointerCapture() {}, focus() {},
     matches(selector) {
       if (kind === 'bodyZone') return ['[data-fitting-swipe]', '.fitting-zone'].includes(selector);
       return selector === (kind === 'wardrobe' ? '[data-fitting-swipe]' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
     querySelector(selector) {
+      if (selector === '.moment-stream') return this.stream || null;
       if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id}};
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
       return null;
@@ -49,6 +50,7 @@ function fixture() {
   vm.runInNewContext(source, {
     document, window: { addEventListener() {} }, performance: { now: () => clock },
     journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
+    visibleSceneCard: feed => feed.querySelector('.life-scene'), resumeFittingGarment: () => 0,
     moveFittingPiece(step, row) { calls.wardrobe.push(step); calls.bodyRows.push(row); },
     dragFittingGarment(zone, offset) { calls.previewRows.push(zone.dataset.row); calls.offsets.push(offset); },
     settleFittingGarment(zone, step) { calls.settled.push([zone.dataset.row, step]); },
@@ -102,8 +104,9 @@ test('taps, vertical drags, multi-touch and cancelled gestures never change the 
   f.drag(f.wardrobe, 5); f.drag(f.wardrobe, 5, 100, 'touch');
   assert.equal(f.event('click').stopped, true);
   f.event('pointerdown');f.event('touchstart', f.wardrobe, { touches: [{}, {}] });f.event('pointerup', f.wardrobe, { clientX: 100 });
-  f.event('pointerdown');f.event('pointermove', f.wardrobe, { clientX: 100 });f.event('pointercancel');f.event('pointerup', f.wardrobe, { clientX: 100 });
   assert.deepEqual(f.calls.wardrobe, []);
+  f.event('pointerdown');f.event('pointermove', f.wardrobe, { clientX: 100 });f.event('pointercancel');f.event('pointerup', f.wardrobe, { clientX: 100 });
+  assert.deepEqual(f.calls.wardrobe, [1, -1]);
 });
 test('dialogs, editable controls and empty rails are protected', () => {
   const f = fixture();f.overlay.innerHTML = 'dialog'; f.drag(f.wardrobe, -150);
@@ -137,22 +140,32 @@ test('arrow keys and a trackpad enter the current series and return to its sourc
   assert.deepEqual(f.calls.navigation.at(-1),'/scene/b');
   assert.equal(f.event('wheel',f.series,{deltaY:110}).prevented,undefined);
 });
-test('vertical wheel momentum cannot skip multiple scenes after replacement', () => {
-  const f = fixture();
-  for(let n=0;n<12;n++){f.tick(20);f.event('wheel',f.scenes[n%3],{deltaY:45});}
-  assert.deepEqual(f.calls.scenes,[1]);
-  f.tick(250);f.event('wheel',f.scenes[1],{deltaY:-90});
-  assert.deepEqual(f.calls.scenes,[1,-1]);
-  assert.equal(f.event('wheel',f.scenes[0],{deltaY:100,ctrlKey:true}).prevented,undefined);
+test('Discover leaves uninterrupted vertical wheel and touch travel to the native stream', () => {
+  const f = fixture(), feed = f.scenes[0];
+  feed.stream = {};
+  for (const deltaY of [20, 80, 1200, 55, -900, -20]) {
+    assert.equal(f.event('wheel', feed, {deltaY}).prevented, undefined);
+  }
+  f.drag(feed, 0, -240, 'touch');
+  assert.deepEqual(f.calls.scenes, []);
+  assert.deepEqual(f.calls.navigation, []);
+  f.drag(feed, -150, 3, 'touch');
+  assert.deepEqual(f.calls.navigation, ['/series/a']);
 });
-test('horizontal trackpad momentum moves once; vertical wheels and zoom remain native', () => {
+test('horizontal trackpad deltas span multiple garments and support immediate reversal', () => {
   const f = fixture();
-  for (let n = 0; n < 10; n++) { f.tick(20);f.event('wheel', f.wardrobe, { deltaX: 30, deltaY: 2 }); }
-  assert.deepEqual(f.calls.wardrobe, [1]);
+  for (let n = 0; n < 16; n++) { f.tick(14); f.event('wheel', f.wardrobe, {deltaX: 30, deltaY: 2}); }
+  assert.deepEqual(f.calls.wardrobe, [1, 1]);
+  f.event('wheel', f.wardrobe, {deltaX: -300});
+  assert.deepEqual(f.calls.wardrobe, [1, 1, -1]);
+  assert.equal(f.calls.offsets.at(-1), 20);
+  f.tick(120);
+  assert.equal(f.calls.settled.at(-1)[1], 0);
   assert.equal(f.event('wheel', f.wardrobe, { deltaY: 100 }).prevented, undefined);
   assert.equal(f.event('wheel', f.wardrobe, { deltaX: 100, ctrlKey: true }).prevented, undefined);
-  f.tick(250);f.event('wheel', f.wardrobe, { deltaY: -90, shiftKey: true });
-  assert.deepEqual(f.calls.wardrobe, [1, -1]);
+  f.event('wheel', f.wardrobe, { deltaY: -90, shiftKey: true });
+  f.tick(120);
+  assert.deepEqual(f.calls.wardrobe, [1, 1, -1, -1]);
 });
 test('navigation swipes use the three visible destinations without momentum skipping across replacement DOM', () => {
   const f = fixture();f.drag(f.nav(), -140);
@@ -175,7 +188,7 @@ test('upper and lower mannequin swipes move only the slot where the drag started
   assert.deepEqual(f.calls.navigation, []);
 });
 
-test('trackpad deltas preview the upper garment before committing once, even with momentum', () => {
+test('trackpad deltas keep the gesture on the starting garment until it settles', () => {
   const f = fixture(), top = f.bodyZone(0);
   f.event('wheel',top,{deltaX:12, deltaY:1});
   assert.deepEqual(f.calls.offsets, [-12]);
@@ -183,11 +196,13 @@ test('trackpad deltas preview the upper garment before committing once, even wit
   f.event('wheel',top,{deltaX:18});
   f.event('wheel',top,{deltaX:16});
   for (let i=0;i<8;i++) { f.tick(15); f.event('wheel',i<4 ? top : f.bodyZone(1),{deltaX:17}); }
+  f.tick(120);
   assert.deepEqual(f.calls.wardrobe, [1]);
   assert.deepEqual(f.calls.bodyRows, [0]);
   assert.deepEqual(f.calls.settled, [[0,1]]);
   f.tick(300);
   f.event('wheel',f.bodyZone(1),{deltaX:-55});
+  f.tick(120);
   assert.deepEqual(f.calls.wardrobe, [1,-1]);
   assert.deepEqual(f.calls.bodyRows, [0,1]);
 });
@@ -207,4 +222,19 @@ test('dragging a side thumbnail also visibly slides the corresponding garment', 
   assert.deepEqual(f.calls.previewRows, [0]);
   assert.deepEqual(f.calls.wardrobe, [1]);
   assert.deepEqual(f.calls.navigation, []);
+});
+
+test('one held drag crosses several pieces and reverses before release', () => {
+  const f = fixture(), zone = f.bodyZone(1);
+  f.event('pointerdown', zone);
+  f.event('pointermove', zone, {clientX: 180});
+  f.event('pointermove', zone, {clientX: -10});
+  assert.deepEqual(f.calls.wardrobe, [1, 1]);
+  f.event('pointermove', zone, {clientX: 205});
+  assert.deepEqual(f.calls.wardrobe, [1, 1, -1]);
+  f.event('pointerup', zone, {clientX: 205});
+  assert.deepEqual(f.calls.bodyRows, [1, 1, 1]);
+  f.event('pointerdown', zone);
+  f.event('pointerup', zone);
+  assert.equal(f.event('click', zone).stopped, undefined);
 });

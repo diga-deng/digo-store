@@ -55,10 +55,10 @@ function itemBrand(item) { return itemInfo(item).reference?itemInfo(item).brand:
 function itemCaption(item) { return item.owned?'Already owned':itemInfo(item).screenReference?'Screen reference':itemInfo(item).reference?'Demo reference':item.type==='concept'?'Inspiration only':item.type==='catalog'?storeMoney(itemInfo(item).price_cents || 0):'Your own piece'; }
 function miniBoard(b) { return `<div class="mini-board">${b.items.slice(0,4).map(i=>`<div>${itemArt(i)}</div>`).join('')}</div>`; }
 function resumeCard() { const r=world.resume;return r?`<a class="resume-card" href="#${esc(r.path)}" data-life="resume"><span>${icon('undo')} Pick up where you left off</span><strong>${esc(r.label)}</strong>${icon('right')}</a>`:''; }
-function sceneSection(s,index,single=false) {
+function sceneSection(s,index,{copy=false, priority=true}={}) {
   const m=moments[s.id]||[s.title,s.subtitle,'YOUR MOMENT'];
-  return `<section class="life-scene ${s.reference?'reference-scene':''} ${s.screenScene?'screen-scene':''} ${s.editorial?'editorial-scene':''}" style="--reference-tone:${s.tone||'#807b70'};--editorial-position:${s.position?.map(x=>(x*100)+'%').join(' ')||'center'}" id="moment-${s.id}" data-scene="${s.id}" ${s.fullScene?'data-real-room="true"':''} aria-label="${esc(m[0])}" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
-    <img class="life-scene-photo" src="${esc(s.image)}" alt="${esc(m[1])}" ${s.fullScene?`style="object-position:${s.position[0]*100}% ${s.position[1]*100}%"`:""} fetchpriority="high" draggable="false">
+  return `<section class="life-scene ${s.reference?'reference-scene':''} ${s.screenScene?'screen-scene':''} ${s.editorial?'editorial-scene':''}" style="--reference-tone:${s.tone||'#807b70'};--editorial-position:${s.position?.map(x=>(x*100)+'%').join(' ')||'center'}" ${copy ? 'aria-hidden="true" inert' : 'id="moment-' + s.id + '"'} data-scene="${s.id}" ${s.fullScene?'data-real-room="true"':''} aria-label="${esc(m[0])}" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
+    <img class="life-scene-photo" src="${esc(s.image)}" alt="${esc(m[1])}" ${s.fullScene?`style="object-position:${s.position[0]*100}% ${s.position[1]*100}%"`:""} ${priority ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'} draggable="false">
     <div class="scene-topline"><span>${String(index+1).padStart(2,'0')} / ${String(baseScenes.length).padStart(2,'0')}</span><span class="scene-static-label">${s.reference?esc(s.brand)+'<span class="reference-mini-label">Demo</span>':'Concept still'}</span></div>
     <aside class="life-rail" aria-label="Pieces in this moment"><span>${s.editorial?'CURATED PIECES':'THE DETAILS'}</span>${s.items.slice(0,4).map((id,i)=>`<button data-life="product" data-id="${id}" data-type="concept" data-scene="${s.id}" aria-label="View ${esc(getProduct(id).name)}">${productPhoto(getProduct(id))}<small>${s.fullScene?String(i+1).padStart(2,'0'):'View piece'} ${icon('plus')}</small></button>`).join('')}</aside>
     ${s.editorial?'':s.fullScene?`<svg class="scene-hotspot-lines" aria-hidden="true">${s.hotspots.map((h,i)=>`<line data-hotspot-line="${i}"/>`).join('')}</svg>${s.hotspots.map((h,i)=>`<button class="life-hotspot room-hotspot" data-hotspot-index="${i}" data-life="product" data-type="concept" data-id="${h.id}" data-scene="${s.id}" aria-label="View ${esc(getProduct(h.id).name)}"><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}`:`<button class="life-hotspot" style="left:72%;top:48%" data-life="product" data-type="concept" data-id="${s.items[0]}" data-scene="${s.id}" aria-label="View ${esc(getProduct(s.items[0]).name)}">${icon('plus')}</button>`}
@@ -69,26 +69,86 @@ function sceneSection(s,index,single=false) {
 }
 let journeyDirection = '';
 function feedScene(key) { return baseScenes.find(s=>s.id===world.browse?.[key]) || baseScenes[0]; }
-function activateFeedScene(id, direction=1) {
+// Edge copies let a settled swipe wrap in either direction. All interactive
+// cards have a single canonical DOM node and the frame stays mounted.
+function sceneStream(selected) {
+  if (!baseScenes.includes(selected)) return sceneSection(selected, 0);
+  const last = baseScenes.length - 1;
+  const card = (scene, index, copy = false) =>
+    sceneSection(scene, index, {copy, priority: !copy && scene.id === selected.id});
+  return `<div class="moment-stream" data-start="${baseScenes.indexOf(selected) + 1}">
+    ${card(baseScenes[last], last, true)}${baseScenes.map((scene, i) => card(scene, i)).join('')}${card(baseScenes[0], 0, true)}</div>`;
+}
+function visibleSceneCard(feed) {
+  const stream = feed?.querySelector('.moment-stream');
+  if (!stream) return feed?.querySelector('.life-scene');
+  const index = Math.round(stream.scrollTop / (stream.clientHeight || 1));
+  return stream.children[Math.max(0, Math.min(index, stream.children.length - 1))];
+}
+function rememberFeedScene(id) {
+  currentScene = id;
+  if (route().startsWith('/scene/') && route() !== '/scene/' + id) {
+    history.replaceState(history.state, '', '#/scene/' + encodeURIComponent(id));
+    remember('/scene/' + id, sceneFor(id).title);
+  }
+  if (world.browse?.discover !== id) {
+    world.browse = {...world.browse, discover: id};
+    writeWorld();
+  }
+}
+function mountSceneStream(feed) {
+  const stream = feed.querySelector('.moment-stream');
+  if (!stream) return;
+  stream.scrollTop = stream.children[Number(stream.dataset.start)].offsetTop;
+  let timer;
+  function settle() {
+    clearTimeout(timer);
+    if (!stream.isConnected || stream.classList.contains('mouse-scrolling')) return;
+    const active = visibleSceneCard(feed);
+    if (!active) return;
+    if (active.inert) {
+      const real = document.getElementById('moment-' + active.dataset.scene);
+      if (Math.abs(stream.scrollTop - active.offsetTop) < 2) stream.scrollTop = real.offsetTop;
+    }
+    rememberFeedScene(active.dataset.scene);
+  }
+  stream.addEventListener('scrollend', settle);
+  stream.addEventListener('scroll', () => {
+    clearTimeout(timer);
+    timer = setTimeout(settle, 180);
+  }, {passive: true});
+}
+function activateFeedScene(id, direction=1, focus=false) {
   const s=sceneFor(id); if(!s)return false;
+  const stream = document.querySelector('.moment-stream');
+  if (stream) {
+    const visible = visibleSceneCard(stream.parentElement);
+    const neighbor = direction > 0 ? visible.nextElementSibling : visible.previousElementSibling;
+    const real = document.getElementById('moment-' + id);
+    const target = neighbor?.dataset.scene === id ? neighbor : real;
+    if (!target) return false;
+    stream.scrollTo({top: target.offsetTop, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+    if (focus) real.focus({preventScroll: true});
+    return true;
+  }
   world.browse={...world.browse,discover:id}; currentScene=id; journeyDirection=direction>0?'up':'down'; writeWorld();
   if(route().startsWith('/scene/'))navigate('/scene/'+id);else render(false);
   return true;
 }
-function moveJourneyScene(step) {
-  const active=document.querySelector('.moment-feed .life-scene'); if(!active)return false;
+function moveJourneyScene(step, focus=false) {
+  const active=visibleSceneCard(document.querySelector('.moment-feed')); if(!active)return false;
   const index=baseScenes.findIndex(s=>s.id===active.dataset.scene);
-  return activateFeedScene(baseScenes[(Math.max(0,index)+step+baseScenes.length)%baseScenes.length].id,step);
+  return activateFeedScene(baseScenes[(Math.max(0,index)+step+baseScenes.length)%baseScenes.length].id,step,focus);
 }
 function discoverPage() {
   const s=feedScene('discover');currentScene=s.id;
-  return wrap(sceneSection(s,baseScenes.indexOf(s)),'discover-page moment-feed');
+  return wrap(sceneStream(s),'discover-page moment-feed');
 }
 function catalogCard(p, extra='', sceneId=null) {return `<article class="life-product-card"><button class="life-art" data-life="product" data-type="catalog" data-id="${esc(p.id)}" ${sceneId?`data-scene="${esc(sceneId)}"`:""} aria-label="View ${esc(p.name)}">${productArt(p)}</button><p class="eyebrow">${esc(brandFor(p))}</p><h3>${esc(p.name)}</h3><p>${storeMoney(p.price_cents,p.currency)} <small>· ${esc(p.style_code||'')}</small></p>${extra||btn('Save to wardrobe','save-product',p.id,'data-type="catalog"','subtle')}</article>`;}
 function scenePage(id) {
   const s=sceneFor(id); if(!s)return wrap(empty('This moment is not here.','The original link may have changed.'));
   currentScene=s.id; remember('/scene/'+id,s.title);
-  return wrap(sceneSection(s,Math.max(0,baseScenes.indexOf(s)),true),'scene-page moment-feed');
+  return wrap(sceneStream(s),'scene-page moment-feed');
 }
 function getBoard(id) {
   if (!world.boards[id]) {
@@ -354,6 +414,7 @@ document.addEventListener('change',e=>{
   if(a==='purchase-kind'||a==='reserve-plan'){world.options[id]={kind:'retail',plan:'refundable',...world.options[id],[a==='purchase-kind'?'kind':'plan']:el.value};writeWorld();showProduct(id,'catalog',currentProduct?.sceneId);}
 });
 async function loadCatalog(repaint=false) {
+  const previousChanges = JSON.stringify(world.catalogChanges || []);
   catalogStatus='loading';if(repaint)render(false);
   try{const r=await fetch('/api/catalog',{cache:'no-store'});if(!r.ok)throw Error();const d=await responseData(r);if(!Array.isArray(d.products))throw Error('Invalid catalog');catalog=d.products;catalogStatus='ready';
     const changes=[],seen=new Set();
@@ -362,6 +423,8 @@ async function loadCatalog(repaint=false) {
     if(changes.length)world.catalogChanges=changes;else world.catalogChanges=[];
     writeWorld();
   }catch{catalogStatus='error';}
+  const staticView = document.querySelector('.moment-stream,.fitting-room');
+  if (staticView && previousChanges === JSON.stringify(world.catalogChanges || [])) return;
   if(!$('#overlay-root').innerHTML&&!document.activeElement?.matches('input,textarea,select'))render(false);
 }
 // Import only deliberate legacy saves. Browsing history is never converted to likes.

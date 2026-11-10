@@ -108,12 +108,24 @@ function fittingRoom() {
     ${fittingOptions(fittingRows[1], 1)}
   </div>`;
 }
+// Pick up a settling strip at its displayed position relative to the selected piece.
+function resumeFittingGarment(zone) {
+  const strip = zone.firstElementChild;
+  if (!strip?.dataset.settling) return 0;
+  const transform = getComputedStyle(strip).transform;
+  const x = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
+  const distance = x + Number(strip.dataset.step) * zone.clientWidth;
+  strip.remove();
+  return distance;
+}
 function dragFittingGarment(zone, distance) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let strip = zone.firstElementChild;
-  if (!strip || strip.dataset.settling) {
+  const lookKey = fittingLook.join('-');
+  if (!strip || strip.dataset.settling || strip.dataset.look !== lookKey) {
     strip = document.createElement('div');
     strip.className = 'fitting-strip';
+    strip.dataset.look = lookKey;
     strip.setAttribute('aria-hidden', 'true');
     const row = Number(zone.dataset.row);
     const count = fittingRows[row].pieces.length;
@@ -136,6 +148,7 @@ function settleFittingGarment(zone, step) {
   const strip = zone.firstElementChild;
   if (!strip || strip.dataset.settling) return;
   strip.dataset.settling = 'true';
+  strip.dataset.step = step;
   const motion = strip.animate([ {transform: strip.style.transform},
     {transform: `translateX(${-step * zone.clientWidth}px)`} ], {duration: 150, easing: 'ease-out', fill: 'forwards'});
   motion.onfinish = () => strip.remove();
@@ -173,7 +186,7 @@ function chooseFittingPiece(row, option, animate = false) {
 }
 function moveFittingPiece(step, row, animate = false) {
   const count = fittingRows[row].pieces.length;
-  chooseFittingPiece(row, (fittingLook[row] + step + count) % count, animate);
+  chooseFittingPiece(row, ((fittingLook[row] + step) % count + count) % count, animate);
 }
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;

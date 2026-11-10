@@ -52,3 +52,13 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
   .moment-feed .scene-quick { top:56px; }
 }
 @media(prefers-reduced-motion:reduce) { [class*="journey-enter-"] { animation:none!important; } }
+
+/* The browser owns vertical touch and trackpad momentum inside Discover. */
+.journey-module.moment-feed:has(.moment-stream) { touch-action: pan-y pinch-zoom; }
+.moment-stream {
+  position: relative; height: 100%; overflow: hidden auto; overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom; scroll-snap-type: y mandatory; scrollbar-width: none;
+}
+.moment-stream::-webkit-scrollbar { display: none; }
+.moment-stream > .life-scene { scroll-snap-align: start; scroll-snap-stop: normal; }
+.moment-stream.mouse-scrolling { scroll-snap-type: none; }

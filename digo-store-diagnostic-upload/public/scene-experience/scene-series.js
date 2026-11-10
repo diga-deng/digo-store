@@ -42,6 +42,7 @@ function sceneSeriesPage(id) {
 
 function openSceneSeries(id) {
   if (!sceneFor(id)) return false;
+  if (document.querySelector('.moment-stream')) rememberFeedScene(id);
   const origin = route();
   closeOverlay();
   journeyDirection = 'left';

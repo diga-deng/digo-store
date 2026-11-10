@@ -1,10 +1,11 @@
-/* One deliberate gesture advances one page. Inner controls keep their own gestures. */
+/* Discover scrolls vertically. Horizontal gestures belong to their starting surface. */
 function mountJourneyGestures() {
   const main = document.querySelector('.life-main');
   const feed = !!document.querySelector('.moment-feed');
   document.documentElement.classList.remove('scene-scroll');
   document.body.classList.toggle('journey-feed', feed);
   main?.classList.toggle('journey-module', ['/', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
+  if (feed && main) mountSceneStream(main);
   if (journeyDirection && main) {
     main.classList.add('journey-enter-' + journeyDirection);
     journeyDirection = '';
@@ -42,12 +43,10 @@ function mountJourneyGestures() {
       return true;
     }
     if (axis === 'y') {
-      const changed = moveJourneyScene(step);
-      if (changed && focus) document.querySelector('.moment-feed .life-scene')?.focus({ preventScroll: true });
-      return changed;
+      return moveJourneyScene(step, focus);
     }
     if (surface.matches('.moment-feed')) {
-      const id = surface.querySelector('.life-scene')?.dataset.scene;
+      const id = visibleSceneCard(surface)?.dataset.scene;
       return step === 1 && !!id && openSceneSeries(id);
     }
     if (surface.matches('.scene-series')) {
@@ -75,41 +74,57 @@ function mountJourneyGestures() {
     return Math.max(20, Math.min(40, zone.clientWidth * 0.14));
   }
 
-  // A trackpad sends wheel deltas (including an inertial tail), not pointer drags.
-  // Show each delta on the garment and commit at most one piece per gesture.
+  // Consume whole garment widths as the gesture travels, keeping its remaining
+  // pixels on the new strip. Reversing direction consumes the same distance back.
+  function startGarment(zone) {
+    if (!zone || Number(zone.dataset.count) < 2) return null;
+    return {zone, steps: 0, distance: resumeFittingGarment(zone), width: Math.max(1, zone.clientWidth)};
+  }
+  function slideGarment(gesture, delta) {
+    if (!gesture || !delta) return;
+    gesture.distance += delta;
+    const steps = Math.trunc(gesture.distance / gesture.width);
+    if (steps) {
+      moveFittingPiece(-steps, Number(gesture.zone.dataset.row));
+      gesture.steps -= steps;
+      gesture.distance -= steps * gesture.width;
+    }
+    dragFittingGarment(gesture.zone, gesture.distance);
+  }
+  function finishGarment(gesture, threshold) {
+    if (!gesture) return;
+    const {zone, distance} = gesture;
+    const step = Math.abs(distance) >= threshold ? -Math.sign(distance) : 0;
+    settleFittingGarment(zone, step);
+    if (step) moveFittingPiece(step, Number(zone.dataset.row));
+  }
   let garmentScroll = null;
-  function endGarmentScroll() {
+  function endGarmentScroll(commit = true) {
     if (!garmentScroll) return;
     clearTimeout(garmentScroll.timer);
-    if (!garmentScroll.done) settleFittingGarment(garmentScroll.zone, 0);
+    finishGarment(garmentScroll, commit ? garmentThreshold(garmentScroll.zone) : Infinity);
     garmentScroll = null;
   }
   function scrollGarment(zone, dx) {
-    const time = now();
-    if (!garmentScroll || !garmentScroll.zone.isConnected || time - garmentScroll.time > 190) {
-      endGarmentScroll();
-      garmentScroll = {zone, distance: 0, time, done: false, timer: 0};
+    if (!garmentScroll || !garmentScroll.zone.isConnected) {
+      endGarmentScroll(false);
+      garmentScroll = startGarment(zone);
+      if (!garmentScroll) return;
     }
-    const scroll = garmentScroll;
-    // Keep the first garment for this entire two-finger swipe, even across the waist.
-    zone = scroll.zone;
-    scroll.time = time;
-    clearTimeout(scroll.timer);
-    scroll.timer = setTimeout(endGarmentScroll, 190);
-    if (scroll.done) return;
-    scroll.distance += dx;
-    const threshold = garmentThreshold(zone);
-    const preview = Math.min(threshold, Math.abs(scroll.distance));
-    dragFittingGarment(zone, -Math.sign(scroll.distance) * preview);
-    if (Math.abs(scroll.distance) < threshold) return;
-    scroll.done = true;
-    const step = Math.sign(scroll.distance);
-    settleFittingGarment(zone, step);
-    moveFittingPiece(step, Number(zone.dataset.row));
+    slideGarment(garmentScroll, -dx);
+    clearTimeout(garmentScroll.timer);
+    garmentScroll.timer = setTimeout(endGarmentScroll, 90);
   }
 
   function reset() {
-    if (drag?.zone) settleFittingGarment(drag.zone, 0);
+    if (drag?.garment) {
+      const {zone, steps} = drag.garment;
+      if (steps) {
+        zone.replaceChildren();
+        moveFittingPiece(-steps, Number(zone.dataset.row));
+      } else finishGarment(drag.garment, Infinity);
+    }
+    drag?.stream?.classList.remove('mouse-scrolling');
     drag?.node.classList.remove('is-gesture-dragging');
     drag = null;
   }
@@ -117,11 +132,12 @@ function mountJourneyGestures() {
   document.addEventListener('pointerdown', event => {
     if (!event.isPrimary) { reset(); return; }
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    blockedUntil = 0;
     const surface = surfaceFor(event.target);
     if (!surface) return;
     endGarmentScroll();
     drag = { ...surface, zone: garmentZone(surface.node), id: event.pointerId,
-      x: event.clientX, y: event.clientY, started: now(), locked: false };
+      x: event.clientX, lastX: event.clientX, y: event.clientY, started: now(), locked: false };
   });
   document.addEventListener('pointermove', event => {
     if (!drag || event.pointerId !== drag.id || drag.rejected) return;
@@ -132,12 +148,23 @@ function mountJourneyGestures() {
       const axis = dx > dy * 1.25 ? 'x' : dy > dx * 1.25 ? 'y' : null;
       if (!axis) return;
       if (drag.axis !== 'both' && drag.axis !== axis) { drag.rejected = true; return; }
+      drag.stream = axis === 'y' ? drag.node.querySelector('.moment-stream') : null;
+      if (drag.stream && event.pointerType !== 'mouse') { drag = null; return; }
+      if (drag.stream) {
+        drag.scrollStart = drag.stream.scrollTop;
+        drag.stream.classList.add('mouse-scrolling');
+      }
+      drag.garment = startGarment(drag.zone);
       drag.axis = axis;
       drag.locked = true;
       drag.node.setPointerCapture(event.pointerId);
       drag.node.classList.add('is-gesture-dragging');
     }
-    if (drag.zone) dragFittingGarment(drag.zone, event.clientX - drag.x);
+    if (drag.garment) {
+      slideGarment(drag.garment, event.clientX - drag.lastX);
+      drag.lastX = event.clientX;
+    }
+    if (drag.stream) drag.stream.scrollTop = drag.scrollStart + drag.y - event.clientY;
     if (event.cancelable) event.preventDefault();
   }, { passive: false });
   document.addEventListener('pointerup', event => {
@@ -148,10 +175,24 @@ function mountJourneyGestures() {
     const quickFlick = current.zone && now() - current.started < 180 && Math.abs(distance) >= 16;
     const passed = current.locked && !current.rejected && (Math.abs(distance) >= threshold || quickFlick);
     const step = distance < 0 ? 1 : -1;
-    if (passed && current.zone) settleFittingGarment(current.zone, step);
+    if (current.garment) {
+      slideGarment(current.garment, event.clientX - current.lastX);
+      finishGarment(current.garment, quickFlick ? 16 : threshold);
+      current.garment = null;
+    }
+    let destination;
+    if (current.stream) {
+      const height = current.stream.clientHeight;
+      destination = Math.round(current.stream.scrollTop / height);
+      const start = Math.round(current.scrollStart / height);
+      if (passed && destination === start) destination += step;
+    }
     reset();
     if (Math.max(Math.abs(event.clientX - current.x), Math.abs(event.clientY - current.y)) > 12) blockedUntil = now() + 400;
-    if (passed) move(current.node, current.axis, step);
+    if (current.stream) {
+      current.stream.scrollTo({top: destination * current.stream.clientHeight,
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+    } else if (passed && !current.zone) move(current.node, current.axis, step);
   });
   document.addEventListener('pointercancel', reset);
   document.addEventListener('lostpointercapture', event => {
@@ -160,7 +201,7 @@ function mountJourneyGestures() {
     if (drag && event.pointerId === drag.id && event.target === drag.node) reset();
   });
   document.addEventListener('touchstart', event => { if (event.touches.length > 1) reset(); }, { passive: true });
-  function cancelGestures() { reset(); endGarmentScroll(); }
+  function cancelGestures() { reset(); endGarmentScroll(false); }
   window.addEventListener('blur', cancelGestures);
   window.addEventListener('hashchange', cancelGestures);
   document.addEventListener('dragstart', event => { if (surfaceFor(event.target)) event.preventDefault(); });
@@ -181,6 +222,7 @@ function mountJourneyGestures() {
     const dx = (event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX) * factor;
     const dy = (event.shiftKey && !event.deltaX ? 0 : event.deltaY) * factor;
     const axis = Math.abs(dx) > Math.abs(dy) * 1.25 ? 'x' : Math.abs(dy) > Math.abs(dx) * 1.25 ? 'y' : null;
+    if (surface.node.matches('.moment-feed') && surface.node.querySelector('.moment-stream') && axis !== 'x') return;
     if (surface.axis === 'x' && axis !== 'x') return;
     if (event.cancelable) event.preventDefault();
     if (!axis) return;

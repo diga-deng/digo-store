@@ -332,11 +332,13 @@ function scenePhotoPoint(point, imageWidth, imageHeight, width, height, position
   const scale=Math.max(width/imageWidth,height/imageHeight);
   return {x:point.x*imageWidth*scale+(width-imageWidth*scale)*position[0],y:point.y*imageHeight*scale+(height-imageHeight*scale)*position[1]};
 }
-let sceneHotspotObserver;
+let sceneHotspotObservers = [];
 function mountSceneHotspots() {
-  sceneHotspotObserver?.disconnect();
-  const section=document.querySelector('.life-scene[data-real-room]');
-  if(!section)return;
+  sceneHotspotObservers.forEach(observer => observer.disconnect());
+  sceneHotspotObservers = [];
+  document.querySelectorAll('.life-scene[data-real-room]').forEach(mountRoomHotspots);
+}
+function mountRoomHotspots(section) {
   const scene=[...baseScenes,...archivedScenes].find(s=>s.id===section.dataset.scene),photo=section.querySelector('.life-scene-photo');
   const update=()=>{
     const width=section.clientWidth,height=section.clientHeight,rect=section.getBoundingClientRect();
@@ -354,6 +356,6 @@ function mountSceneHotspots() {
     });
   };
   photo.addEventListener('load',update,{once:true});
-  if(typeof ResizeObserver!=='undefined'){sceneHotspotObserver=new ResizeObserver(update);sceneHotspotObserver.observe(section);}
+  if(typeof ResizeObserver!=='undefined'){const observer=new ResizeObserver(update);observer.observe(section);sceneHotspotObservers.push(observer);}
   update();
 }

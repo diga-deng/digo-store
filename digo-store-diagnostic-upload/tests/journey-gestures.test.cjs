@@ -15,7 +15,6 @@ function fixture() {
       if (kind === 'bodyZone') return ['[data-fitting-swipe]', '.fitting-zone'].includes(selector);
       return selector === (kind === 'wardrobe' ? '[data-fitting-swipe]' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
     querySelector(selector) {
-      if (selector === '.moment-stream') return this.stream || null;
       if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id}};
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
       return null;
@@ -140,17 +139,45 @@ test('arrow keys and a trackpad enter the current series and return to its sourc
   assert.deepEqual(f.calls.navigation.at(-1),'/scene/b');
   assert.equal(f.event('wheel',f.series,{deltaY:110}).prevented,undefined);
 });
-test('Discover leaves uninterrupted vertical wheel and touch travel to the native stream', () => {
+test('Discover commits during a drag, stays on that frame until release and accepts the next swipe immediately', () => {
   const f = fixture(), feed = f.scenes[0];
-  feed.stream = {};
-  for (const deltaY of [20, 80, 1200, 55, -900, -20]) {
-    assert.equal(f.event('wheel', feed, {deltaY}).prevented, undefined);
+  for (const pointerType of ['touch','mouse']) {
+    f.calls.scenes.length = 0;
+    f.event('pointerdown', feed, {pointerType});
+    f.event('pointermove', feed, {pointerType, clientY: 385});
+    assert.deepEqual(f.calls.scenes, []);
+    f.event('pointermove', feed, {pointerType, clientY: 362});
+    assert.deepEqual(f.calls.scenes, [1]);
+    f.event('pointermove', feed, {pointerType, clientY: 10});
+    f.event('pointerup', feed, {pointerType, clientY: 10});
+    f.drag(feed, 0, -180, pointerType);
+    assert.deepEqual(f.calls.scenes, [1, 1]);
   }
-  f.drag(feed, 0, -240, 'touch');
-  assert.deepEqual(f.calls.scenes, []);
-  assert.deepEqual(f.calls.navigation, []);
-  f.drag(feed, -150, 3, 'touch');
-  assert.deepEqual(f.calls.navigation, ['/series/a']);
+});
+test('trackpad tails stay on one scene, a renewed push and a reversal each move one', () => {
+  const f = fixture(), feed = f.scenes[0];
+  const send = deltaY => {
+    f.tick(12);
+    assert.equal(f.event('wheel', feed, {deltaY}).prevented, true);
+  };
+  [9, 32, 111, 180, 140, 70, 42, 22, 10, 5].forEach(send);
+  assert.deepEqual(f.calls.scenes, [1]);
+  [11, 23, 48, 22, 5].forEach(send);
+  assert.deepEqual(f.calls.scenes, [1, 1]);
+  [-12, -30, -55, -8].forEach(send);
+  assert.deepEqual(f.calls.scenes, [1, 1, -1]);
+  f.tick(100);
+  send(1200);
+  assert.deepEqual(f.calls.scenes, [1, 1, -1, 1]);
+});
+test('rightward trackpad return works during the entry tail and vertical paging resumes immediately', () => {
+  const f = fixture();
+  f.event('wheel', f.scenes[1], {deltaX: 74});
+  f.tick(16); f.event('wheel', f.series, {deltaX: 25});
+  f.tick(16); f.event('wheel', f.series, {deltaX: -40});
+  assert.deepEqual(f.calls.navigation, ['/series/b', '/scene/b']);
+  f.tick(16); f.event('wheel', f.scenes[1], {deltaY: 50});
+  assert.deepEqual(f.calls.scenes, [1]);
 });
 test('horizontal trackpad deltas span multiple garments and support immediate reversal', () => {
   const f = fixture();

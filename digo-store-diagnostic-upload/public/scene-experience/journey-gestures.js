@@ -1,11 +1,11 @@
-/* Discover scrolls vertically. Horizontal gestures belong to their starting surface. */
+/* Discover commits a whole scene per swipe. Fitting-room gestures follow the garment. */
 function mountJourneyGestures() {
   const main = document.querySelector('.life-main');
   const feed = !!document.querySelector('.moment-feed');
   document.documentElement.classList.remove('scene-scroll');
   document.body.classList.toggle('journey-feed', feed);
   main?.classList.toggle('journey-module', ['/', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
-  if (feed && main) mountSceneStream(main);
+  if (feed && main) preloadNeighborPhotos(visibleSceneCard(main)?.dataset.scene);
   if (journeyDirection && main) {
     main.classList.add('journey-enter-' + journeyDirection);
     journeyDirection = '';
@@ -14,7 +14,7 @@ function mountJourneyGestures() {
 
 (function () {
   let drag = null, blockedUntil = 0;
-  let wheel = { key: null, x: 0, y: 0, time: 0, fired: false };
+  let consumedPointer = null, wheel = null;
   const editable = 'input,textarea,select,[contenteditable=true]';
   const overlayOpen = () => !!document.querySelector('#overlay-root')?.innerHTML;
   const now = () => performance.now();
@@ -26,12 +26,13 @@ function mountJourneyGestures() {
       const source = horizontal.matches('.life-nav') && document.querySelector('.moment-feed,.scene-series');
       return { node: source || horizontal, axis: 'x' };
     }
-    const card = target.closest('.series-piece');
-    if (card) return { node: card.closest('.scene-series'), axis: 'x' };
-    if (target.closest('button,a,.life-rail,.closet-categories,#circle-canvas,[data-gesture-ignore]')) return null;
+    if (target.closest('.life-rail,.closet-categories,#circle-canvas,[data-gesture-ignore]')) return null;
     const main = target.closest('.journey-module');
+    if (main?.matches('.moment-feed')) return { node: main, axis: 'both' };
+    if (main?.matches('.scene-series')) return { node: main, axis: 'x' };
+    if (target.closest('button,a')) return null;
     if (main?.querySelector('.fitting-room')) return null;
-    return main ? { node: main, axis: main.matches('.moment-feed') ? 'both' : 'x' } : null;
+    return main ? { node: main, axis: 'x' } : null;
   }
 
   function move(surface, axis, step, focus = false) {
@@ -124,7 +125,6 @@ function mountJourneyGestures() {
         moveFittingPiece(-steps, Number(zone.dataset.row));
       } else finishGarment(drag.garment, Infinity);
     }
-    drag?.stream?.classList.remove('mouse-scrolling');
     drag?.node.classList.remove('is-gesture-dragging');
     drag = null;
   }
@@ -132,6 +132,7 @@ function mountJourneyGestures() {
   document.addEventListener('pointerdown', event => {
     if (!event.isPrimary) { reset(); return; }
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    consumedPointer = null;
     blockedUntil = 0;
     const surface = surfaceFor(event.target);
     if (!surface) return;
@@ -148,12 +149,6 @@ function mountJourneyGestures() {
       const axis = dx > dy * 1.25 ? 'x' : dy > dx * 1.25 ? 'y' : null;
       if (!axis) return;
       if (drag.axis !== 'both' && drag.axis !== axis) { drag.rejected = true; return; }
-      drag.stream = axis === 'y' ? drag.node.querySelector('.moment-stream') : null;
-      if (drag.stream && event.pointerType !== 'mouse') { drag = null; return; }
-      if (drag.stream) {
-        drag.scrollStart = drag.stream.scrollTop;
-        drag.stream.classList.add('mouse-scrolling');
-      }
       drag.garment = startGarment(drag.zone);
       drag.axis = axis;
       drag.locked = true;
@@ -164,14 +159,27 @@ function mountJourneyGestures() {
       slideGarment(drag.garment, event.clientX - drag.lastX);
       drag.lastX = event.clientX;
     }
-    if (drag.stream) drag.stream.scrollTop = drag.scrollStart + drag.y - event.clientY;
+    if (!drag.zone && (drag.node.matches('.moment-feed') || drag.node.matches('.scene-series'))) {
+      const distance = drag.axis === 'x' ? event.clientX - drag.x : event.clientY - drag.y;
+      if (Math.abs(distance) >= 32) {
+        const current = drag;
+        consumedPointer = current.id;
+        reset();
+        move(current.node, current.axis, distance < 0 ? 1 : -1);
+      }
+    }
     if (event.cancelable) event.preventDefault();
   }, { passive: false });
   document.addEventListener('pointerup', event => {
+    if (event.pointerId === consumedPointer) {
+      consumedPointer = null;
+      blockedUntil = now() + 400;
+      return;
+    }
     if (!drag || event.pointerId !== drag.id) return;
     const current = drag;
     const distance = current.axis === 'x' ? event.clientX - current.x : event.clientY - current.y;
-    const threshold = current.zone ? garmentThreshold(current.zone) : (current.axis === 'x' ? 48 : 64);
+    const threshold = current.zone ? garmentThreshold(current.zone) : 32;
     const quickFlick = current.zone && now() - current.started < 180 && Math.abs(distance) >= 16;
     const passed = current.locked && !current.rejected && (Math.abs(distance) >= threshold || quickFlick);
     const step = distance < 0 ? 1 : -1;
@@ -180,19 +188,9 @@ function mountJourneyGestures() {
       finishGarment(current.garment, quickFlick ? 16 : threshold);
       current.garment = null;
     }
-    let destination;
-    if (current.stream) {
-      const height = current.stream.clientHeight;
-      destination = Math.round(current.stream.scrollTop / height);
-      const start = Math.round(current.scrollStart / height);
-      if (passed && destination === start) destination += step;
-    }
     reset();
     if (Math.max(Math.abs(event.clientX - current.x), Math.abs(event.clientY - current.y)) > 12) blockedUntil = now() + 400;
-    if (current.stream) {
-      current.stream.scrollTo({top: destination * current.stream.clientHeight,
-        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
-    } else if (passed && !current.zone) move(current.node, current.axis, step);
+    if (passed && !current.zone) move(current.node, current.axis, step);
   });
   document.addEventListener('pointercancel', reset);
   document.addEventListener('lostpointercapture', event => {
@@ -211,18 +209,12 @@ function mountJourneyGestures() {
 
   document.addEventListener('wheel', event => {
     if (event.ctrlKey || event.metaKey || overlayOpen()) return;
-    let surface = surfaceFor(event.target);
-    // A wheel over a scene action still pages the scene; scrollable rails keep their scroll.
-    if (!surface && !event.target.closest(editable + ',.life-rail')) {
-      const feed = event.target.closest('.moment-feed');
-      if (feed) surface = { node: feed, axis: 'both' };
-    }
+    const surface = surfaceFor(event.target);
     if (!surface) return;
     const factor = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? surface.node.clientHeight : 1;
     const dx = (event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX) * factor;
     const dy = (event.shiftKey && !event.deltaX ? 0 : event.deltaY) * factor;
     const axis = Math.abs(dx) > Math.abs(dy) * 1.25 ? 'x' : Math.abs(dy) > Math.abs(dx) * 1.25 ? 'y' : null;
-    if (surface.node.matches('.moment-feed') && surface.node.querySelector('.moment-stream') && axis !== 'x') return;
     if (surface.axis === 'x' && axis !== 'x') return;
     if (event.cancelable) event.preventDefault();
     if (!axis) return;
@@ -231,16 +223,29 @@ function mountJourneyGestures() {
       if (!drag && axis === 'x') scrollGarment(zone, dx);
       return;
     }
+    const delta = axis === 'x' ? dx : dy;
+    const amount = Math.abs(delta);
+    const direction = Math.sign(delta);
     const time = now();
-    // Stable keys survive a render: inertial tails cannot advance the replacement page.
-    const key = surface.node.matches('[data-fitting-swipe]') ? 'wardrobe-' + (surface.node.dataset?.row || 0) : 'pages';
-    if (wheel.key !== key || time - wheel.time > 220) wheel = { key, x: 0, y: 0, time, fired: false };
+    const gap = wheel ? time - wheel.time : Infinity;
+
+    // Browsers report trackpad contact and inertia as one wheel stream. A new
+    // push can reverse direction or accelerate out of the previous fading tail.
+    if (wheel && (axis !== wheel.axis || direction !== wheel.direction) && amount < 5 && gap < 90) return;
+    const renewedPush = wheel?.fired && wheel.last <= wheel.peak * 0.55 &&
+      amount >= Math.max(8, wheel.last * 1.5);
+    const mouseTick = event.deltaMode !== 0 ||
+      (gap >= 45 && amount >= 50 && amount === wheel?.last && Number.isInteger(amount));
+    if (!wheel || gap >= 90 || wheel.axis !== axis || wheel.direction !== direction || renewedPush || mouseTick) {
+      wheel = {axis, direction, total: 0, peak: 0, fired: false};
+    }
     wheel.time = time;
-    if (wheel.fired) return;
-    wheel.x += dx; wheel.y += dy;
-    if (Math.abs(wheel[axis]) < 60) return;
+    wheel.last = amount;
+    wheel.peak = Math.max(wheel.peak, amount);
+    wheel.total += amount;
+    if (wheel.fired || (wheel.total < 28 && event.deltaMode === 0)) return;
     wheel.fired = true;
-    move(surface.node, axis, wheel[axis] > 0 ? 1 : -1);
+    move(surface.node, axis, direction);
   }, { passive: false });
 
   document.addEventListener('keydown', event => {

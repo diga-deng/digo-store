@@ -42,7 +42,7 @@ function sceneSeriesPage(id) {
 
 function openSceneSeries(id) {
   if (!sceneFor(id)) return false;
-  if (document.querySelector('.moment-stream')) rememberFeedScene(id);
+  if (document.querySelector('.moment-feed')) rememberFeedScene(id);
   const origin = route();
   closeOverlay();
   journeyDirection = 'left';
@@ -53,13 +53,10 @@ function openSceneSeries(id) {
 }
 
 function leaveSceneSeries(id) {
+  if (journeyDirection === 'right') return true; // History traversal is asynchronous.
   const origin = history.state?.seriesOrigin;
   journeyDirection = 'right';
   if (origin === '/' || origin === '/scene/' + id) {
-    if (origin === '/') {
-      world.browse = {...world.browse, discover: id};
-      writeWorld();
-    }
     history.back();
   } else {
     navigate('/scene/' + encodeURIComponent(id));

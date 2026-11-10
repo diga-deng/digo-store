@@ -60,12 +60,23 @@ function itemBrand(item) { return itemInfo(item).reference?itemInfo(item).brand:
 function itemCaption(item) { return item.owned?'Already owned':itemInfo(item).screenReference?'Screen reference':itemInfo(item).reference?'Demo reference':item.type==='concept'?'Inspiration only':item.type==='catalog'?storeMoney(itemInfo(item).price_cents || 0):'Your own piece'; }
 function miniBoard(b) { return `<div class="mini-board">${b.items.slice(0,4).map(i=>`<div>${itemArt(i)}</div>`).join('')}</div>`; }
 function resumeCard() { const r=world.resume;return r?`<a class="resume-card" href="#${esc(r.path)}" data-life="resume"><span>${icon('undo')} Pick up where you left off</span><strong>${esc(r.label)}</strong>${icon('right')}</a>`:''; }
+function sceneProductRail(scene) {
+  const pieces = scenePieces(scene).slice(0, 4);
+  if (!pieces.length) return '';
+  const buttons = pieces.map((product, index) => {
+    const label = scene.fullScene ? String(index + 1).padStart(2, '0') : 'View piece';
+    return `<button data-life="product" data-id="${esc(product.id)}" data-type="concept" data-scene="${esc(scene.id)}" aria-label="View ${esc(product.name)}">
+      ${productPhoto(product)}<small>${label} ${icon('plus')}</small></button>`;
+  }).join('');
+  return `<aside class="life-rail" aria-label="Pieces in this moment"><span>${scene.editorial ? 'CURATED PIECES' : 'THE DETAILS'}</span>${buttons}</aside>`;
+}
+
 function sceneSection(s,index) {
   const m=moments[s.id]||[s.title,s.subtitle,'YOUR MOMENT'];
   return `<section class="life-scene ${s.reference?'reference-scene':''} ${s.screenScene?'screen-scene':''} ${s.editorial?'editorial-scene':''}" style="--reference-tone:${s.tone||'#807b70'};--editorial-position:${s.position?.map(x=>(x*100)+'%').join(' ')||'center'}" id="moment-${s.id}" data-scene="${s.id}" ${s.fullScene?'data-real-room="true"':''} aria-label="${esc(m[0])}" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
     <img class="life-scene-photo" src="${esc(s.image)}" alt="${esc(m[1])}" ${s.fullScene?`style="object-position:${s.position[0]*100}% ${s.position[1]*100}%"`:""} fetchpriority="high" draggable="false">
     <div class="scene-topline"><span>${String(index+1).padStart(2,'0')} / ${String(baseScenes.length).padStart(2,'0')}</span><span class="scene-static-label">${s.reference?esc(s.brand)+'<span class="reference-mini-label">Demo</span>':'Concept still'}</span></div>
-    <aside class="life-rail" aria-label="Pieces in this moment"><span>${s.editorial?'CURATED PIECES':'THE DETAILS'}</span>${s.items.slice(0,4).map((id,i)=>`<button data-life="product" data-id="${id}" data-type="concept" data-scene="${s.id}" aria-label="View ${esc(getProduct(id).name)}">${productPhoto(getProduct(id))}<small>${s.fullScene?String(i+1).padStart(2,'0'):'View piece'} ${icon('plus')}</small></button>`).join('')}</aside>
+    ${sceneProductRail(s)}
     ${s.editorial?'':s.fullScene?`<svg class="scene-hotspot-lines" aria-hidden="true">${s.hotspots.map((h,i)=>`<line data-hotspot-line="${i}"/>`).join('')}</svg>${s.hotspots.map((h,i)=>`<button class="life-hotspot room-hotspot" data-hotspot-index="${i}" data-life="product" data-type="concept" data-id="${h.id}" data-scene="${s.id}" aria-label="View ${esc(getProduct(h.id).name)}"><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}`:`<button class="life-hotspot" style="left:72%;top:48%" data-life="product" data-type="concept" data-id="${s.items[0]}" data-scene="${s.id}" aria-label="View ${esc(getProduct(s.items[0]).name)}">${icon('plus')}</button>`}
     <div class="scene-quick"><button data-life="save-scene" data-id="${s.id}" aria-label="Save this moment" aria-pressed="${world.saved.some(x=>x.kind==='scene'&&x.id===s.id)}">${icon('save')}<span>Save</span></button><button data-life="circle" data-id="${s.id}" aria-label="Circle a detail">${icon('circle')}<span>Circle a detail</span></button></div>
     ${s.screenScene?`<button class="scene-wide-view" data-life="full-scene" data-id="${s.id}">${icon('grid')}<span>Full scene</span></button>`:''}<div class="life-scene-copy"><h2 class="${s.editorial&&!s.hideSceneHeading?'editorial-title':'sr-only'}">${esc(m[0])}</h2><div class="life-actions"><a class="life-btn light" href="#/edit/${s.id}">Make it mine ${icon('plus')}</a><a class="life-btn glass" data-life="open-series" data-id="${s.id}" href="#/series/${s.id}" title="Swipe left to view this series">View series ${icon('right')}</a></div>${s.editorial?`<a class="editorial-credit" href="${esc(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(s.sourceCredit)} ↗</a>`:''}</div>
@@ -129,6 +140,7 @@ function discoverPoster(frame, index, count) {
   return `<section class="life-scene discover-poster" data-scene="${esc(id)}" data-branch="${branch.id}" tabindex="-1" aria-label="${esc(title)}" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
     <img class="life-scene-photo" src="${esc(scene.image)}" alt="${esc(scene.description || scene.subtitle)}" style="object-position:${position}" fetchpriority="high" draggable="false">
     ${cover ? '' : `<a class="poster-parent life-btn" href="#/discover/${branch.id}" data-life="branch-back" data-id="${branch.id}" aria-label="Back to ${esc(branch.title)}">${icon('left')}${esc(branch.title)}</a>`}
+    ${sceneProductRail(scene)}
     ${sceneTools}
     <div class="life-scene-copy"><h1>${esc(title)}</h1>
       <div class="life-actions"><a class="life-btn glass" data-life="${cover ? 'open-branch' : 'open-series'}" data-id="${esc(id)}" href="#${target}" title="Swipe left to continue">${label} ${icon('right')}</a>

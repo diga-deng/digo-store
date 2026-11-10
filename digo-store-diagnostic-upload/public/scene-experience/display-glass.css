@@ -38,14 +38,14 @@ body:is(.journey-feed, .style-browsing) :is(a,button,select):focus-visible {
 .journey-feed .life-scene .scene-quick { top: calc(var(--journey-header) + 20px); }
 .journey-feed .life-scene :is(.life-scene-copy,.scene-index) { bottom: calc(var(--journey-nav) + 18px); }
 .journey-feed .life-scene :is(.scene-static-label,.style-refine-entry) { top: calc(var(--journey-header) + 14px); }
-.journey-feed .reference-scene .life-rail,
+.journey-feed :is(.reference-scene, .discover-poster) .life-rail,
 .journey-feed .life-scene .life-rail button,
 .journey-feed .life-scene :is(.scene-quick button, .scene-step, .scene-static-label, .life-btn, .scene-wide-view) {
   color: white; border: var(--clear-edge); background: var(--clear-face); box-shadow: var(--clear-shadow);
   backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); text-shadow: 0 1px 3px #000a;
 }
 .journey-feed .life-scene .life-rail :is(span,small) { color: white; }
-.journey-feed .reference-scene .life-rail img.reference-product-photo { background: transparent; }
+.journey-feed :is(.reference-scene, .discover-poster) .life-rail img.reference-product-photo { background: transparent; }
 
 /* A continuous photographic fabric column is visible through every product. */
 body.style-browsing { --lane-width: 30%; color: white; }
@@ -322,6 +322,13 @@ html:has(.fitting-room) { overscroll-behavior-x: none; }
 .discover-poster .poster-parent {
   position: absolute; z-index: 2; left: clamp(16px, 3vw, 48px); top: calc(var(--journey-header) + 15px);
 }
+/* Leave the back link and the bottom title clear of a long product rail. */
+.journey-feed .branch-scenes .life-rail { top: calc(var(--journey-header) + 65px); }
+.journey-feed :is(.branch-feed, .branch-scenes) .life-rail {
+  max-height: max(60px, calc(100% - var(--journey-header) - var(--journey-nav) - 245px));
+  z-index: 2;
+}
+.discover-poster .life-rail .product-photo { max-width: 100%; }
 .discover-poster .poster-pager {
   position: absolute; right: clamp(15px, 3vw, 48px);
   bottom: calc(var(--journey-nav) + env(safe-area-inset-bottom, 0px) + 20px);

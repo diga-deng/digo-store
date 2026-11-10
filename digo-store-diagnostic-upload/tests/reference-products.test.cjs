@@ -75,3 +75,22 @@ test('European references retain their currency and original sold-out identity',
   const html=run('captured');
   assert.match(html,/€1,219.00/);assert.match(html,/Brand reference price · EUR/);assert.match(html,/Out of stock at the source/);assert.match(html,/insert-side-table-stone-sand/);assert.doesNotMatch(html,/add-real|add-bag|\/checkout/);
 });
+
+test('Discover covers and scene posters expose the pictured scene’s products in the left rail', () => {
+  const run = fixture();
+  for (const file of ['curated-edit', 'discover-tree', 'scene-series']) {
+    run(fs.readFileSync(path.join(root, 'public/scene-experience', file + '.js'), 'utf8'));
+  }
+  run("const world = {saved: []}; const icon = () => ''; const productPhoto = p => '<img src=' + p.image + '>'; const sceneFor = id => [...baseScenes, ...archivedScenes].find(s => s.id === id);");
+  run(journeys.slice(journeys.indexOf('function sceneProductRail('), journeys.indexOf('function sceneSection(')));
+  run(journeys.slice(journeys.indexOf('function branchEntry('), journeys.indexOf('function visibleSceneCard(')));
+  run(journeys.slice(journeys.indexOf('function discoverPoster('), journeys.indexOf('function rememberPoster(')));
+  for (const [cover, id, pictured] of [[true, 'active', 'alpine-ridge'], [false, 'coast', 'coast']]) {
+    const html = run(`discoverPoster({branch:branchForScene('coast'), scene:sceneFor('${pictured}'), cover:${cover}, id:'${id}'}, 0, 5)`);
+    const rail = html.match(/<aside class="life-rail"[^>]*>([\s\S]*?)<\/aside>/);
+    assert.ok(rail, id);
+    const buttons = [...rail[1].matchAll(/data-life="product" data-id="([^"]+)" data-type="concept" data-scene="([^"]+)"/g)];
+    assert.deepEqual(buttons.map(m => m[1]), Array.from(run(`sceneFor('${pictured}').items.slice(0, 4)`)));
+    assert.ok(buttons.every(m => m[2] === pictured));
+  }
+});

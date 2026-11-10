@@ -1,54 +1,62 @@
-/* A series is an editorial selection. Unassigned scenes keep their own selection. */
-const discoverSeries = [
-  { title: 'Alpine series', scenes: ['alpine-ridge', 'alpine-snow', 'outdoor-dawn', 'outdoor-ridgewalk', 'outdoor-powder'] },
-  { title: 'Architecture series', scenes: ['architecture-terrace', 'architecture-canoas', 'architecture-glass', 'architecture-courtyard', 'architecture-lounge'] }
-];
+function scenePieces(scene) {
+  return [...new Set(scene.items)].map(getProduct).filter(Boolean);
+}
+
+function piecePoster(scene, pieces, index) {
+  const p = pieces[index];
+  const title = sceneLabel(branchForScene(scene.id), scene);
+  const back = `<a class="poster-parent life-btn" data-life="series-back" data-id="${esc(scene.id)}" href="#/scene/${esc(scene.id)}">${icon('left')}${esc(title)}</a>`;
+  const select = pieces.map((item, i) => `<button data-life="select-piece" data-id="${esc(scene.id)}" data-piece="${esc(item.id)}"
+    aria-label="Show ${esc(item.name)}" aria-pressed="${i === index}">${productPhoto(item)}</button>`).join('');
+  return `<section class="life-scene discover-poster piece-poster" data-scene="${esc(scene.id)}" data-piece="${esc(p.id)}" tabindex="-1" aria-label="${esc(p.name)}">
+    <img class="life-scene-photo" src="${esc(scene.image)}" alt="" draggable="false">
+    ${back}
+    <button class="piece-portrait" data-life="product" data-id="${esc(p.id)}" data-type="concept" data-scene="${esc(scene.id)}" aria-label="View ${esc(p.name)}">${productPhoto(p)}</button>
+    <div class="piece-caption"><p>${esc(p.brand || p.category)}</p><h1>${esc(p.name)}</h1>
+    ${p.color ? `<p>${esc(p.color)}</p>` : ''}
+    <button class="life-btn glass" data-life="product" data-id="${esc(p.id)}" data-type="concept" data-scene="${esc(scene.id)}">View details ${icon('right')}</button></div>
+    <div class="piece-thumbnails" aria-label="Pieces styled for this scene">${select}</div>
+    <div class="poster-pager" aria-label="Scene pieces"><output aria-label="Position">${index+1} / ${pieces.length}</output>
+    <button class="scene-step" data-life="page-poster" data-direction="-1" aria-label="Previous piece">↑</button>
+    <button class="scene-step" data-life="page-poster" data-direction="1" aria-label="Next piece">↓</button></div></section>`;
+}
 
 function sceneSeriesPage(id) {
   const scene = sceneFor(id);
-  if (!scene) return wrap(empty('This series is unavailable.', 'Explore the current moments in Discover.'));
-  const series = discoverSeries.find(group => group.scenes.includes(id));
-  const title = series?.title || scene.collection || scene.title;
-  const here = [...new Set(scene.items)];
-  const related = new Set((series?.scenes || []).flatMap(sceneId => sceneFor(sceneId)?.items || []));
-  here.forEach(pieceId => related.delete(pieceId));
+  if (!scene) return wrap(empty('This scene is unavailable.', 'Browse the current scenes in Discover.'));
+  const pieces = scenePieces(scene);
+  if (!pieces.length) return wrap(empty('No pieces in this scene yet.', '', '#/scene/' + id, 'Back to scene'));
+  const saved = history.state?.pieceId;
+  const index = Math.max(0, pieces.findIndex(piece => piece.id === saved));
+  return wrap(piecePoster(scene, pieces, index), 'moment-feed piece-feed');
+}
 
-  function pieceCard(pieceId) {
-    const product = getProduct(pieceId);
-    if (!product) return '';
-    return `<button class="series-piece" data-life="product" data-type="concept"
-      data-id="${esc(pieceId)}" data-scene="${esc(scene.id)}" aria-label="View ${esc(product.name)}">
-      <span class="series-piece-photo">${productPhoto(product)}</span>
-      <span class="series-piece-copy"><small>${esc(product.brand || product.category)}</small>
-        <strong>${esc(product.name)}</strong>${product.color ? `<span>${esc(product.color)}</span>` : ''}</span></button>`;
-  }
+function selectScenePiece(id, pieceId, focus) {
+  const scene = sceneFor(id), current = document.querySelector('.piece-feed .piece-poster');
+  if (!current || current.dataset.scene !== id || !scene) return false;
+  const pieces = scenePieces(scene), index = pieces.findIndex(piece => piece.id === pieceId);
+  if (index < 0) return false;
+  focus = focus || current.contains(document.activeElement);
+  history.replaceState({...history.state, pieceId}, '');
+  current.outerHTML = piecePoster(scene, pieces, index);
+  if (focus) document.querySelector('.piece-poster').focus({preventScroll:true});
+  return true;
+}
 
-  const position = (scene.position || [.5,.5]).map(n => n * 100 + '%').join(' ');
-  return wrap(`<div class="series-cover" aria-hidden="true"><img src="${esc(scene.image)}" alt=""
-      style="object-position:${position}" fetchpriority="high"></div>
-    <div class="series-content" data-series-scene="${esc(id)}">
-      <a class="series-back" data-life="series-back" data-id="${esc(id)}" href="#/scene/${esc(id)}">${icon('left')} Back to scene</a>
-      <header class="series-heading">
-        <p>${esc(scene.brand || scene.category)}</p><h1 tabindex="-1">${esc(title)}</h1>
-        ${title !== scene.title ? `<span>${esc(scene.title)}</span>` : ''}
-      </header>
-      <section aria-labelledby="series-pieces"><h2 id="series-pieces">In this scene</h2>
-        <div class="series-grid">${here.map(pieceCard).join('')}</div>
-      </section>
-      ${related.size ? `<details class="series-more"><summary>More from this series</summary>
-        <div class="series-grid">${[...related].map(pieceCard).join('')}</div></details>` : ''}
-    </div>`, 'scene-series');
+function moveScenePiece(card, step, focus) {
+  const scene = sceneFor(card.dataset.scene), pieces = scenePieces(scene);
+  const index = pieces.findIndex(p => p.id === card.dataset.piece);
+  return selectScenePiece(scene.id, pieces[(index + step + pieces.length) % pieces.length].id, focus);
 }
 
 function openSceneSeries(id) {
   if (!sceneFor(id)) return false;
-  if (document.querySelector('.moment-feed')) rememberFeedScene(id);
   const origin = route();
   closeOverlay();
   journeyDirection = 'left';
   history.pushState({seriesOrigin: origin}, '', '#/series/' + encodeURIComponent(id));
   render();
-  document.querySelector('.series-heading h1')?.focus({preventScroll: true});
+  document.querySelector('.piece-poster')?.focus({preventScroll: true});
   return true;
 }
 
@@ -56,10 +64,11 @@ function leaveSceneSeries(id) {
   if (journeyDirection === 'right') return true; // History traversal is asynchronous.
   const origin = history.state?.seriesOrigin;
   journeyDirection = 'right';
-  if (origin === '/' || origin === '/scene/' + id) {
+  if (origin === '/scene/' + id) {
     history.back();
   } else {
-    navigate('/scene/' + encodeURIComponent(id));
+    history.replaceState(null, '', '#/scene/' + encodeURIComponent(id));
+    render();
   }
   return true;
 }

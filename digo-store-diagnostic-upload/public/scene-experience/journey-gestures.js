@@ -82,6 +82,11 @@ function mountDiscoverWheel(feed) {
     }
     if (surface.matches('.moment-feed')) {
       const id = visibleSceneCard(surface)?.dataset.scene;
+      if (surface.matches('.piece-feed')) return step === -1 && !!id && leaveSceneSeries(id);
+      if (surface.matches('.branch-feed')) return step === 1 && openDiscoverBranch(id);
+      if (step === -1 && surface.matches('.branch-scenes')) {
+        return leaveDiscoverBranch(visibleSceneCard(surface).dataset.branch);
+      }
       return step === 1 && !!id && openSceneSeries(id);
     }
     if (surface.matches('.scene-series')) {
@@ -199,7 +204,8 @@ function mountDiscoverWheel(feed) {
         const current = drag;
         consumedPointer = current.id;
         reset();
-        move(current.node, current.axis, distance < 0 ? 1 : -1);
+        const step = distance < 0 ? 1 : -1;
+        move(current.node, current.axis, current.axis === 'y' && current.node.matches('.branch-feed') ? -step : step);
       }
     }
     if (event.cancelable) event.preventDefault();
@@ -224,7 +230,7 @@ function mountDiscoverWheel(feed) {
     }
     reset();
     if (Math.max(Math.abs(event.clientX - current.x), Math.abs(event.clientY - current.y)) > 12) blockedUntil = now() + 400;
-    if (passed && !current.zone) move(current.node, current.axis, step);
+    if (passed && !current.zone) move(current.node, current.axis, current.axis === 'y' && current.node.matches('.branch-feed') ? -step : step);
   });
   document.addEventListener('pointercancel', reset);
   document.addEventListener('lostpointercapture', event => {
@@ -279,12 +285,12 @@ function mountDiscoverWheel(feed) {
     if (event.momentum === true) return;
     const delta = axis === 'x' ? dx : dy;
     const direction = Math.sign(delta);
-    const series = surface.node.matches('.scene-series');
+    const level = (surface.node.matches('.piece-feed') || surface.node.matches('.scene-series')) ? 'pieces' : surface.node.matches('.branch-feed') ? 'categories' : 'scenes';
     const changedHeading = wheel && (axis !== wheel.axis || direction !== wheel.direction);
     // Without a momentum flag, keep the entire wheel burst latched, including
     // line/page units. A deliberate return on the newly opened series is separate.
-    if (!wheel || (changedHeading && (!wheel.fired || series !== wheel.series))) {
-      wheel = {axis, direction, series, time, total: 0, fired: false};
+    if (!wheel || (changedHeading && (!wheel.fired || level !== wheel.level))) {
+      wheel = {axis, direction, level, time, total: 0, fired: false};
     }
     if (wheel.fired) return;
     wheel.total += Math.abs(delta);

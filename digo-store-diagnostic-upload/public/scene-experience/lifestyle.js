@@ -68,14 +68,35 @@ function sceneSection(s,index) {
   </section>`;
 }
 let journeyDirection = '';
-function feedScene(key) { return baseScenes.find(s=>s.id===world.browse?.[key]) || baseScenes[0]; }
-// Keep only the current scene interactive. Warm the two adjacent photographs
-// so a committed swipe can replace the entire frame at once.
+
+function feedScene(key) {
+  return sceneFor(world.browse?.[key]) || baseScenes[0];
+}
+function homeBranch() {
+  const id = history.state?.branchId || world.browse?.branchId;
+  return discoverBranches.find(branch => branch.id === id) || discoverBranches[0];
+}
+function branchEntry(branch) {
+  const remembered = world.browse?.branches?.[branch.id];
+  return branch.scenes.some(([id]) => id === remembered) ? remembered : branch.scenes[0][0];
+}
+function visibleSceneCard(feed) { return feed?.querySelector('.life-scene'); }
+function feedFrames() {
+  if (!route().startsWith('/scene/')) {
+    return discoverBranches.map(branch => ({id: branch.id, branch, scene: sceneFor(branch.cover), cover: true}));
+  }
+  const id = route().split('/')[2], branch = branchForScene(id);
+  if (!branch) return baseScenes.map(scene => ({id: scene.id, scene}));
+  return branch.scenes.map(([id]) => ({id, branch, scene: sceneFor(id)}));
+}
+
 const nearbyPhotos = new Map();
 function preloadNeighborPhotos(id) {
-  const index = baseScenes.findIndex(scene => scene.id === id);
+  const frames = feedFrames(), index = frames.findIndex(frame => frame.id === id);
   if (index < 0) return;
-  const images = [-1, 1].map(step => baseScenes[(index + step + baseScenes.length) % baseScenes.length].image);
+  const images = [-1, 1].map(step => frames[(index + step + frames.length) % frames.length].scene.image);
+  const frame = frames[index];
+  if (frame.cover) images.push(sceneFor(branchEntry(frame.branch)).image);
   for (const url of nearbyPhotos.keys()) {
     if (!images.includes(url)) nearbyPhotos.delete(url);
   }
@@ -88,44 +109,112 @@ function preloadNeighborPhotos(id) {
     nearbyPhotos.set(url, photo);
   }
 }
-function visibleSceneCard(feed) { return feed?.querySelector('.life-scene'); }
-function rememberFeedScene(id) {
-  currentScene = id;
-  if (route().startsWith('/scene/') && route() !== '/scene/' + id) {
+
+function discoverPoster(frame, index, count) {
+  const {branch, scene, cover, id} = frame;
+  if (!branch) return sceneSection(scene, Math.max(0, baseScenes.indexOf(scene)));
+  const title = cover ? branch.title : sceneLabel(branch, scene);
+  const label = cover ? 'Browse scenes' : 'View pieces';
+  const target = cover ? '/scene/' + branchEntry(branch) : '/series/' + id;
+  const position = (scene.position || [.5, .5]).map(n => n * 100 + '%').join(' ');
+  const sceneTools = cover ? '' : `<div class="scene-quick">
+    <button data-life="save-scene" data-id="${esc(id)}" aria-label="Save this scene" aria-pressed="${world.saved.some(x=>x.kind==='scene' && x.id===id)}">${icon('save')}<span>Save</span></button>
+    <button data-life="circle" data-id="${esc(id)}" aria-label="Circle a detail">${icon('circle')}<span>Circle a detail</span></button></div>`;
+  return `<section class="life-scene discover-poster" data-scene="${esc(id)}" data-branch="${branch.id}" tabindex="-1" aria-label="${esc(title)}" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
+    <img class="life-scene-photo" src="${esc(scene.image)}" alt="${esc(scene.description || scene.subtitle)}" style="object-position:${position}" fetchpriority="high" draggable="false">
+    ${cover ? '' : `<a class="poster-parent life-btn" href="#/" data-life="branch-back" data-id="${branch.id}" aria-label="Back to ${esc(branch.title)}">${icon('left')}${esc(branch.title)}</a>`}
+    ${sceneTools}
+    <div class="life-scene-copy"><h1>${esc(title)}</h1>
+      <div class="life-actions"><a class="life-btn glass" data-life="${cover ? 'open-branch' : 'open-series'}" data-id="${esc(id)}" href="#${target}" title="Swipe left to continue">${label} ${icon('right')}</a>
+      ${cover ? '' : `<a class="life-btn glass" href="#/edit/${esc(id)}">Make it mine ${icon('plus')}</a>`}</div>
+      ${!cover && scene.sourceCredit && scene.sourceUrl ? `<a class="editorial-credit" href="${esc(scene.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(scene.sourceCredit)} ↗</a>` : ''}
+    </div>
+    <div class="poster-pager" aria-label="${cover ? 'Categories' : 'Scenes'}">
+      <output aria-label="Position">${index+1} / ${count}</output>
+      <button class="scene-step" data-life="page-poster" data-direction="-1" aria-label="Previous ${cover ? 'category' : 'scene'}">↑</button>
+      <button class="scene-step" data-life="page-poster" data-direction="1" aria-label="Next ${cover ? 'category' : 'scene'}">↓</button>
+    </div></section>`;
+}
+
+function rememberPoster(frame) {
+  const {id, branch, cover} = frame;
+  const browse = world.browse || {};
+  if (cover) {
+    world.browse = {...browse, branchId: id};
+    history.replaceState({...history.state, branchId: id}, '');
+    currentScene = branchEntry(branch);
+  } else {
+    currentScene = id;
+    world.browse = {...browse, discover: id};
+    if (branch) {
+      world.browse.branchId = branch.id;
+      world.browse.branches = {...browse.branches, [branch.id]: id};
+    }
     history.replaceState(history.state, '', '#/scene/' + encodeURIComponent(id));
-    remember('/scene/' + id, sceneFor(id).title);
+    world.resume = {path:'/scene/' + id, label:frame.scene.title, scroll:0, at:Date.now()};
   }
-  if (world.browse?.discover !== id) {
-    world.browse = {...world.browse, discover: id};
-    writeWorld();
-  }
+  writeWorld();
 }
 function activateFeedScene(id, focus=false) {
-  const index = baseScenes.findIndex(scene => scene.id === id);
   const card = visibleSceneCard(document.querySelector('.moment-feed'));
+  const frames = feedFrames(), index = frames.findIndex(frame => frame.id === id);
   if (!card || index < 0) return false;
   const restoreFocus = focus || card.contains(document.activeElement);
-  card.outerHTML = sceneSection(baseScenes[index], index);
-  rememberFeedScene(id);
+  const frame = frames[index];
+  rememberPoster(frame);
+  // A pre-tree saved scene can page into a classified scene. Mount its parent
+  // controls and sibling list as if its shared link had been opened directly.
+  if (!frame.branch && branchForScene(id)) {
+    render(false);
+    if (restoreFocus) visibleSceneCard(document.querySelector('.moment-feed'))?.focus({preventScroll:true});
+    return true;
+  }
+  card.outerHTML = discoverPoster(frame, index, frames.length);
   mountSceneHotspots();
   preloadNeighborPhotos(id);
-  if (restoreFocus) document.getElementById('moment-' + id).focus({preventScroll: true});
+  if (restoreFocus) visibleSceneCard(document.querySelector('.moment-feed'))?.focus({preventScroll:true});
   return true;
 }
 function moveJourneyScene(step, focus=false) {
-  const active=visibleSceneCard(document.querySelector('.moment-feed')); if(!active)return false;
-  const index=baseScenes.findIndex(s=>s.id===active.dataset.scene);
-  return activateFeedScene(baseScenes[(Math.max(0,index)+step+baseScenes.length)%baseScenes.length].id,focus);
+  const active = visibleSceneCard(document.querySelector('.moment-feed'));
+  if (!active) return false;
+  const frames = feedFrames(), index = frames.findIndex(frame => frame.id === active.dataset.scene);
+  return activateFeedScene(frames[(Math.max(index, 0) + step + frames.length) % frames.length].id, focus);
 }
 function discoverPage() {
-  const s=feedScene('discover');currentScene=s.id;
-  return wrap(sceneSection(s,Math.max(0,baseScenes.indexOf(s))),'discover-page moment-feed');
+  const branch = homeBranch(), index = discoverBranches.indexOf(branch);
+  currentScene = branchEntry(branch);
+  const frame = {id:branch.id, branch, scene:sceneFor(branch.cover), cover:true};
+  return wrap(discoverPoster(frame, index, discoverBranches.length), 'discover-page moment-feed branch-feed');
+}
+function openDiscoverBranch(id) {
+  const branch = discoverBranches.find(group => group.id === id);
+  if (!branch) return false;
+  history.replaceState({...history.state, branchId:id}, '');
+  journeyDirection = 'left';
+  history.pushState({discoverParent:route()}, '', '#/scene/' + branchEntry(branch));
+  render();
+  visibleSceneCard(document.querySelector('.moment-feed'))?.focus({preventScroll:true});
+  return true;
+}
+function leaveDiscoverBranch(id) {
+  if (journeyDirection === 'right') return true;
+  journeyDirection = 'right';
+  if (history.state?.discoverParent === '/') history.back();
+  else {
+    history.replaceState({branchId:id}, '', '#/');
+    render();
+  }
+  return true;
 }
 function catalogCard(p, extra='', sceneId=null) {return `<article class="life-product-card"><button class="life-art" data-life="product" data-type="catalog" data-id="${esc(p.id)}" ${sceneId?`data-scene="${esc(sceneId)}"`:""} aria-label="View ${esc(p.name)}">${productArt(p)}</button><p class="eyebrow">${esc(brandFor(p))}</p><h3>${esc(p.name)}</h3><p>${storeMoney(p.price_cents,p.currency)} <small>· ${esc(p.style_code||'')}</small></p>${extra||btn('Save to wardrobe','save-product',p.id,'data-type="catalog"','subtle')}</article>`;}
 function scenePage(id) {
   const s=sceneFor(id); if(!s)return wrap(empty('This moment is not here.','The original link may have changed.'));
   currentScene=s.id; remember('/scene/'+id,s.title);
-  return wrap(sceneSection(s,Math.max(0,baseScenes.indexOf(s))),'scene-page moment-feed');
+  const branch = branchForScene(id);
+  if (!branch) return wrap(sceneSection(s, Math.max(0,baseScenes.indexOf(s))), 'scene-page moment-feed');
+  const index = branch.scenes.findIndex(([sceneId]) => sceneId === id);
+  return wrap(discoverPoster({id, branch, scene:s}, index, branch.scenes.length), 'scene-page moment-feed branch-scenes');
 }
 function getBoard(id) {
   if (!world.boards[id]) {
@@ -320,6 +409,9 @@ document.addEventListener('click',async e=>{
   if(a==='resume'){const r={...world.resume};navigate(r.path);setTimeout(()=>window.scrollTo(0,r.scroll||0),100);}else if(a==='search')searchModal();else if(a==='style-search')searchModal(id);else if(a==='product')showProduct(id,type,el.dataset.scene||contextScene());else if(a==='bag')bagModal();
   else if(a==='retry-save'){if(writeWorld()){render(false);toast('Your choices are now saved.');}}
   else if(a==='reload-catalog')await loadCatalog(true);
+  else if(a==='open-branch')openDiscoverBranch(id);
+  else if(a==='branch-back')leaveDiscoverBranch(id);
+  else if(a==='page-poster')moveJourneyScene(Number(el.dataset.direction), true);
   else if(a==='open-series')openSceneSeries(id);
   else if(a==='series-back')leaveSceneSeries(id);
   else if(a==='next-scene')activateFeedScene(id);

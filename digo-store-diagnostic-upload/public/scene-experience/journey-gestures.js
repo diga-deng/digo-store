@@ -50,6 +50,10 @@ function mountJourneyGestures() {
     }
     if (surface.matches('.moment-feed')) {
       const id = visibleSceneCard(surface)?.dataset.scene;
+      if (surface.matches('.branch-feed')) return step === 1 && openDiscoverBranch(id);
+      if (step === -1 && surface.matches('.branch-scenes')) {
+        return leaveDiscoverBranch(visibleSceneCard(surface).dataset.branch);
+      }
       return step === 1 && !!id && openSceneSeries(id);
     }
     if (surface.matches('.scene-series')) {
@@ -233,12 +237,12 @@ function mountJourneyGestures() {
     if (event.momentum === true) return;
     const delta = axis === 'x' ? dx : dy;
     const direction = Math.sign(delta);
-    const series = surface.node.matches('.scene-series');
+    const level = surface.node.matches('.scene-series') ? 'pieces' : surface.node.matches('.branch-feed') ? 'categories' : 'scenes';
     const changedHeading = wheel && (axis !== wheel.axis || direction !== wheel.direction);
     // Without a momentum flag, keep the entire wheel burst latched, including
     // line/page units. A deliberate return on the newly opened series is separate.
-    if (!wheel || (changedHeading && (!wheel.fired || series !== wheel.series))) {
-      wheel = {axis, direction, series, time, total: 0, fired: false};
+    if (!wheel || (changedHeading && (!wheel.fired || level !== wheel.level))) {
+      wheel = {axis, direction, level, time, total: 0, fired: false};
     }
     if (wheel.fired) return;
     wheel.total += Math.abs(delta);

@@ -12,10 +12,12 @@ function fixture() {
     kind, get dataset() { return {count, row}; }, isConnected: true, clientWidth: 200,
     classList: { add() {}, remove() {}, toggle() {} }, replaceChildren() {}, setPointerCapture() {}, focus() {},
     matches(selector) {
+      if (selector === '.branch-feed') return this.level === 'categories';
+      if (selector === '.branch-scenes') return this.level === 'scenes';
       if (kind === 'bodyZone') return ['[data-fitting-swipe]', '.fitting-zone'].includes(selector);
       return selector === (kind === 'wardrobe' ? '[data-fitting-swipe]' : kind === 'nav' ? '.life-nav' : kind === 'series' ? '.scene-series' : '.moment-feed'); },
     querySelector(selector) {
-      if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id}};
+      if (kind === 'scene' && selector === '.life-scene') return {dataset:{scene:this.id, branch:this.branch}};
       if (kind === 'series' && selector === '[data-series-scene]') return {dataset:{seriesScene:this.id}};
       return null;
     },
@@ -56,6 +58,8 @@ function fixture() {
     settleFittingGarment(zone, step) { calls.settled.push([zone.dataset.row, step]); },
     setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, {fn, at: clock + delay}); return id; },
     clearTimeout(id) { timers.delete(id); },
+    openDiscoverBranch: id => { calls.navigation.push('open branch ' + id); return true; },
+    leaveDiscoverBranch: id => { calls.navigation.push('back to branch ' + id); return true; },
     openSceneSeries: id => { calls.navigation.push('/series/' + id); return true; },
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
     navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
@@ -288,4 +292,22 @@ test('one held drag crosses several pieces and reverses before release', () => {
   f.event('pointerdown', zone);
   f.event('pointerup', zone);
   assert.equal(f.event('click', zone).stopped, undefined);
+});
+
+test('one stroke can only cross one Discover level and right swipes restore each parent', () => {
+  const f = fixture();
+  const cover = Object.assign(f.scenes[0], {level:'categories'});
+  const scene = Object.assign(f.scenes[1], {level:'scenes', branch:cover.id});
+  f.drag(cover, -600, 0, 'touch');
+  f.drag(scene, -36, 0, 'touch');
+  f.drag(f.series, 90, 0, 'touch');
+  f.drag(scene, 100, 0, 'touch');
+  assert.deepEqual(f.calls.navigation, ['open branch a', '/series/b', '/scene/b', 'back to branch a']);
+  f.calls.navigation.length = 0;
+  f.event('wheel', cover, {deltaX:120});
+  f.tick(16); f.event('wheel', scene, {deltaX:190});
+  f.tick(16); f.event('wheel', scene, {deltaX:40});
+  assert.deepEqual(f.calls.navigation, ['open branch a']);
+  f.tick(16); f.event('wheel', scene, {deltaX:-80});
+  assert.deepEqual(f.calls.navigation, ['open branch a','back to branch a']);
 });

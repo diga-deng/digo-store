@@ -302,3 +302,38 @@ html:has(.fitting-room) { overscroll-behavior-x: none; }
   .fitting-peek[data-row="1"] .fitting-peek-edge { height: 90px; }
   .fitting-peek::after { flex-basis: 6px; height: 6px; }
 }
+
+/* Each Discover depth owns one full-bleed photograph and one vertical pager. */
+.journey-feed .discover-poster::after {
+  inset: 0;
+  background: linear-gradient(0deg, #081018b0 0%, #0a131953 24%, transparent 53%);
+  pointer-events: none;
+}
+.discover-poster .life-scene-photo { inset: 0; width: 100%; object-fit: cover; }
+.discover-poster .life-scene-copy h1 {
+  color: white; font: normal clamp(34px, 4.1vw, 66px)/1.02 Georgia, serif;
+  letter-spacing: -.035em; margin: 0 0 14px; text-shadow: 0 1px 12px #0005;
+}
+.journey-feed .discover-poster .life-scene-copy {
+  left: clamp(20px, 4vw, 64px); right: 76px;
+  bottom: calc(var(--journey-nav) + env(safe-area-inset-bottom, 0px) + 22px);
+}
+.discover-poster .life-scene-copy .life-actions { margin-top: 0; }
+.discover-poster .poster-parent {
+  position: absolute; z-index: 2; left: clamp(16px, 3vw, 48px); top: calc(var(--journey-header) + 15px);
+}
+.discover-poster .poster-pager {
+  position: absolute; right: clamp(15px, 3vw, 48px);
+  bottom: calc(var(--journey-nav) + env(safe-area-inset-bottom, 0px) + 20px);
+  display: grid; justify-items: center; gap: 6px; color: white;
+}
+.poster-pager output { font-size: 12px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px #000; }
+.discover-poster .poster-pager .scene-step {
+  width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 19px;
+}
+.discover-poster .editorial-credit { display: inline-block; margin-top: 8px; color: #fff; text-shadow: 0 1px 3px #000; }
+@media (max-width: 640px) {
+  .discover-poster .life-scene-copy h1 { font-size: clamp(30px, 8vw, 42px); }
+  .discover-poster .poster-parent { max-width: 74%; top: calc(var(--journey-header) + 10px); }
+  .discover-poster .editorial-credit { font-size: 9px; }
+}

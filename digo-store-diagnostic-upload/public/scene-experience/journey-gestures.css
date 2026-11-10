@@ -57,3 +57,17 @@ body.journey-feed { height:100dvh; overflow:hidden; overscroll-behavior:none; }
 .moment-feed .life-scene, .journey-feed .life-nav, .journey-feed .life-nav a { touch-action: pinch-zoom; }
 html:has(.moment-feed, .scene-series) { overscroll-behavior-x: none; }
 .moment-feed.journey-enter-right { animation: none; }
+
+.discover-pager, .discover-viewport { height: 100%; }
+.discover-pager.native-wheel {
+  overflow: hidden scroll;
+  overscroll-behavior: none;
+  overflow-anchor: none;
+  scrollbar-width: none;
+}
+.discover-pager.native-wheel::-webkit-scrollbar { display: none; }
+.discover-pager.native-wheel::after { content: ""; display: block; height: 4000%; }
+.discover-pager.native-wheel > .discover-viewport { position: sticky; top: 0; }
+body.journey-feed .discover-pager.native-wheel :is(.life-header, .life-nav) { position: absolute; }
+.discover-pager.native-wheel .life-main.moment-feed,
+.discover-pager.native-wheel .moment-feed .life-scene { overflow: clip; overscroll-behavior: auto; }

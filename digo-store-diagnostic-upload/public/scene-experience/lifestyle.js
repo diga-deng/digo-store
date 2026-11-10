@@ -36,7 +36,12 @@ function bottomNavigation() {
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';
 symbols.circle = '<path d="M20 12a8 8 0 1 1-8-8c3 0 5 1 6 3"/><path d="m17 2 5 2-2 5"/>';
-function wrap(body, cls='') { return `${header()}<main id="main" class="life-main ${cls}">${world.catalogChanges?.length?notice(world.catalogChanges.map(esc).join(' ')):''}${storageFailed?'<div role="alert" class="life-notice">Your changes have not been saved. <button data-life="retry-save">Retry saving</button></div>':''}${body}</main>${bottomNavigation()}`; }
+function wrap(body, cls='') {
+  const frame = `${header()}<main id="main" class="life-main ${cls}">${world.catalogChanges?.length?notice(world.catalogChanges.map(esc).join(' ')):''}${storageFailed?'<div role="alert" class="life-notice">Your changes have not been saved. <button data-life="retry-save">Retry saving</button></div>':''}${body}</main>${bottomNavigation()}`;
+  return cls.split(' ').includes('moment-feed')
+    ? `<div class="discover-pager"><div class="discover-viewport">${frame}</div></div>`
+    : frame;
+}
 function pageHeading(kicker,title,copy='',action='') { return `<div class="life-page-head"><div><p class="eyebrow">${kicker}</p><h1>${title}</h1>${copy?`<p>${copy}</p>`:''}</div>${action}</div>`; }
 function btn(label,action,id='',extra='',cls='') { return `<button class="life-btn ${cls}" data-life="${action}" data-id="${esc(id)}" ${extra}>${label}</button>`; }
 function empty(title,copy,link='#/',label='Discover a little inspiration') { return `<div class="life-empty">${icon('save')}<h2>${title}</h2><p>${copy}</p><a class="life-btn" href="${link}">${label} ${icon('arrow')}</a></div>`; }

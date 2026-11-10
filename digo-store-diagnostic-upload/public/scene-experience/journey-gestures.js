@@ -5,11 +5,43 @@ function mountJourneyGestures() {
   document.documentElement.classList.remove('scene-scroll');
   document.body.classList.toggle('journey-feed', feed);
   main?.classList.toggle('journey-module', ['/', '/wardrobe', '/world', '/plans'].includes(route()) || feed || main.matches('.scene-series'));
-  if (feed && main) preloadNeighborPhotos(visibleSceneCard(main)?.dataset.scene);
+  if (feed && main) {
+    mountDiscoverWheel(main);
+    preloadNeighborPhotos(visibleSceneCard(main)?.dataset.scene);
+  }
   if (journeyDirection && main) {
     main.classList.add('journey-enter-' + journeyDirection);
     journeyDirection = '';
   }
+}
+
+// A trackpad can pause or change speed while the same fingers are still down.
+// Give the browser a stable scrolling element so it can signal the actual end.
+// Only the input surface scrolls; its visible scene stays pinned to the viewport.
+const discoverWheel = new WeakMap();
+function mountDiscoverWheel(feed) {
+  const pager = feed.closest('.discover-pager');
+  if (!pager || discoverWheel.has(feed) || !('onscrollend' in pager)) return;
+  pager.classList.add('native-wheel');
+  const center = () => { pager.scrollTop = (pager.scrollHeight - pager.clientHeight) / 2; };
+  center();
+  const state = {start: pager.scrollTop, armed: false, fired: false, momentum: false};
+  discoverWheel.set(feed, state);
+
+  pager.addEventListener('scroll', () => {
+    if (!state.armed || state.fired || !feed.isConnected) return;
+    const distance = pager.scrollTop - state.start;
+    if (Math.abs(distance) < 24) return;
+    state.fired = true;
+    moveJourneyScene(Math.sign(distance));
+  }, {passive: true});
+  pager.addEventListener('scrollend', event => {
+    if (event.target !== pager || !pager.isConnected) return;
+    state.armed = state.fired = state.momentum = false;
+    const remaining = pager.scrollHeight - pager.clientHeight - pager.scrollTop;
+    if (Math.min(pager.scrollTop, remaining) < pager.clientHeight) center();
+    state.start = pager.scrollTop;
+  });
 }
 
 (function () {
@@ -220,6 +252,20 @@ function mountJourneyGestures() {
     const dx = (event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX) * factor;
     const dy = (event.shiftKey && !event.deltaX ? 0 : event.deltaY) * factor;
     const axis = Math.abs(dx) > Math.abs(dy) * 1.25 ? 'x' : Math.abs(dy) > Math.abs(dx) * 1.25 ? 'y' : null;
+    const native = discoverWheel.get(surface.node);
+    if (native && (axis === 'y' || (native.fired && !native.momentum))) {
+      if (event.momentum === true) {
+        native.momentum = true;
+      } else if (axis === 'y') {
+        if (native.momentum || !native.armed) {
+          native.start = surface.node.closest('.discover-pager').scrollTop;
+          native.fired = false;
+        }
+        native.momentum = false;
+        native.armed = true;
+      }
+      return; // Let the browser scroll the pager and deliver its scrollend.
+    }
     if (surface.axis === 'x' && axis !== 'x') return;
     if (event.cancelable) event.preventDefault();
     if (!axis) return;

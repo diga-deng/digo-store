@@ -47,7 +47,7 @@ function fixture() {
       return selector === '#overlay-root' ? overlay : selector === '[data-fitting-swipe]' ? wardrobe : selector === '.life-nav' ? nav : null; },
     querySelectorAll() { return scenes; }
   };
-  vm.runInNewContext(source, {
+  const context = vm.createContext({
     document, window: { addEventListener() {} }, performance: { now: () => clock },
     journeyDirection: '', route: () => '/', moveJourneyScene: step => { calls.scenes.push(step); return true; }, requestAnimationFrame: fn => fn(), matchMedia: () => ({ matches: false }),
     visibleSceneCard: feed => feed.querySelector('.life-scene'), resumeFittingGarment: () => 0,
@@ -60,8 +60,21 @@ function fixture() {
     leaveSceneSeries: id => { calls.navigation.push('/scene/' + id); return true; },
     navigate: p => { calls.navigation.push(p); active = ['/', '/wardrobe', '/plans'].indexOf(p); nav.isConnected = false; nav = makeSurface('nav'); }
   });
+  vm.runInContext(source, context);
   return {
     calls, overlay, wardrobe, scenes, series, target, bodyZone: row => zones[row], nav: () => nav,
+    mountPager(feed) {
+      const listeners = {};
+      const pager = {
+        isConnected: true, onscrollend: null, scrollHeight: 42000, clientHeight: 1000,
+        classList: {add() {}}, addEventListener(name, fn) { listeners[name] = fn; },
+        scrollBy(dy) { this.scrollTop += dy; listeners.scroll({target: this}); },
+        end() { listeners.scrollend({target: this}); }
+      };
+      feed.closest = selector => selector === '.discover-pager' ? pager : null;
+      context.mountDiscoverWheel(feed);
+      return pager;
+    },
     tick(n) {
       clock += n;
       for (const [id,timer] of timers) {
@@ -194,6 +207,28 @@ test('a swipe from a bottom navigation link pages Discover just once', () => {
   f.drag(f.scenes[0], 0, -35, 'touch');
   assert.deepEqual(f.calls.scenes, [1,1]);
 });
+test('one native scroll stays on one frame across pauses longer than the old idle window', () => {
+  const f = fixture(), feed = f.scenes[0], pager = f.mountPager(feed);
+  const scroll = (gap, deltaY, extra = {}) => {
+    f.tick(gap);
+    const event = f.event('wheel', feed, {deltaY, ...extra});
+    assert.equal(event.prevented, undefined);
+    pager.scrollBy(deltaY);
+  };
+  scroll(0, 32);
+  for (const [gap, delta] of [[12, 1200], [600, 900], [40,-480], [350,720]]) scroll(gap, delta);
+  assert.deepEqual(f.calls.scenes, [1]);
+  pager.end();
+  scroll(1, 36);
+  assert.deepEqual(f.calls.scenes, [1,1]);
+  scroll(10, 720, {momentum: true});
+  scroll(1, -30, {momentum: false});
+  assert.deepEqual(f.calls.scenes, [1,1,-1]);
+  pager.end();
+  scroll(300, 100, {momentum: true});
+  assert.deepEqual(f.calls.scenes, [1,1,-1]);
+});
+
 test('rightward trackpad return works during the entry tail and vertical paging resumes immediately', () => {
   const f = fixture();
   f.event('wheel', f.scenes[1], {deltaX: 74});

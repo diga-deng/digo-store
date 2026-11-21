@@ -1,7 +1,7 @@
 /* The fitting room in the same glass as Discover: the last scene, blurred, sits behind everything. */
 body:has(.glass-page), body:has(.glass-page) #app { background: #101820; --stage-surround: #101820; }
 .fit-backdrop { position: fixed; inset: -40px; z-index: 0; background: #101820 center / cover no-repeat; filter: blur(30px) brightness(.5) saturate(.9); pointer-events: none; }
-.life-main.closet-page.fitting-page { position: relative; background: none; color: white; max-width: none; padding-bottom: calc(var(--journey-nav) + 96px); }
+.life-main.closet-page.fitting-page { position: relative; background: none; color: white; max-width: none; padding-bottom: calc(var(--journey-nav) + 24px); }
 .fitting-page > :not(.fit-backdrop) { position: relative; z-index: 1; }
 .fitting-page {
   --fit-edge: 1px solid rgb(255 255 255 / .5);
@@ -71,7 +71,7 @@ body:has(.glass-page) .nav-count { background: white; color: #1b2a36; }
 @keyframes fit-press { 0% { box-shadow: 0 0 0 0 #1b2a3680; } 100% { box-shadow: 0 0 0 20px #1b2a3600; } }
 
 /* Setting your shape: everything but the figure steps back. */
-body.fit-shaping .fitting-page :is(.fitting-rail, .fitting-peek, .closet-top, .fit-picks, figcaption, .fit-face) { opacity: .0; pointer-events: none; transition: opacity .2s; }
+body.fit-shaping .fitting-page :is(.fitting-rail, .fitting-peek, .closet-top, .fit-buy, figcaption, .fit-face) { opacity: .0; pointer-events: none; transition: opacity .2s; }
 body.fit-shaping .fit-backdrop { filter: blur(30px) brightness(.3) saturate(.8); }
 body.fit-shaping :is(.life-header, .life-nav) { visibility: hidden; }
 body.fit-shaping .fitting-zone { pointer-events: none; }
@@ -295,3 +295,27 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 #overlay-root .modal :is(.piece-size-set, .piece-size-edit) { margin-top: 10px; height: 44px; padding: 0 16px; border-radius: 14px; font: 600 13px/1 Arial, sans-serif; cursor: pointer; }
 #overlay-root .modal .piece-size-set { background: white; color: #1b2a36; border-color: white; }
 #overlay-root .modal .life-btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* One clear way to buy what is on the figure: tap for the whole look, hold for a single piece. */
+.fitting-page .fitting-figure { padding-top: 0; }
+.fit-buy { position: relative; z-index: 5; display: grid; justify-items: center; gap: 5px; margin-bottom: calc(var(--fit-model) * .46 + 16px); -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.fit-buy-all { height: 48px; padding: 0 26px; border: 0; border-radius: 999px; background: white; color: #1b2a36; font: 600 15px/1 Arial, sans-serif; cursor: pointer; box-shadow: 0 8px 24px #00000059; touch-action: manipulation; }
+.fit-buy.is-open .fit-buy-all { box-shadow: 0 0 0 4px #ffffff59, 0 8px 24px #00000059; }
+.fit-buy small { font: 11px/1.2 Arial, sans-serif; color: #ffffffe0; text-shadow: 0 1px 4px #000a; }
+.fit-buy-one { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; width: max-content; max-width: calc(100vw - 28px); animation: map-pop-plain .22s ease-out both; }
+.fit-buy-one[hidden] { display: none; }
+@keyframes map-pop-plain { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+.fit-buy-one button { min-width: 132px; min-height: 56px; padding: 9px 16px; display: grid; gap: 3px; text-align: left; border-radius: 18px; color: white; cursor: pointer;
+  border: 1px solid #ffffffa6; background: linear-gradient(125deg, #ffffff40, #ffffff14 52%, #ffffff29), #141c24e0; box-shadow: inset 0 1px 0 #ffffff4d, 0 10px 28px #00000066; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.fit-buy-one b { font: 600 14px/1.1 Arial, sans-serif; } .fit-buy-one span { font: 11px/1.2 Arial, sans-serif; color: #ffffffd9; }
+.fit-buy-one button:hover { background: white; color: #1b2a36; } .fit-buy-one button:hover span { color: #3a4650; }
+@media (max-width: 640px) { .fitting-page .fitting-figure { --fit-model: min(100%, clamp(130px, calc((100dvh - 500px) * .4258), 230px)); } .fit-buy-one button { min-width: 0; } }
+
+/* My pieces: a plain list. */
+.pieces-page .saved-grid { margin-top: 18px; }
+.pieces-page .saved-card { display: grid; gap: 6px; align-content: start; }
+.pieces-page .saved-card h3 { margin: 6px 0 0; font: 400 17px/1.2 Georgia, serif; }
+.pieces-page .saved-card p { margin: 0; font-size: 12px; color: #ffffffd1; min-height: 1em; }
+.pieces-page .saved-card .life-btn { justify-self: start; min-height: 40px; padding: 0 14px; border-radius: 999px; }
+.pieces-page .pieces-heading { margin: 28px 0 0; font: 400 22px/1.2 Georgia, serif; }
+.pieces-page .closet-empty { margin-top: 24px; display: grid; justify-items: center; gap: 14px; text-align: center; padding: 28px 18px; }

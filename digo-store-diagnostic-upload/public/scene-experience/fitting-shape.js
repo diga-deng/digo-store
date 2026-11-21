@@ -95,7 +95,7 @@
     const box = room(), carousel = box?.querySelector('.fitting-carousel');
     if (!box || shaping) return;
     shaping = true;
-    write(GUIDE_KEY, {used: true});
+    write(GUIDE_KEY, {...read(GUIDE_KEY, {}), used: true});
     box.querySelectorAll('.fit-hint').forEach(node => node.remove());
     stage().insertAdjacentHTML('beforeend', `<div class="fit-guides">${guides()}</div>`);
     carousel.closest('.fitting-figure').insertAdjacentHTML('beforeend', panel());
@@ -141,6 +141,41 @@
     carousel.insertAdjacentHTML('afterbegin', faceHtml());
   }
 
+  // Buying from the fitting room: one tap buys the whole look, holding the button offers one piece.
+  let buyHold = null, buyHeld = false;
+  function buyHtml() {
+    const names = fittingRows.map((row, i) => row.pieces[fittingLook[i]]);
+    return `<div class="fit-buy"><button type="button" class="fit-buy-all" data-fit="buy-look" aria-haspopup="true" aria-expanded="false" aria-describedby="fit-buy-tip">Buy this look</button>
+      <small id="fit-buy-tip">Hold to buy just one piece</small>
+      <div class="fit-buy-one" hidden><button type="button" data-fit="buy-one" data-id="0"><b>Top only</b><span data-fit-buy-name="0">${esc(names[0])}</span></button>
+        <button type="button" data-fit="buy-one" data-id="1"><b>Trousers only</b><span data-fit-buy-name="1">${esc(names[1])}</span></button></div></div>`;
+  }
+  function toggleBuyOne(open) {
+    const box = room()?.querySelector('.fit-buy'); if (!box) return;
+    const names = fittingRows.map((row, i) => row.pieces[fittingLook[i]]);
+    box.querySelectorAll('[data-fit-buy-name]').forEach(node => { node.textContent = names[node.dataset.fitBuyName]; });
+    box.querySelector('.fit-buy-one').hidden = !open;
+    box.querySelector('.fit-buy-all').setAttribute('aria-expanded', String(open));
+    box.classList.toggle('is-open', open);
+    if (open) { write(GUIDE_KEY, {...read(GUIDE_KEY, {}), buyHeld: true}); box.querySelector('small').hidden = true; navigator.vibrate?.(8); }
+  }
+  function buyLook(rows) {
+    toggleBuyOne(false);
+    const size = fitSize();
+    if (!size) { toast('Set your shape first, so we can send the size that fits.'); startShaping(); return; }
+    if (size === 'none') { toast('Your shape is outside the sizes we make, so this cannot be ordered.'); return; }
+    const picks = rows.map(row => ({name: fittingRows[row].pieces[fittingLook[row]], id: fittingProductIds[row]?.[fittingLook[row]]}));
+    const missing = picks.filter(pick => !pick.id || !productFor(pick.id));
+    if (missing.length) { toast(missing.map(pick => pick.name).join(' and ') + (missing.length > 1 ? ' are studio samples' : ' is a studio sample') + ' and not on sale yet.'); return; }
+    let added = 0;
+    for (const pick of picks) {
+      world.options[pick.id] = {kind: 'retail', plan: 'refundable', ...world.options[pick.id], size};
+      if (addReal(pick.id, true)) added++;
+    }
+    writeWorld();
+    if (added) { render(false); bagModal(); }
+  }
+
   function mount() {
     const box = room();
     if (!box) { shaping = false; document.body.classList.remove('fit-shaping'); return; }
@@ -150,6 +185,8 @@
     photo.insertAdjacentHTML('afterend', '<canvas class="fitting-warp" aria-hidden="true"></canvas>');
     photo.addEventListener('load', drawWarp);
     mountFace();
+    box.querySelector('.fitting-figure').insertAdjacentHTML('afterbegin', buyHtml());
+    if (read(GUIDE_KEY, {}).buyHeld) box.querySelector('.fit-buy small').hidden = true;
     if (!read(GUIDE_KEY, {}).used) box.querySelector('.fitting-carousel').insertAdjacentHTML('beforeend',
       '<span class="fit-hint fit-hint-ring" aria-hidden="true"></span><span class="fit-hint fit-hint-press" aria-hidden="true"></span><p class="fit-hint fit-hint-text"><b>Press and hold</b> the figure to set your shape</p>');
     drawWarp();
@@ -216,6 +253,8 @@
   document.addEventListener('pointerdown', event => {
     clearTimeout(hold?.timer); hold = null;
     if (!room() || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    clearTimeout(buyHold); buyHeld = false;
+    if (event.target.closest?.('.fit-buy-all')) { buyHold = setTimeout(() => { buyHeld = true; toggleBuyOne(true); }, 420); return; }
     const grip = event.target.closest?.('[data-fit-handle]');
     if (shaping && grip) {
       const rect = stage().getBoundingClientRect();
@@ -234,14 +273,18 @@
       if (event.cancelable) event.preventDefault();
     }
   }, {capture: true, passive: false});
-  const release = () => { clearTimeout(hold?.timer); hold = null; if (handle) { handle = null; saveShape(); } };
+  const release = () => { clearTimeout(buyHold); clearTimeout(hold?.timer); hold = null; if (handle) { handle = null; saveShape(); } };
   document.addEventListener('pointerup', release, true);
   document.addEventListener('pointercancel', release, true);
-  document.addEventListener('contextmenu', event => { if (event.target.closest?.('.fitting-stage')) event.preventDefault(); });
+  document.addEventListener('contextmenu', event => { if (event.target.closest?.('.fitting-stage, .fit-buy')) event.preventDefault(); });
   document.addEventListener('input', event => { if (event.target.matches?.('[data-fit-range]')) setValue(active, Number(event.target.value)); });
   document.addEventListener('change', event => {
     if (event.target.matches?.('[data-fit-range]')) saveShape();
     if (event.target.matches?.('[data-fit-file]')) { loadFace(event.target.files[0]); event.target.value = ''; }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.target.matches?.('.fit-buy-all') && event.key === 'ArrowDown') { event.preventDefault(); toggleBuyOne(true); room().querySelector('.fit-buy-one button').focus(); }
+    if (event.key === 'Escape' && room()?.querySelector('.fit-buy.is-open')) toggleBuyOne(false);
   });
   document.addEventListener('keydown', event => { if (shaping && event.key === 'Escape') { event.preventDefault(); stopShaping(); } }, true);
   document.addEventListener('click', event => {
@@ -253,6 +296,8 @@
       else if (action === 'reset') { for (const part of PARTS) shape[part.id] = 100; setPart(active); drawWarp(); saveShape(); }
       else if (action === 'face') el.parentElement.querySelector('[data-fit-file]').click();
       else if (action === 'face-clear') { try { localStorage.removeItem(FACE_KEY); } catch {} mountFace(); }
+      else if (action === 'buy-look') { if (buyHeld) { buyHeld = false; event.preventDefault(); } else buyLook([0, 1]); }
+      else if (action === 'buy-one') buyLook([Number(el.dataset.id)]);
       else if (action === 'size') {
         const id = el.closest('.piece-size').dataset.piece;
         world.options[id] = {kind: 'retail', plan: 'refundable', ...world.options[id], size: el.dataset.id};
@@ -266,6 +311,7 @@
       }
       return;
     }
+    if (!el && room()?.querySelector('.fit-buy.is-open') && !event.target.closest('.fit-buy')) toggleBuyOne(false);
     // Nothing reaches the bag or checkout in an unchecked or ill-fitting size.
     const order = event.target.closest?.('[data-life="add-real"], [data-life="buy-board"]');
     if (order) {

@@ -153,7 +153,9 @@
       <div><dt>Fabric weight</dt><dd>${esc(p.weight || pending)}</dd></div>
       <div><dt>Made in</dt><dd>${esc(p.origin || pending)}</dd></div></dl>
       <p>Screens differ. The colour card number is the colour a piece is produced to.</p></section>`;
-    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', facts);
+    const brand = p.brand && brandPieces(brandSlug(p.brand)).length ? `<a class="piece-brand" href="#/brand/${encodeURIComponent(brandSlug(p.brand))}">
+      <span><small>Brand</small><strong>${esc(p.brand)}</strong></span><em>See all ${brandPieces(brandSlug(p.brand)).length} pieces ${icon('right')}</em></a>` : '';
+    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', brand + facts);
   };
 
   new MutationObserver(mount).observe(document.querySelector('#app'), {childList: true});

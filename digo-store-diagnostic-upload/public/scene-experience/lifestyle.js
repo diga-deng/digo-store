@@ -35,7 +35,7 @@ function header() {
 }
 function bottomNavigation() {
   const r = route();
-  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r), likedPieceCount())}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
+  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/') || r.startsWith('/brand/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r), likedPieceCount())}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
 }
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';
@@ -236,6 +236,30 @@ function leaveDiscoverBranch(id) {
   }
   return true;
 }
+// A brand's own page: every piece of that brand, each ready to open or send to the wardrobe.
+const brandSlug = name => String(name || '').trim().toLowerCase();
+function brandPieces(slug) {
+  const seen = new Set(), rows = [];
+  for (const p of [...catalog.map(p => ({p, type: 'catalog', brand: p.brand})), ...products.map(p => ({p, type: 'concept', brand: p.brand}))]) {
+    if (!p.brand || brandSlug(p.brand) !== slug || seen.has(p.p.id)) continue;
+    seen.add(p.p.id); rows.push(p);
+  }
+  return rows;
+}
+function brandPage(slug) {
+  slug = brandSlug(slug);
+  const rows = brandPieces(slug), name = rows[0]?.brand;
+  const scene = sceneFor(world.browse?.discover) || baseScenes[0];
+  const backdrop = `<div class="fit-backdrop" aria-hidden="true" style="background-image:url('${esc(scene?.image || '')}')"></div>`;
+  if (!rows.length) return wrap(`${backdrop}<div class="brand-head"><a class="brand-back" href="#/">${icon('left')}Discover</a><h1>This brand is not here yet.</h1></div>`, 'brand-page');
+  const tiles = rows.map(({p, type}) => {
+    const liked = world.saved.some(x => x.key === 'product:' + p.id && x.savedManually !== false);
+    return `<article class="brand-piece rail-piece"><button class="brand-piece-open" data-life="product" data-id="${esc(p.id)}" data-type="${type}" aria-label="View ${esc(p.name)}">${type === 'catalog' ? productArt(p) : productPhoto(p)}</button>
+      <div class="brand-piece-meta"><div><h2>${esc(p.name)}</h2><p>${esc(type === 'catalog' ? storeMoney(p.price_cents, p.currency) : (p.color || pieceLabel(p)))}</p></div>
+      <button class="brand-piece-like" data-life="like-piece" data-id="${esc(p.id)}" data-type="${type}" aria-pressed="${liked}" aria-label="${liked ? 'Remove ' + esc(p.name) + ' from your wardrobe' : 'Add ' + esc(p.name) + ' to your wardrobe'}">${icon(liked ? 'check' : 'plus')}</button></div></article>`;
+  }).join('');
+  return wrap(`${backdrop}<div class="brand-head"><a class="brand-back" href="#/" data-life="brand-back">${icon('left')}Back</a><p>Brand</p><h1>${esc(name)}</h1><span>${rows.length} ${rows.length === 1 ? 'piece' : 'pieces'}</span></div><div class="brand-grid">${tiles}</div>`, 'brand-page');
+}
 function catalogCard(p, extra='', sceneId=null) {return `<article class="life-product-card"><button class="life-art" data-life="product" data-type="catalog" data-id="${esc(p.id)}" ${sceneId?`data-scene="${esc(sceneId)}"`:""} aria-label="View ${esc(p.name)}">${productArt(p)}</button><p class="eyebrow">${esc(brandFor(p))}</p><h3>${esc(p.name)}</h3><p>${storeMoney(p.price_cents,p.currency)} <small>· ${esc(p.style_code||'')}</small></p>${extra||btn('Save to wardrobe','save-product',p.id,'data-type="catalog"','subtle')}</article>`;}
 function scenePage(id) {
   const s=sceneFor(id); if(!s)return wrap(empty('This moment is not here.','The original link may have changed.'));
@@ -342,7 +366,7 @@ function render(scroll=true) {
   }
   const parts=route().split('/').filter(Boolean);let content;
   if(parts[0]==='scene')content=scenePage(parts[1]);else if(parts[0]==='series')content=sceneSeriesPage(parts[1]);else if(parts[0]==='edit')content=editPage(parts[1]);else if(['world','wardrobe','recent','interests'].includes(parts[0])){if(parts[0]==='recent')wardrobeFilter='Recently viewed';if(parts[0]==='interests')wardrobeFilter='Moments';content=wardrobePage();}
-  else if(parts[0]==='plans')content=plansPage();else if(parts[0]==='plan')content=planPage(parts[1]);else if(parts[0]==='account')content=accountPage();else if(parts[0]==='choose'){content=wrap('<div class="life-empty" role="status">Loading your friend’s question…</div>');loadChoice(parts[1]);}
+  else if(parts[0]==='brand')content=brandPage(decodeURIComponent(parts[1]||''));else if(parts[0]==='plans')content=plansPage();else if(parts[0]==='plan')content=planPage(parts[1]);else if(parts[0]==='account')content=accountPage();else if(parts[0]==='choose'){content=wrap('<div class="life-empty" role="status">Loading your friend’s question…</div>');loadChoice(parts[1]);}
   else if(parts[0]==='product'){content=discoverPage();if(catalogStatus!=='loading')queueMicrotask(()=>showProduct(parts[1],getProduct(parts[1])?'concept':'catalog',new URLSearchParams(location.search).get('scene')));}
   else if(parts[0]==='references'){content=wrap(`<div class="life-product-grid reference-collection">${referenceProducts.map(referenceCard).join('')}</div>`);} else if(parts[0]==='search'){content=discoverPage();queueMicrotask(()=>searchModal());}else if(parts[0]==='shop'){location.assign('/shop');return;}else content=discoverPage();
   $('#app').innerHTML=content;document.body.classList.remove('feed-mode');document.title='DIGO — A life that feels like you';if(typeof mountJourneyGestures==='function')mountJourneyGestures();if(typeof mountSceneHotspots==='function')mountSceneHotspots();if(scroll)window.scrollTo(0,0);
@@ -486,6 +510,7 @@ document.addEventListener('click',async e=>{
   else if(a==='refine-style')overlay(`<h2>Find your own balance.</h2><div class="life-actions">${['Sweet but structured','Light utility','Relaxed tailoring','Natural texture'].map(s=>btn(s,'style-search',s,'','subtle')).join('')}</div>`,'Refine your style');
   else if(a==='save-scene'){saveRecord({kind:'scene',id,title:sceneFor(id).title});el.setAttribute('aria-pressed','true');}
   else if(a==='like-piece')likePiece(el,id,type);
+  else if(a==='brand-back'){if(history.length>1)history.back();else navigate('/');}
   else if(a==='save-product'){const p=type==='concept'?getProduct(id):productFor(id);if(p && saveRecord({kind:'product',id,type,title:p.name,snapshot:type==='catalog'?p:undefined}) && route().startsWith('/wardrobe')){render(false);}}
   else if(a==='scene-pieces'){const s=sceneFor(id);if(s.reference){overlay(`<p class="eyebrow">${esc(s.brand)} <span class="reference-mini-label">Demo</span></p><div class="life-product-grid">${s.items.map(pid=>referenceCard(getProduct(pid))).join('')}</div>${btn('Prepare for a day','new-plan',id,'','subtle')}`,'Explore scene pieces');return;}overlay(`<h2>${esc(moments[id]?.[0]||s.title)}</h2><p>Concept pieces in the original image</p><div class="life-product-grid">${s.items.map(pid=>`<article><button class="life-art" data-life="product" data-id="${pid}" data-type="concept" data-scene="${id}">${productPhoto(getProduct(pid))}</button><h3>${esc(getProduct(pid).name)}</h3><small>Illustration · Not orderable</small></article>`).join('')}</div>${btn('Prepare for a day','new-plan',id,'','subtle')}<h3>Related catalog accessories</h3><p>Different pieces with their own identities. These are not the same products shown in the scene.</p><div class="life-product-grid">${catalog.slice(0,4).map(p=>catalogCard(p,'',id)).join('')}</div>`,'Explore scene pieces');}
   else if(a==='related'){overlay(`<h2>Something with a similar feeling.</h2><p>Related catalog accessories. These are not the illustrated piece.</p><div class="life-product-grid">${catalog.slice(0,8).map(p=>catalogCard(p,'',currentProduct?.sceneId||contextScene())).join('')}</div>`,'Related pieces');}

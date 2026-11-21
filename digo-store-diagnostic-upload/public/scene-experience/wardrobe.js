@@ -103,7 +103,7 @@ function fittingRoom() {
         ${fittingRows.map((_, row) => fittingPeek(row, -1) + fittingPeek(row, 1)).join('')}
       </div>
       <figcaption><p class="fitting-caption" aria-live="polite">${fittingLookName()}</p>
-      <p id="fitting-hint"><span class="fit-touch-hint">Swipe the top or trousers left or right.</span><span class="fit-desktop-hint">Drag a garment sideways, or swipe with two fingers on your trackpad.</span></p></figcaption>
+      <p id="fitting-hint"><span class="fit-touch-hint">Swipe the top or trousers to change it. Press and hold to set your shape.</span><span class="fit-desktop-hint">Drag a garment sideways to change it. Press and hold to set your shape.</span></p></figcaption>
     </figure>
     ${fittingOptions(fittingRows[1], 1)}
   </div>`;
@@ -188,6 +188,17 @@ function moveFittingPiece(step, row, animate = false) {
   const count = fittingRows[row].pieces.length;
   chooseFittingPiece(row, ((fittingLook[row] + step) % count + count) % count, animate);
 }
+// The pieces liked on Discover wait here with their prices, one tap from their details.
+function fittingPicks() {
+  const picks = world.saved.filter(x => x.kind === 'product' && x.savedManually !== false);
+  const priced = picks.map(x => closetProduct(x)).filter(p => p?.price_cents);
+  const total = priced.reduce((sum, p) => sum + p.price_cents, 0);
+  const thumbs = picks.slice(0, 5).map(x => `<button type="button" data-life="product" data-id="${esc(x.id)}" data-type="${esc(x.type)}" aria-label="View ${esc(closetProduct(x)?.name || 'piece')}">${closetArt(x)}</button>`).join('');
+  return `<aside class="fit-picks" aria-label="Your picks"><div class="fit-picks-copy"><small>Your picks · ${picks.length}</small>
+      <strong>${picks.length ? (total ? storeMoney(total) : 'Prices to be confirmed') : 'Tap + on a scene to add pieces'}</strong></div>
+    <div class="fit-picks-row">${thumbs}${picks.length > 5 ? `<span>+${picks.length - 5}</span>` : ''}</div>
+    <a class="fit-picks-go" href="${picks.length ? '#/wardrobe/pieces' : '#/'}">${picks.length ? 'Review & buy' : 'Browse scenes'}</a></aside>`;
+}
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;
 }
@@ -203,7 +214,9 @@ function closetPage() {
   const heading = `<div class="closet-top"><h1>Wardrobe</h1>${tabs}</div>`;
   if (fitting) {
     requestAnimationFrame(warmFittingPhotos);
-    return wrap(heading + fittingRoom(), 'closet-page');
+    const scene = sceneFor(world.browse?.discover) || baseScenes[0];
+    const backdrop = `<div class="fit-backdrop" aria-hidden="true" style="background-image:url('${esc(scene?.image || '')}')"></div>`;
+    return wrap(backdrop + heading + fittingRoom() + fittingPicks(), 'closet-page fitting-page');
   }
   const rows = closetRecords();
   let content;

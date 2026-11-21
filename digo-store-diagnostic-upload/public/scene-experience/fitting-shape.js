@@ -158,8 +158,13 @@
     const brand = family.length ? `<section class="piece-brand" aria-label="More from ${esc(p.brand)}">
       <a class="piece-brand-link" href="#/brand/${encodeURIComponent(brandSlug(p.brand))}"><span><small>Like this brand?</small><strong>${esc(p.brand)}</strong></span><em>See all ${family.length} pieces ${icon('right')}</em></a>
       ${others.length ? `<div class="piece-brand-row">${others.slice(0, 8).map(row => `<button type="button" data-life="product" data-id="${esc(row.p.id)}" data-type="${row.type}" ${sceneId ? `data-scene="${esc(sceneId)}"` : ''} aria-label="View ${esc(row.p.name)}">${row.type === 'catalog' ? productArt(row.p) : productPhoto(row.p)}<span>${esc(row.p.name)}</span></button>`).join('')}</div>` : ''}</section>` : '';
-    const under = sheet.querySelector('.piece-light') || sheet.querySelector('.reference-gallery') || art;
-    if (under) under.insertAdjacentHTML('afterend', brand); else sheet.querySelector('h2')?.insertAdjacentHTML('beforebegin', brand);
+    // Keep the pictures, their light switch and the brand together as one column of the sheet.
+    if (art) {
+      const media = document.createElement('div'); media.className = 'piece-media';
+      const light = sheet.querySelector('.piece-light');
+      art.replaceWith(media); media.append(art); if (light) media.append(light);
+      media.insertAdjacentHTML('beforeend', brand);
+    } else sheet.querySelector('h2')?.insertAdjacentHTML('beforebegin', brand);
     (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', facts);
   };
 

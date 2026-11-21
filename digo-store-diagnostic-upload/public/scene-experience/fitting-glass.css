@@ -177,3 +177,42 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 .brand-piece-like[aria-pressed=true] { background: white; color: #1b2a36; border-color: white; }
 .brand-page :is(a, button):focus-visible { outline: 2px solid white; outline-offset: 2px; }
 @media (max-width: 640px) { .life-main.brand-page { padding-inline: 14px; } .brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+
+/* The piece sheet in the same glass: frosted and dark over the scene, pictures on a clean light panel. */
+#overlay-root .overlay:has(.modal.product-sheet) { background: #0a111873; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+#overlay-root .modal.product-sheet {
+  color: white; border: 1px solid #ffffff80; border-radius: 28px;
+  background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #141c24cc;
+  box-shadow: inset 0 1px 0 #ffffff4d, 0 24px 60px #00000080;
+  backdrop-filter: blur(26px) saturate(1.2); -webkit-backdrop-filter: blur(26px) saturate(1.2);
+}
+.modal.product-sheet :is(h2, h3, p, dd, summary, label, strong, li) { color: white; }
+.modal.product-sheet :is(.eyebrow, dt, small, .life-small, .reference-disclosure, .detail-totals small, .piece-facts p, .piece-facts h3, .piece-facts dt) { color: #ffffffd1; }
+.modal.product-sheet h2 { text-shadow: 0 1px 6px #0006; }
+.modal.product-sheet .product-detail-art { background: #f6f6f4; border-radius: 20px; overflow: hidden; border: 1px solid #ffffffb3; box-shadow: 0 10px 30px #00000059; }
+.modal.product-sheet .product-detail-art :is(img, .product-photo) { background-color: #f6f6f4; }
+.modal.product-sheet :is(dl > div, .product-more, .detail-totals) { border-color: #ffffff3d; }
+.modal.product-sheet .reference-mini-label, .modal.product-sheet .demo-label { color: white; border-color: #ffffff99; background: #ffffff1f; }
+.modal.product-sheet :is(.life-btn, .text-btn, select, .reference-thumbnails button) {
+  color: white; border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d; box-shadow: inset 0 1px 0 #ffffff4d; text-shadow: none;
+}
+.modal.product-sheet .text-btn { padding: 10px 14px; border-radius: 999px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.modal.product-sheet .life-btn { border-radius: 16px; }
+.modal.product-sheet .life-btn:not(.subtle, .quiet), .modal.product-sheet .life-btn.reference-source { background: white; color: #1b2a36; border-color: white; }
+.modal.product-sheet .life-btn[disabled] { opacity: .5; }
+.modal.product-sheet select option { color: #1b2a36; }
+.modal.product-sheet .life-notice { color: white; background: #ffffff1f; border: 1px solid #ffffff4d; }
+.modal.product-sheet :is(.close, [data-action="close"], .modal-close) { color: white; }
+.modal.product-sheet :is(a, button, select, summary):focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.modal.product-sheet .piece-light { background: #ffffff1f; border-color: #ffffff80; box-shadow: inset 0 1px 0 #ffffff4d; }
+.modal.product-sheet .piece-light button { color: white; }
+.modal.product-sheet .piece-light button[aria-pressed=true] { background: white; color: #1b2a36; }
+.modal.product-sheet :is(.piece-brand, .piece-facts) {
+  border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202547; box-shadow: inset 0 1px 0 #ffffff40;
+}
+.modal.product-sheet .piece-facts dl div { border-top-color: #ffffff33; }
+.modal.product-sheet .piece-facts dd { color: white; }
+.modal.product-sheet .piece-brand-row :is(img, .product-photo) { border: 1px solid #ffffff99; }
+
+.piece-media { min-width: 0; display: grid; align-content: start; }
+.piece-media .piece-brand { margin-bottom: 0; }

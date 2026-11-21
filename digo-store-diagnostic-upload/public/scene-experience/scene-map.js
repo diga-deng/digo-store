@@ -1,7 +1,7 @@
 /* Scene map: press and hold a Discover scene and the page shrinks into a map of every
    category. Keep holding and slide onto a branch to open it, then let go on a scene. */
 (function () {
-  const HOLD_MS = 380, DWELL_MS = 240, HINT_KEY = 'digo-scene-map-guide-v2';
+  const HOLD_MS = 380, DWELL_MS = 240, HINT_KEY = 'digo-scene-map-guide-v3';
   const root = () => document.querySelector('#overlay-root');
   let hold = null, map = null, hintTimer = 0;
 
@@ -43,7 +43,11 @@
     const width = innerWidth, height = innerHeight, {centre, nodes} = levelNodes(), points = ring(nodes.length, width, height);
     const prompt = map.branch ? (map.holding ? 'Let go on a scene' : 'Choose a scene') : (map.holding ? 'Keep holding · slide to a category' : 'Choose a category');
     map.points = [{node: centre, x: width / 2, y: height / 2, centre: true}, ...nodes.map((node, i) => ({node, x: points[i][0], y: points[i][1]}))];
-    map.el.innerHTML = `<svg class="map-lines" aria-hidden="true">${points.map(([x, y]) => `<line x1="${width / 2}" y1="${height / 2}" x2="${x}" y2="${y}"/>`).join('')}</svg>
+    const arrows = map.holding ? points.map(([x, y]) => {
+      const angle = Math.atan2(y - height / 2, x - width / 2) * 180 / Math.PI;
+      return `<g transform="translate(${width / 2 + (x - width / 2) * .42} ${height / 2 + (y - height / 2) * .42}) rotate(${angle.toFixed(1)})"><g class="map-arrow"><path d="M-16 0H9M2 -6 9 0 2 6"/></g></g>`;
+    }).join('') : '';
+    map.el.innerHTML = `<svg class="map-lines" aria-hidden="true">${points.map(([x, y]) => `<line x1="${width / 2}" y1="${height / 2}" x2="${x}" y2="${y}"/>`).join('')}${arrows}</svg>
       <div class="map-level ${entering || ''}">${nodeHtml(centre, width / 2, height / 2, true)}${nodes.map((node, i) => nodeHtml(node, points[i][0], points[i][1])).join('')}</div>
       <p class="map-prompt" aria-live="polite">${prompt}</p><button class="map-close" data-map="close" aria-label="Close the scene map">${icon('close')}</button>`;
     const size = map.el.querySelector('.map-centre .map-art')?.getBoundingClientRect();
@@ -179,7 +183,7 @@
     if (hintState().used || !document.querySelector('.discover-poster:not(.piece-poster)')) return;
     const reminder = document.createElement('p');
     reminder.className = 'map-reminder'; reminder.setAttribute('role', 'note');
-    reminder.innerHTML = '<i aria-hidden="true"></i>Press and hold to browse by category';
+    reminder.innerHTML = '<i aria-hidden="true"></i><span>Press and hold</span>';
     document.body.append(reminder);
   }
   function showHint() {
@@ -190,12 +194,11 @@
     if (state.coached) return showReminder();
     const coach = document.createElement('div');
     coach.className = 'map-coach'; coach.setAttribute('role', 'note');
-    coach.innerHTML = `<div class="coach-stage" aria-hidden="true"><span class="coach-page"></span>
-        ${['a', 'b', 'c', 'd', 'e'].map(k => `<span class="coach-branch ${k}"></span>`).join('')}
-        <span class="coach-ring"></span><span class="coach-finger"></span></div>
+    coach.innerHTML = `<div class="coach-stage" aria-hidden="true">
+        ${[-90, -18, 54, 126, 198].map(angle => `<span class="coach-arrow" style="--angle:${angle}deg"><i></i><i></i><i></i></span>`).join('')}
+        <span class="coach-ring"></span><span class="coach-press"></span></div>
       <h2>Looking for a certain scene?</h2>
-      <ol><li><b>1</b>Press and hold the picture</li><li><b>2</b>Slide to a category</li><li><b>3</b>Let go on a scene</li></ol>
-      <span class="coach-go">Try it now — press and hold</span>`;
+      <ol><li><b>1</b>Press and hold on the circle</li><li><b>2</b>Slide along an arrow to a category</li><li><b>3</b>Let go on a scene</li></ol>`;
     document.body.append(coach);
     setHint({coached: true});
   }

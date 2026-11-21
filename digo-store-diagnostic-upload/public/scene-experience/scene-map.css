@@ -67,37 +67,44 @@ body.scene-map-open :is(.life-header, .life-nav) { visibility: hidden; }
   box-shadow: inset 0 1px 0 #ffffff45; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 .map-coach li b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: white; color: #1b2a36; font-size: 11px; }
-.coach-go { margin-top: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #ffffffd9; animation: coach-blink 1.6s ease-in-out infinite; }
-@keyframes coach-blink { 50% { opacity: .45; } }
-.coach-stage { position: relative; width: 250px; height: 210px; }
-.coach-stage > span { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
-.coach-page {
-  width: 58px; height: 76px; border-radius: 12px; border: 1.5px solid #fffc;
-  background: linear-gradient(160deg, #ffffff52, #ffffff14); box-shadow: 0 8px 26px #0007;
-  animation: coach-page 5s cubic-bezier(.3,0,.15,1) infinite;
+.coach-stage { position: relative; width: 280px; height: 250px; }
+.coach-stage > span { position: absolute; left: 50%; top: 50%; }
+/* A round ghost shows where to press and how long: the ring closes in while the press is held. */
+.coach-press {
+  width: 78px; height: 78px; margin: -39px 0 0 -39px; border-radius: 50%; border: 2px solid white;
+  background: radial-gradient(circle, #ffffffb8, #ffffff4d 70%); box-shadow: 0 0 0 10px #ffffff24, 0 6px 26px #0008;
+  animation: coach-press 4.4s ease-in-out infinite;
 }
-.coach-branch { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #ffffffb3; background: #ffffff29; animation: coach-branch 5s ease-in-out infinite; }
-.coach-branch.a { margin: -86px 0 0 0; } .coach-branch.b { margin: -30px 0 0 100px; animation-name: coach-picked; }
-.coach-branch.c { margin: 70px 0 0 62px; } .coach-branch.d { margin: 70px 0 0 -62px; } .coach-branch.e { margin: -30px 0 0 -100px; }
-.coach-ring { width: 62px; height: 62px; border-radius: 50%; border: 2px solid white; animation: coach-ring 5s ease-in-out infinite; }
-.coach-finger { width: 26px; height: 26px; border-radius: 50%; background: white; box-shadow: 0 0 0 6px #ffffff40, 0 3px 12px #0008; animation: coach-finger 5s ease-in-out infinite; }
-@keyframes coach-page { 0%,26% { scale: 3.1 2.6; opacity: .55; border-radius: 4px; } 40%,90% { scale: 1; opacity: 1; border-radius: 12px; } 100% { scale: 1; opacity: 0; } }
-@keyframes coach-ring { 0%,4% { scale: 1.6; opacity: 0; } 12% { scale: 1; opacity: 1; } 28% { scale: .6; opacity: 1; } 34%,100% { scale: .6; opacity: 0; } }
-@keyframes coach-finger { 0%,4% { scale: 1.4; opacity: 0; margin: 0; } 12%,48% { scale: 1; opacity: 1; margin: 0; } 66%,86% { scale: 1; opacity: 1; margin: -30px 0 0 100px; } 96%,100% { scale: 1.3; opacity: 0; margin: -30px 0 0 100px; } }
-@keyframes coach-branch { 0%,34% { opacity: 0; scale: .4; } 46%,90% { opacity: 1; scale: 1; } 100% { opacity: 0; } }
-@keyframes coach-picked { 0%,34% { opacity: 0; scale: .4; } 46%,62% { opacity: 1; scale: 1; background: #ffffff29; } 70%,90% { opacity: 1; scale: 1.25; background: white; } 100% { opacity: 0; } }
+.coach-ring { width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 2px solid white; animation: coach-ring 4.4s ease-in-out infinite; }
+/* Ghost arrows then fan out from the circle, one chevron after another, showing where to slide. */
+.coach-arrow { width: 0; height: 0; transform: rotate(var(--angle)) translateX(58px); }
+.coach-arrow i {
+  position: absolute; top: -8px; left: calc(var(--n) * 17px); width: 14px; height: 14px; transform: scaleY(.6) rotate(45deg);
+  border-top: 2.5px solid white; border-right: 2.5px solid white; filter: drop-shadow(0 1px 3px #000a);
+  animation: coach-arrow 4.4s ease-out infinite; animation-delay: calc(var(--n) * .16s);
+}
+.coach-arrow i:nth-child(1) { --n: 0; } .coach-arrow i:nth-child(2) { --n: 1; } .coach-arrow i:nth-child(3) { --n: 2; }
+@keyframes coach-press { 0%,6% { scale: 1.12; opacity: .55; } 16%,40% { scale: .88; opacity: 1; } 52%,100% { scale: 1; opacity: .7; } }
+@keyframes coach-ring { 0%,6% { scale: 1; opacity: 0; } 14% { scale: 1; opacity: .9; } 40% { scale: .56; opacity: .9; } 46%,100% { scale: .56; opacity: 0; } }
+@keyframes coach-arrow { 0%,40% { opacity: 0; translate: -10px 0; } 52% { opacity: 1; translate: 0 0; } 78% { opacity: 1; translate: 6px 0; } 94%,100% { opacity: 0; translate: 14px 0; } }
 
-/* Until the map has been used once, a small pulsing reminder stays on the scene. */
+/* In the real map, while the finger is still down, arrows run out along every branch. */
+.map-arrow { animation: map-arrow 1.3s ease-in-out infinite; }
+.map-arrow path { fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 3px #000a); }
+@keyframes map-arrow { 0% { opacity: 0; transform: translateX(-12px); } 35%,65% { opacity: .95; } 100% { opacity: 0; transform: translateX(14px); } }
+
+/* Until the map has been used once, a round ghost stays on the scene as the place to press. */
 .map-reminder {
-  position: fixed; left: 50%; bottom: calc(var(--journey-nav) + env(safe-area-inset-bottom, 0px) + 22px); transform: translateX(-50%);
-  z-index: 30; margin: 0; pointer-events: none; display: flex; align-items: center; gap: 9px; white-space: nowrap;
-  padding: 8px 15px 8px 10px; border-radius: 999px; color: white; font-size: 11.5px; text-shadow: 0 1px 3px #000a;
-  border: 1px solid #ffffff73; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202552;
-  box-shadow: inset 0 1px 0 #ffffff45, 0 6px 20px #0005; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  animation: map-line .4s both;
+  position: fixed; left: 50%; top: 60%; transform: translate(-50%, -50%); z-index: 30; margin: 0; pointer-events: none;
+  display: grid; justify-items: center; gap: 12px; color: white; animation: map-line .4s both;
 }
-.map-reminder i { width: 14px; height: 14px; border-radius: 50%; background: white; animation: coach-pulse 1.8s ease-out infinite; }
-@keyframes coach-pulse { 0% { box-shadow: 0 0 0 0 #ffffffb3; } 100% { box-shadow: 0 0 0 11px #fff0; } }
+.map-reminder i {
+  width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid #ffffffe6;
+  background: radial-gradient(circle, #ffffff8c, #ffffff2e 70%); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  animation: coach-pulse 2s ease-out infinite;
+}
+.map-reminder span { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 4px #000c; }
+@keyframes coach-pulse { 0% { box-shadow: 0 0 0 0 #ffffffa6, 0 4px 18px #0006; scale: 1; } 50% { scale: .92; } 100% { box-shadow: 0 0 0 20px #fff0, 0 4px 18px #0006; scale: 1; } }
 body.scene-map-open :is(.map-coach, .map-reminder) { visibility: hidden; }
 
 @media (max-width: 640px) {
@@ -115,5 +122,5 @@ body.scene-map-open :is(.map-coach, .map-reminder) { visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
   .scene-map, .scene-map *, .map-coach, .map-coach *, .map-reminder, .map-reminder * { animation: none !important; transition: none !important; }
-  .coach-ring { opacity: 0; }
+  .coach-ring { opacity: 0; } .coach-arrow i { opacity: 1; }
 }

@@ -2,7 +2,7 @@
    the pieces they wear, and the wardrobe those pieces go to. Everything else recedes. */
 
 /* One side margin for the whole poster, the same as the header's, so the logo, the piece tiles
-   and the credit share a left edge and the icons, save and pager share a right edge. */
+   and the credit share a left edge and the icons and pager share a right edge. */
 body.journey-feed { --poster-gutter: 4vw; }
 @media (max-width: 640px) { body.journey-feed { --poster-gutter: 20px; } }
 
@@ -73,15 +73,6 @@ body.journey-feed .life-header .icon-btn svg { width: 17px; height: 17px; }
 .journey-feed .discover-poster .life-rail .rail-like:active { transform: scale(.9); }
 .journey-feed .discover-poster .life-rail .rail-like[aria-pressed="true"] { background: white; color: #1b2a36; border-color: white; }
 
-/* Saving the whole scene is a single quiet glass button. */
-.journey-feed .discover-poster .scene-quick { top: calc(var(--journey-header) + 26px); right: var(--poster-gutter); }
-.journey-feed .discover-poster .scene-quick button {
-  width: 36px; min-width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center;
-}
-.journey-feed .discover-poster .scene-quick button svg { width: 16px; height: 16px; }
-.journey-feed .discover-poster .scene-quick button[aria-pressed="true"] { background: white; color: #1b2a36; }
-.journey-feed .discover-poster .scene-quick button[aria-pressed="true"] svg { fill: currentColor; }
-
 /* Paging is a swipe; the arrows stay only as a faint affordance for pointers. */
 .journey-feed .discover-poster .poster-pager { right: var(--poster-gutter); gap: 8px; opacity: .8; transition: opacity .2s; }
 .discover-poster .poster-pager:is(:hover, :focus-within) { opacity: 1; }
@@ -119,7 +110,6 @@ body:not(.journey-feed) .nav-count { background: #1b2a36; color: white; }
   .discover-poster .rail-meta { padding: 4px 4px 4px 6px; }
   .journey-feed .discover-poster .life-rail .rail-meta span { font-size: 8.5px; }
   .journey-feed .discover-poster .life-rail .rail-like { width: 24px; height: 24px; }
-  .journey-feed .discover-poster .scene-quick { top: calc(var(--journey-header) + 76px); right: var(--poster-gutter); }
   .discover-poster .life-scene-copy h1 { font-size: 20px; }
   .discover-poster .scene-traits { font-size: 10px; letter-spacing: .05em; }
   .discover-poster .scene-traits span:first-child { flex-basis: 100%; }

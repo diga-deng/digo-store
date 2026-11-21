@@ -145,7 +145,6 @@ function discoverPoster(frame, index, count) {
   return `<section class="life-scene discover-poster" data-scene="${esc(id)}" data-branch="${branch.id}" tabindex="-1" aria-label="${esc(title)}" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
     <img class="life-scene-photo" src="${esc(scene.image)}" alt="${esc(scene.description || scene.subtitle)}" style="object-position:${position}" fetchpriority="high" draggable="false">
     ${sceneProductRail(scene)}
-    <div class="scene-quick"><button data-life="save-scene" data-id="${esc(scene.id)}" aria-label="Save this scene" aria-pressed="${world.saved.some(x=>x.kind==='scene' && x.id===scene.id)}">${icon('save')}</button></div>
     <div class="life-scene-copy"><h1>${esc(title)}</h1>
       <p class="scene-traits">${traits.map(t => `<span>${esc(t)}</span>`).join('')}</p>
     </div>

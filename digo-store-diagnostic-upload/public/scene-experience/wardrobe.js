@@ -191,16 +191,27 @@ function moveFittingPiece(step, row, animate = false) {
   const count = fittingRows[row].pieces.length;
   chooseFittingPiece(row, ((fittingLook[row] + step) % count + count) % count, animate);
 }
-// My pieces is one plain list: what you added with the plus, then what you have bought.
+// The cart: every piece added with the plus or from the fitting room. Tick what to buy now.
 function myPieces() {
   const liked = world.saved.filter(x => x.kind === 'product' && x.savedManually !== false);
   const bought = world.saved.filter(x => x.kind === 'product' && (x.orderIds?.length || x.testOrderIds?.length));
-  const card = (x, removable) => { const p = closetProduct(x); return p ? `<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.key)}" aria-label="View ${esc(p.name)}">${closetArt(x)}</button>
-    <h3>${esc(p.name)}</h3><p>${esc([p.brand || (x.type === 'catalog' ? brandFor(p) : ''), x.type === 'catalog' && p.price_cents ? storeMoney(p.price_cents, p.currency) : ''].filter(Boolean).join(' · '))}</p>
-    ${removable ? `<button class="life-btn quiet" data-life="unsave" data-id="${esc(x.key)}">Remove</button>` : ''}</article>` : ''; };
-  if (!liked.length && !bought.length) return `<div class="closet-empty"><p>Nothing here yet. Tap + on a piece in any scene to add it.</p><a class="life-btn" href="#/">Browse scenes</a></div>`;
-  return `${liked.length ? `<div class="saved-grid closet-grid">${liked.map(x => card(x, true)).join('')}</div>` : ''}
-    ${bought.length ? `<h2 class="pieces-heading">Purchased</h2><div class="saved-grid closet-grid">${bought.map(x => card(x, false)).join('')}</div>` : ''}`;
+  if (!liked.length && !bought.length) return `<div class="closet-empty"><p>Your cart is empty. Tap + on a piece in any scene to add it.</p><a class="life-btn" href="#/">Browse scenes</a></div>`;
+  const size = window.DigoFit?.size();
+  let total = 0, ticked = 0;
+  const lines = liked.map(x => {
+    const p = closetProduct(x), buyable = x.type === 'catalog' && !!productFor(x.id)?.active, on = buyable && x.buy !== false;
+    if (!p) return '';
+    if (on) { total += p.price_cents; ticked++; }
+    return `<article class="bag-line"><label class="bag-tick"><input type="checkbox" data-change-life="cart-select" data-id="${esc(x.key)}" ${on ? 'checked' : ''} ${buyable ? '' : 'disabled'}><span class="sr-only">Buy ${esc(p.name)}</span></label>
+      <button class="life-art cart-art" data-closet="detail" data-key="${esc(x.key)}" aria-label="View ${esc(p.name)}">${closetArt(x)}</button>
+      <div><p class="eyebrow">${esc(p.brand || (x.type === 'catalog' ? brandFor(p) : ''))}</p><h3>${esc(p.name)}</h3>
+        <p>${buyable ? (size && size !== 'none' ? 'Size ' + esc(size) : 'Size set from your shape') : 'Not on sale yet'}</p>${buyable ? `<strong>${storeMoney(p.price_cents, p.currency)}</strong>` : ''}</div>
+      <button class="life-btn quiet" data-life="unsave" data-id="${esc(x.key)}">Remove</button></article>`;
+  }).join('');
+  return `<div class="bag-page">${liked.length ? `<p class="bag-hint">Tick the pieces you want to buy now.</p>${lines}
+      <div class="bag-total"><span>${ticked} of ${liked.length} selected<small>Shipping and tax are added at checkout</small></span><strong>${storeMoney(total)}</strong></div>
+      <button class="life-btn bag-buy" data-life="cart-checkout" ${ticked ? '' : 'disabled'}>Buy selected · ${storeMoney(total)}</button>` : ''}
+    ${bought.length ? `<h2 class="pieces-heading">Purchased</h2>${bought.map(x => { const p = closetProduct(x); return p ? `<article class="bag-line"><span></span><button class="life-art cart-art" data-closet="detail" data-key="${esc(x.key)}" aria-label="View ${esc(p.name)}">${closetArt(x)}</button><div><h3>${esc(p.name)}</h3><p>${esc(closetStatus(x))}</p></div><span></span></article>` : ''; }).join('')}` : ''}</div>`;
 }
 function closetGrid(rows) {
   return `<div class="saved-grid closet-grid">${rows.map(x=>['product','own'].includes(x.kind)?`<article class="saved-card"><button class="life-art" data-closet="detail" data-key="${esc(x.closetKey)}">${closetArt(x)}</button><small class="closet-grid-status">${esc(closetStatus(x))}</small><h3>${esc(closetProduct(x).name)}</h3>${closetProduct(x).reference?`<p>${esc(closetProduct(x).brand)}</p>`:''}${x.type==='catalog'?`<p>${esc(brandFor(closetProduct(x)))} · ${storeMoney(closetProduct(x).price_cents||0)}</p>`:''}${x.kind!=='own'?savedTools(x):''}</article>`:savedCard(x)).join('')}</div>`;
@@ -210,11 +221,10 @@ function closetEmpty() {
   return `<div class="closet-empty"><div class="empty-rail" aria-hidden="true">${hanger()}${hanger()}${hanger()}</div><p>${ordered?'Purchased pieces appear here after payment is confirmed.':owned?'Your own pieces will live here.':'A little space for your next favourite.'}</p>${!ordered&&!owned?`<button class="life-btn subtle" data-closet="add">Add DIGO pieces ${icon('plus')}</button>`:`<a class="life-btn subtle" href="${owned?'#/edit/amalfi':'/shop'}">${owned?'Add an owned piece':'Explore pieces'} ${icon('arrow')}</a>`}</div>`;
 }
 function closetPage() {
-  const fitting = route() === '/wardrobe' && !location.hash.includes('tab=purchased'), bag = route() === '/wardrobe/bag', count = storeCartCount();
+  const fitting = route() === '/wardrobe' && !location.hash.includes('tab=purchased'), count = likedPieceCount();
   const tabs = `<nav class="fitting-tabs" aria-label="Wardrobe views">
     <a href="#/wardrobe" ${fitting ? 'aria-current="page"' : ''}>Fitting room</a>
-    <a href="#/wardrobe/pieces" ${!fitting && !bag ? 'aria-current="page"' : ''}>My pieces</a>
-    <a href="#/wardrobe/bag" ${bag ? 'aria-current="page"' : ''}>Bag${count ? ` <b class="tab-count">${count}</b>` : ''}</a></nav>`;
+    <a href="#/wardrobe/pieces" ${!fitting ? 'aria-current="page"' : ''}>Cart${count ? ` <b class="tab-count">${count}</b>` : ''}</a></nav>`;
   const heading = `<div class="closet-top"><h1>Wardrobe</h1>${tabs}</div>`;
   if (fitting) {
     requestAnimationFrame(warmFittingPhotos);
@@ -222,7 +232,6 @@ function closetPage() {
     const backdrop = `<div class="fit-backdrop" aria-hidden="true" style="background-image:url('${esc(scene?.image || '')}')"></div>`;
     return wrap(backdrop + heading + fittingRoom(), 'closet-page fitting-page');
   }
-  if (bag) return wrap(heading + bagContent(), 'closet-page pieces-page');
   return wrap(heading + myPieces(), 'closet-page pieces-page');
   const rows = closetRecords();
   let content;

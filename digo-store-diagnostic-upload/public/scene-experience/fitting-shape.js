@@ -168,12 +168,8 @@
     const missing = picks.filter(pick => !pick.id || !productFor(pick.id));
     if (missing.length) { toast(missing.map(pick => pick.name).join(' and ') + (missing.length > 1 ? ' are studio samples' : ' is a studio sample') + ' and not on sale yet.'); return; }
     let added = 0;
-    for (const pick of picks) {
-      world.options[pick.id] = {kind: 'retail', plan: 'refundable', ...world.options[pick.id], size};
-      if (addReal(pick.id, true)) added++;
-    }
-    writeWorld();
-    if (added) { render(false); bagModal(); }
+    for (const pick of picks) if (addReal(pick.id, true)) added++;
+    if (added) navigate('/wardrobe/pieces');
   }
 
   function mount() {
@@ -210,7 +206,7 @@
       <p class="piece-size-note ${block ? 'is-blocked' : 'is-ok'}" role="status">${esc(block ? block.text : chosen + ' fits your shape.')}</p>
       ${!size ? '<button type="button" class="piece-size-set" data-fit="set-shape">Set my shape</button>' : '<button type="button" class="piece-size-edit" data-fit="set-shape">Change my shape</button>'}`;
     const buy = document.querySelector('.modal.product-sheet [data-life="add-real"]');
-    if (buy && buyable) { buy.disabled = !!block; buy.setAttribute('aria-disabled', String(!!block)); }
+    if (buy && buyable) buy.textContent = 'Add to cart';
   }
 
   // Every piece shows its colour reference and make-up, and can be seen out of the scene's light.
@@ -312,16 +308,8 @@
       return;
     }
     if (!el && room()?.querySelector('.fit-buy.is-open') && !event.target.closest('.fit-buy')) toggleBuyOne(false);
-    // Nothing reaches the bag or checkout in an unchecked or ill-fitting size.
-    const order = event.target.closest?.('[data-life="add-real"], [data-life="buy-board"]');
-    if (order) {
-      let block = null;
-      if (order.dataset.life === 'add-real') block = orderBlock(order.dataset.id);
-      else for (const item of world.boards[order.dataset.id]?.items || []) if (item.type === 'catalog' && !item.owned && item.selected !== false && (block = orderBlock(item.id))) break;
-      if (block) { event.preventDefault(); event.stopImmediatePropagation(); toast(block.text); paintSize(); return; }
-    }
     // Tapping anywhere outside the figure and its panel goes back to trying pieces.
     if (shaping && !event.target.closest('.fitting-stage, .fit-panel')) { event.preventDefault(); event.stopPropagation(); stopShaping(); }
   }, true);
-  window.DigoFit = {size: fitSize, orderBlock, sizes: SIZES};
+  window.DigoFit = {size: fitSize, orderBlock, sizes: SIZES, setShape() { if (route() === '/wardrobe') startShaping(); else { pendingShape = true; navigate('/wardrobe'); } }};
 })();

@@ -400,40 +400,16 @@ function showProduct(id,type='catalog',sceneId=null) {
     <details class="product-more"><summary>Material, size & care</summary><p>${esc(p.description||p.story||'Details are being prepared.')}</p><p>Material video, model measurements and verified care instructions have not been supplied.</p></details><details class="product-more"><summary>Delivery & services</summary><p>Estimated arrival is not confirmed. Gift packaging, scent, tracking accessories, swatches and spare buttons are only included when confirmed for this exact item.</p></details>${!concept?`<a class="text-btn" href="/products/${encodeURIComponent(p.slug)}${sceneId?'?scene='+encodeURIComponent(sceneId):''}">Full product page ${icon('arrow')}</a>`:''}</div></div>`,'Product details');
   $('.modal')?.classList.add('product-sheet');
 }
+// Everything chosen goes to the one cart in the wardrobe. Size is checked there, when buying.
 function addReal(id,quiet=false) {
-  const sizeBlock=window.DigoFit?.orderBlock(id);if(sizeBlock){toast(sizeBlock.text);return false;}
   const p=productFor(id);if(!p||!p.active){toast('This piece is unavailable. Your selection is unchanged.');return false;}
-  const o=world.options[id]||{kind:'retail',plan:'refundable'},items=storeCartItems();
-  const kind=o.kind==='reservation'&&p.reserve_price_cents>0?'reservation':'retail';
-  const match=items.find(x=>x.product.id===id&&x.size===o.size&&x.kind===kind&&(kind==='retail'||x.reservationPlan===o.plan));
-  if(match)match.quantity=Math.min(99,match.quantity+1);else{if(items.length>=20){toast('Your bag has reached 20 selections.');return false;}items.push({product:p,quantity:1,kind,size:o.size,...(kind==='reservation'?{reservationPlan:o.plan}: {})});}
-  try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not update your bag. Please retry.');return false;}
-  if(!quiet){closeOverlay();render(false);bagModal();}return true;
+  const key='product:'+id;let record=world.saved.find(x=>x.key===key);
+  if(!record){record={kind:'product',id,type:'catalog',title:p.name,snapshot:p,key,at:Date.now(),group:'',status:'liked',savedManually:true};world.saved.unshift(record);}
+  record.savedManually=true;record.buy=true;
+  if(!writeWorld())return false;
+  if(!quiet){closeOverlay();navigate('/wardrobe/pieces');}return true;
 }
-// The bag holds pieces one by one. Ticked pieces are bought now; the rest wait for next time.
-const BAG_LATER_KEY = 'digo-cart-later-v1';
-function bagItems() {
-  let later = [];
-  try { later = JSON.parse(sessionStorage.getItem(BAG_LATER_KEY) || '[]'); } catch { later = []; }
-  if (!Array.isArray(later) || !later.length) return storeCartItems();
-  // Pieces left unticked at the last checkout come back, still unticked.
-  const items = [...storeCartItems(), ...later.filter(x => x?.product?.id).map(x => ({...x, selected: false}))];
-  try { sessionStorage.setItem('digo-cart-v3', JSON.stringify(items)); sessionStorage.removeItem(BAG_LATER_KEY); } catch { /* Keep both lists as they are. */ }
-  return storeCartItems();
-}
-function bagPrice(x) { return (x.kind === 'reservation' ? x.product.reserve_price_cents : x.product.price_cents) * x.quantity; }
-// The bag lives in the wardrobe, right after the fitting room.
-function bagContent() {
-  const items = bagItems(), chosen = items.filter(x => x.selected !== false), due = chosen.reduce((n, x) => n + bagPrice(x), 0);
-  if (!items.length) return `<div class="closet-empty"><p>Your bag is empty. Add a look from the fitting room, or a piece from any scene.</p><a class="life-btn" href="#/wardrobe">Go to the fitting room</a></div>`;
-  const lines = items.map((x, i) => `<article class="bag-line"><label class="bag-tick"><input type="checkbox" data-change-life="bag-select" data-id="${i}" ${x.selected !== false ? 'checked' : ''}><span class="sr-only">Buy ${esc(x.product.name)}</span></label>
-    <div><p class="eyebrow">${esc(brandFor(x.product))}</p><h3>${esc(x.product.name)}</h3><p>${x.size ? 'Size ' + esc(x.size) + ' · ' : ''}Qty ${x.quantity}${x.kind === 'reservation' ? ' · Deposit' : ''}</p><strong>${storeMoney(bagPrice(x))}</strong></div>
-    ${btn('Remove', 'bag-remove', String(i), '', 'quiet')}</article>`).join('');
-  return `<div class="bag-page"><p class="bag-hint">Tick the pieces you want to buy now.</p>${lines}
-    <div class="bag-total"><span>${chosen.length} of ${items.length} selected<small>Shipping and tax are added at checkout</small></span><strong>${storeMoney(due)}</strong></div>
-    <button class="life-btn bag-buy" data-life="bag-checkout" ${chosen.length ? '' : 'disabled'}>Buy selected · ${storeMoney(due)}</button></div>`;
-}
-function bagModal() { closeOverlay(); if (route() === '/wardrobe/bag') render(false); else navigate('/wardrobe/bag'); }
+function bagModal() { closeOverlay(); if (route() === '/wardrobe/pieces') render(false); else navigate('/wardrobe/pieces'); }
 function searchModal(query='') {
   overlay(`<p class="eyebrow">FIND YOUR NEXT LITTLE THING</p><h2>A piece, a place, a feeling.</h2><label class="search-box">${icon('search')}<input id="life-search" type="search" placeholder="Product, brand, moment or feeling…" value="${esc(query)}" aria-label="Search products, brands, moments and styles"></label><a class="text-btn" href="#/references">Browse demo pieces ${icon('arrow')}</a><div id="life-search-results"></div>`,'Search');searchPaint(query);
 }
@@ -548,10 +524,15 @@ document.addEventListener('click',async e=>{
   else if(a==='related'){overlay(`<h2>Something with a similar feeling.</h2><p>Related catalog accessories. These are not the illustrated piece.</p><div class="life-product-grid">${catalog.slice(0,8).map(p=>catalogCard(p,'',currentProduct?.sceneId||contextScene())).join('')}</div>`,'Related pieces');}
   else if(a==='add-to-board'){const p=type==='concept'?getProduct(id):productFor(id);const boardId=(route().startsWith('/edit/')?route().split('/')[2]:null)||currentProduct?.sceneId||'pieces-'+id;const b=getBoard(boardId);if(!b.items.some(i=>i.id===id&&i.type===type))world.boards[boardId]=J.change(b,{type:'add',item:{key:newId(),id,type,owned:false,locked:false,selected:true,snapshot:type==='catalog'?p:undefined}});writeWorld();navigate('/edit/'+boardId);}
   else if(a==='add-real')addReal(id);
-  else if(a==='bag-checkout'){
-    const items=bagItems(),chosen=items.filter(x=>x.selected!==false),later=items.filter(x=>x.selected===false);
+  else if(a==='cart-checkout'){
+    const chosen=world.saved.filter(x=>x.kind==='product'&&x.savedManually!==false&&x.type==='catalog'&&x.buy!==false).map(x=>productFor(x.id)).filter(p=>p&&p.active);
     if(!chosen.length){toast('Tick at least one piece to buy.');return;}
-    try{sessionStorage.setItem(BAG_LATER_KEY,JSON.stringify(later));sessionStorage.setItem('digo-cart-v3',JSON.stringify(chosen));}catch{toast('Could not update your bag. Please retry.');return;}
+    // Returns are DIGO's cost, so nothing is ordered before a shape is set and a size fits it.
+    const size=window.DigoFit?.size();
+    if(!size){toast('Set your shape first, so we can send the size that fits.');window.DigoFit?.setShape();return;}
+    if(size==='none'){toast('Your shape is outside the sizes we make, so these pieces cannot be ordered.');return;}
+    const items=chosen.slice(0,20).map(p=>({product:p,quantity:1,kind:'retail',size}));
+    try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not start checkout. Please retry.');return;}
     location.assign('/checkout');
   }
   else if(a==='bag-remove'){const items=storeCartItems(),item=items[Number(id)];if(item){item.quantity--;try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items.filter(x=>x.quantity>0)));bagModal();}catch{toast('Could not update your bag. Please retry.');}}}
@@ -608,7 +589,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{if(e.target.id==='life-search')searchPaint(e.target.value);});
 document.addEventListener('change',e=>{
   const el=e.target,a=el.dataset.changeLife,id=el.dataset.id;
-  if(a==='bag-select'){const items=bagItems(),item=items[Number(id)];if(item){item.selected=el.checked;try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not update your bag. Please retry.');}bagModal();}return;}
+  if(a==='cart-select'){const record=world.saved.find(x=>x.key===id);if(record){record.buy=el.checked;writeWorld();render(false);}return;}
   if(el.dataset.boardField){const key=el.dataset.boardField;world.boards[currentBoard]=J.change(getBoard(currentBoard),{type:'preferences',value:{[key]:el.value}});writeWorld();if(key==='budget')render(false);}
   if(el.dataset.planField){world.plans[id][el.dataset.planField]=el.value;writeWorld();if(['date','place','budget'].includes(el.dataset.planField))render(false);}
   if(a==='group'){const x=world.saved.find(x=>x.key===id);if(x){x.group=el.value;writeWorld();}}

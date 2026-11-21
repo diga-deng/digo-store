@@ -1,5 +1,5 @@
 /* The fitting room in the same glass as Discover: the last scene, blurred, sits behind everything. */
-body:has(:is(.fitting-page, .brand-page)), body:has(:is(.fitting-page, .brand-page)) #app { background: #101820; --stage-surround: #101820; }
+body:has(.glass-page), body:has(.glass-page) #app { background: #101820; --stage-surround: #101820; }
 .fit-backdrop { position: fixed; inset: -40px; z-index: 0; background: #101820 center / cover no-repeat; filter: blur(30px) brightness(.5) saturate(.9); pointer-events: none; }
 .life-main.closet-page.fitting-page { position: relative; background: none; color: white; max-width: none; padding-bottom: calc(var(--journey-nav) + 96px); }
 .fitting-page > :not(.fit-backdrop) { position: relative; z-index: 1; }
@@ -8,20 +8,20 @@ body:has(:is(.fitting-page, .brand-page)), body:has(:is(.fitting-page, .brand-pa
   --fit-face: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d;
   --fit-shadow: inset 0 1px 0 #ffffff4d, 0 8px 24px #00000047;
 }
-body:has(:is(.fitting-page, .brand-page)) .life-header { background: none; border-bottom: 0; position: relative; z-index: 2; }
-body:has(:is(.fitting-page, .brand-page)) .life-header .brand { color: white; text-shadow: 0 1px 4px #0009; }
-body:has(:is(.fitting-page, .brand-page)) .life-header .icon-btn { color: white; background: var(--fit-face, #ffffff24); border: 1px solid #ffffff80; border-radius: 50%; box-shadow: inset 0 1px 0 #ffffff4d; }
-body:has(:is(.fitting-page, .brand-page)) nav.life-nav.digo-stage-nav {
+body:has(.glass-page) .life-header { background: none; border-bottom: 0; position: relative; z-index: 2; }
+body:has(.glass-page) .life-header .brand { color: white; text-shadow: 0 1px 4px #0009; }
+body:has(.glass-page) .life-header .icon-btn { color: white; background: var(--fit-face, #ffffff24); border: 1px solid #ffffff80; border-radius: 50%; box-shadow: inset 0 1px 0 #ffffff4d; }
+body:has(.glass-page) nav.life-nav.digo-stage-nav {
   left: 50%; right: auto; transform: translateX(-50%); width: auto; height: auto; min-height: 0; gap: 2px; padding: 5px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); border: 1px solid #ffffff80; border-radius: 999px;
   background: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d; box-shadow: inset 0 1px 0 #ffffff4d, 0 8px 24px #00000047;
   backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
-body:has(:is(.fitting-page, .brand-page)) nav.life-nav.digo-stage-nav > a { position: relative; flex: none; width: 84px; max-width: none; padding: 7px 4px 6px; gap: 2px; border: 0; border-radius: 999px; background: none; box-shadow: none; color: #ffffffc4; font-size: 10px; }
-body:has(:is(.fitting-page, .brand-page)) nav.life-nav.digo-stage-nav > a svg { width: 19px; height: 19px; }
-body:has(:is(.fitting-page, .brand-page)) nav.life-nav.digo-stage-nav > a[aria-current=page] { background: #ffffff2e; color: white; }
-body:has(:is(.fitting-page, .brand-page)) nav.life-nav.digo-stage-nav > a[aria-current=page]::after { display: none; }
-body:has(:is(.fitting-page, .brand-page)) .nav-count { background: white; color: #1b2a36; }
+body:has(.glass-page) nav.life-nav.digo-stage-nav > a { position: relative; flex: none; width: 84px; max-width: none; padding: 7px 4px 6px; gap: 2px; border: 0; border-radius: 999px; background: none; box-shadow: none; color: #ffffffc4; font-size: 10px; }
+body:has(.glass-page) nav.life-nav.digo-stage-nav > a svg { width: 19px; height: 19px; }
+body:has(.glass-page) nav.life-nav.digo-stage-nav > a[aria-current=page] { background: #ffffff2e; color: white; }
+body:has(.glass-page) nav.life-nav.digo-stage-nav > a[aria-current=page]::after { display: none; }
+body:has(.glass-page) .nav-count { background: white; color: #1b2a36; }
 
 .fitting-page .closet-top { border-bottom: 0; padding: 4px 0 6px; }
 .fitting-page .closet-top h1 { color: white; font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -.01em; text-shadow: 0 1px 6px #0009; }
@@ -216,3 +216,67 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 
 .piece-media { min-width: 0; display: grid; align-content: start; }
 .piece-media .piece-brand { margin-bottom: 0; }
+
+/* The same glass on every other page: wardrobe pieces, plans, account, combinations. */
+.life-main.glass-page { position: relative; background: none; color: white; }
+.life-main.closet-page.glass-page { background: none; color: white; max-width: none; }
+.glass-page > :not(.fit-backdrop) { position: relative; z-index: 1; }
+.glass-page :is(h1, h2, h3, h4, p, li, dd, label, strong, summary, figcaption, legend) { color: white; }
+.glass-page :is(h1, h2) { text-shadow: 0 1px 6px #0009; }
+.glass-page :is(.eyebrow, small, dt, .life-small, .status-dot, .closet-grid-status, .editor-breadcrumb, .editor-breadcrumb a) { color: #ffffffd1; }
+.glass-page .closet-top { border-bottom: 0; }
+.glass-page .closet-top h1 { color: white; }
+.glass-page .fitting-tabs { gap: 4px; padding: 4px; border: 1px solid #ffffff80; border-radius: 999px; background: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d; box-shadow: inset 0 1px 0 #ffffff4d; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.glass-page .fitting-tabs a { min-height: 36px; padding: 0 14px; border-radius: 999px; color: #ffffffd1; font-size: 12.5px; box-shadow: none; }
+.glass-page .fitting-tabs a[aria-current=page] { background: white; color: #1b2a36; box-shadow: none; }
+.glass-page :is(.saved-card, .life-empty, .closet-empty, .life-product-card, .board-item, .life-source, .board-summary, .board-preferences, .version-section, .version-grid article, .account-grid section, .life-section, .resume-card, .share-record, .plan-card, .life-notice, .life-page-head + section) {
+  color: white; border: 1px solid #ffffff66; border-radius: 20px; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202547;
+  box-shadow: inset 0 1px 0 #ffffff40, 0 8px 24px #0000003d; backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.glass-page :is(.saved-card, .life-product-card, .board-item, .version-grid article, .account-grid section, .life-section, .life-empty, .closet-empty, .life-source, .board-summary, .board-preferences, .version-section) { padding: 12px; }
+.glass-page :is(.life-art, .board-art, .saved-cover, .mini-board > div, .inspiration-preview, .own-art, .closet-missing, .life-source img) { background-color: #f6f6f4; border-radius: 14px; overflow: hidden; color: #1b2a36; }
+.glass-page :is(.life-art, .board-art) :is(span, small, strong) { color: #3a4650; }
+.glass-page :is(.life-btn, .text-btn, select, input, textarea, .closet-status button, .closet-categories button, .closet-views button, .closet-add, .closet-collection button, .closet-collection select, .saved-tools select, .saved-tools button) {
+  color: white; border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d; box-shadow: inset 0 1px 0 #ffffff4d; text-shadow: none;
+}
+.glass-page :is(.life-btn, .closet-add) { border-radius: 16px; }
+.glass-page .life-btn:not(.subtle, .quiet, .glass), .glass-page :is(.closet-status, .closet-categories, .closet-views) button:is([aria-pressed=true], [aria-current=true]) { background: white; color: #1b2a36; border-color: white; }
+.glass-page .life-btn[disabled] { opacity: .5; }
+.glass-page :is(input, textarea)::placeholder { color: #ffffffb8; }
+.glass-page select option { color: #1b2a36; }
+.glass-page .text-btn { padding: 9px 14px; border-radius: 999px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.glass-page .life-empty svg, .glass-page .closet-empty svg { color: white; }
+.glass-page .closet-hanger :is(.hanger-wood) { fill: #ffffff59; stroke: #ffffffb3; } .glass-page .closet-hanger :is(.hanger-hook, .hanger-line) { stroke: #ffffffb3; }
+.glass-page :is(a, button, select, input, textarea, summary, [tabindex="0"]):focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.fitting-page :is(.fitting-options button) { color: #3a4047; }
+.fitting-page .fit-face :is(button) { color: #3a4650; }
+.fitting-page .fit-face-pick { background: #1b2a360d; border: 1.5px dashed #1b2a3680; box-shadow: none; }
+.fitting-page .fit-face-clear { background: white; color: #1b2a36; border: 1px solid #1b2a3640; }
+
+/* Bag, search and every other sheet share the glass. */
+#overlay-root .overlay { background: #0a111873; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+#overlay-root :is(.modal, .drawer) {
+  color: white; border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #141c24cc;
+  box-shadow: inset 0 1px 0 #ffffff4d, 0 24px 60px #00000080; backdrop-filter: blur(26px) saturate(1.2); -webkit-backdrop-filter: blur(26px) saturate(1.2);
+}
+#overlay-root :is(.modal, .drawer) :is(h2, h3, p, li, dd, label, strong, summary, span) { color: white; }
+#overlay-root :is(.modal, .drawer) :is(.eyebrow, dt, small, .life-small) { color: #ffffffd1; }
+#overlay-root :is(.modal, .drawer) :is(.life-btn, .text-btn, select, input, textarea, button:not(.modal-close, .piece-light button, .life-art, .piece-brand-row button)) {
+  color: white; border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff33, #ffffff0d 52%, #ffffff21), #1e20254d; box-shadow: inset 0 1px 0 #ffffff4d;
+}
+#overlay-root :is(.modal, .drawer) .life-btn:not(.subtle, .quiet) { background: white; color: #1b2a36; border-color: white; }
+#overlay-root :is(.modal, .drawer) :is(input, textarea)::placeholder { color: #ffffffb8; }
+#overlay-root :is(.modal, .drawer) select option { color: #1b2a36; }
+#overlay-root :is(.modal, .drawer) .modal-close { color: white; background: none; border: 0; box-shadow: none; }
+#overlay-root :is(.modal, .drawer) :is(.life-art, .product-detail-art, .unavailable-art) { background-color: #f6f6f4; border-radius: 14px; overflow: hidden; }
+#overlay-root :is(.modal, .drawer) :is(.life-art, .board-art) :is(span, small, strong) { color: #3a4650; }
+#overlay-root :is(.modal, .drawer) svg { color: inherit; }
+#overlay-root :is(.modal, .drawer) :is(a, button, select, input, textarea, summary):focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.glass-page .life-page-head p:not(.eyebrow), .glass-page :is(.life-section, .account-grid section, .life-empty, .closet-empty) p { color: #ffffffe0; opacity: 1; }
+#overlay-root :is(.modal, .drawer) :is(.life-empty, .closet-empty, .life-product-card, .saved-card, .life-notice, article) {
+  color: white; border: 1px solid #ffffff59; border-radius: 18px; background: #ffffff14; box-shadow: inset 0 1px 0 #ffffff33;
+}
+#overlay-root :is(.modal, .drawer) :is(.life-empty, .closet-empty) :is(h2, p) { color: white; opacity: 1; }
+#overlay-root :is(.modal, .drawer) :is(header, footer, .drawer-head, .drawer-foot) { background: none; border-color: #ffffff33; color: white; }
+.glass-page :is(.demo-label, .board-kind, .reference-mini-label), #overlay-root :is(.modal, .drawer) :is(.demo-label, .reference-mini-label) { color: white; background: #ffffff24; border: 1px solid #ffffff80; }
+.glass-page .board-kind { color: #1b2a36; background: #ffffffe6; border-color: transparent; }

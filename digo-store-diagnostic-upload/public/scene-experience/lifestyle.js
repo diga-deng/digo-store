@@ -41,6 +41,15 @@ symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M1
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';
 symbols.circle = '<path d="M20 12a8 8 0 1 1-8-8c3 0 5 1 6 3"/><path d="m17 2 5 2-2 5"/>';
 function wrap(body, cls='') {
+  // Every page outside the scene feed sits on glass over the last scene, blurred.
+  const classes = cls.split(' ');
+  if (!classes.includes('moment-feed') && !classes.includes('scene-series')) {
+    cls += ' glass-page';
+    if (!body.includes('class="fit-backdrop"')) {
+      const scene = sceneFor(world.browse?.discover) || baseScenes[0];
+      body = `<div class="fit-backdrop" aria-hidden="true" style="background-image:url('${esc(scene?.image || '')}')"></div>` + body;
+    }
+  }
   const frame = `${header()}<main id="main" class="life-main ${cls}">${world.catalogChanges?.length?notice(world.catalogChanges.map(esc).join(' ')):''}${storageFailed?'<div role="alert" class="life-notice">Your changes have not been saved. <button data-life="retry-save">Retry saving</button></div>':''}${body}</main>${bottomNavigation()}`;
   return cls.split(' ').includes('moment-feed')
     ? `<div class="discover-pager"><div class="discover-viewport">${frame}</div></div>`

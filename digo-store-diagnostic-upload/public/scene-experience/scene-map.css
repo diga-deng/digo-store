@@ -1,0 +1,96 @@
+/* Scene map: the current page shrinks to the centre and its categories branch out in glass. */
+.discover-poster { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.scene-map {
+  position: fixed; inset: 0; z-index: 80; color: white; touch-action: none; user-select: none; -webkit-user-select: none;
+  background: radial-gradient(ellipse at center, #0c141ba8, #080e13d9);
+  backdrop-filter: blur(22px) saturate(1.15); -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  animation: map-veil .32s ease-out both;
+}
+@keyframes map-veil { from { background-color: transparent; opacity: 0; } }
+.map-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.map-lines line { stroke: #ffffff59; stroke-width: 1; stroke-dasharray: 3 5; animation: map-line .5s .12s ease-out both; }
+@keyframes map-line { from { opacity: 0; } }
+.map-level { position: absolute; inset: 0; }
+.map-node {
+  position: absolute; transform: translate(-50%, -50%); width: 124px; padding: 0; margin: 0; border: 0; background: none; color: inherit;
+  display: grid; justify-items: center; gap: 5px; text-align: center; cursor: pointer; font: inherit;
+}
+.map-art {
+  display: grid; place-items: center; width: 82px; height: 82px; padding: 4px; border-radius: 50%; overflow: hidden;
+  border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff2e, #ffffff08 52%, #ffffff1c), #1e20253d;
+  box-shadow: inset 0 1px 0 #ffffff45, 0 8px 24px #0006;
+  transition: transform .18s ease, border-color .18s, box-shadow .18s;
+}
+.map-art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; pointer-events: none; }
+.map-art i svg { width: 26px; height: 26px; }
+.map-node strong { font: 400 14px/1.2 Georgia, serif; text-shadow: 0 1px 6px #000c; max-width: 124px; }
+.map-node small { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #ffffffb8; text-shadow: 0 1px 4px #000c; }
+.map-node.is-current .map-art { border-color: white; box-shadow: inset 0 1px 0 #ffffff45, 0 0 0 3px #ffffff38, 0 8px 24px #0006; }
+.map-node:is(.is-hover, :hover, :focus-visible) .map-art { transform: scale(1.14); border-color: white; box-shadow: inset 0 1px 0 #ffffff70, 0 0 0 5px #ffffff40, 0 10px 30px #0008; }
+.map-node:focus-visible { outline: none; }
+.map-centre { width: 150px; z-index: 1; }
+.map-centre .map-art { width: 104px; height: 132px; border-radius: 18px; }
+.map-centre .map-art img { border-radius: 14px; }
+.map-centre strong { font-size: 15px; max-width: 150px; }
+.map-level:not(.is-shrinking) .map-node { animation: map-pop .3s cubic-bezier(.2,.8,.3,1.1) both; }
+.is-shrinking .map-node:not(.map-centre) { animation: map-pop .34s .16s cubic-bezier(.2,.8,.3,1.1) both; }
+.is-shrinking .map-centre :is(strong, small) { animation: map-line .3s .25s both; }
+/* The centre starts at the size of the whole page, so the page is seen to shrink into the map. */
+.is-shrinking .map-centre .map-art { animation: map-shrink .42s cubic-bezier(.3,0,.15,1) both; }
+@keyframes map-shrink { from { transform: scale(var(--map-zoom, 7)); border-radius: 0; border-color: transparent; } }
+@keyframes map-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+.map-prompt {
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 26px); transform: translateX(-50%); margin: 0;
+  padding: 9px 16px; border-radius: 999px; white-space: nowrap; font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+  border: 1px solid #ffffff59; background: #ffffff1a; box-shadow: inset 0 1px 0 #ffffff33; pointer-events: none;
+}
+.map-close {
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 21px); right: 4vw; width: 36px; height: 36px; padding: 0;
+  display: grid; place-items: center; border-radius: 50%; color: white; cursor: pointer;
+  border: 1px solid #ffffff80; background: #ffffff1f; box-shadow: inset 0 1px 0 #ffffff45;
+}
+.map-close svg { width: 15px; height: 15px; }
+.map-close:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+body.scene-map-open :is(.life-header, .life-nav, .map-hint) { visibility: hidden; }
+
+/* The first-visit demonstration: a finger presses, holds, then slides to a category. */
+.map-hint {
+  position: fixed; left: 50%; top: 56%; transform: translate(-50%, -50%); z-index: 40; pointer-events: none;
+  display: grid; justify-items: center; gap: 12px; color: white; text-align: center; animation: map-line .5s both;
+}
+.map-hint p {
+  margin: 0; padding: 9px 16px; border-radius: 999px; font-size: 12px; white-space: nowrap; text-shadow: 0 1px 3px #000a;
+  border: 1px solid #ffffff73; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202552;
+  box-shadow: inset 0 1px 0 #ffffff45, 0 6px 20px #0005; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.map-hint-stage { position: relative; width: 200px; height: 130px; }
+.map-hint-ring, .map-hint-finger { position: absolute; left: 50%; top: 68%; border-radius: 50%; translate: -50% -50%; }
+.map-hint-ring { width: 54px; height: 54px; border: 1.5px solid #fffc; animation: hint-ring 4.2s ease-in-out infinite; }
+.map-hint-finger { width: 22px; height: 22px; background: white; box-shadow: 0 2px 10px #0007; animation: hint-finger 4.2s ease-in-out infinite; }
+.map-hint-chip {
+  position: absolute; padding: 5px 10px; border-radius: 999px; font-size: 10px; letter-spacing: .06em;
+  border: 1px solid #ffffff80; background: #ffffff24; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  animation: hint-chip 4.2s ease-in-out infinite;
+}
+.map-hint-chip.a { left: 0; top: 30%; } .map-hint-chip.b { right: 6px; top: 4%; animation-name: hint-chip-picked; } .map-hint-chip.c { left: 26%; top: -6%; }
+@keyframes hint-ring { 0%,8% { scale: 1.5; opacity: 0; } 18% { scale: 1; opacity: 1; } 42% { scale: .72; opacity: 1; } 50%,100% { scale: .72; opacity: 0; } }
+@keyframes hint-finger { 0%,8% { scale: 1.25; opacity: 0; translate: -50% -50%; } 18%,48% { scale: 1; opacity: 1; translate: -50% -50%; } 72%,86% { scale: 1; opacity: 1; translate: 46px -88px; } 96%,100% { scale: 1.2; opacity: 0; translate: 46px -88px; } }
+@keyframes hint-chip { 0%,40% { opacity: 0; scale: .7; } 52%,88% { opacity: 1; scale: 1; } 100% { opacity: 0; } }
+@keyframes hint-chip-picked { 0%,40% { opacity: 0; scale: .7; } 52%,68% { opacity: 1; scale: 1; background: #ffffff24; color: white; } 76%,88% { opacity: 1; scale: 1.12; background: white; color: #1b2a36; } 100% { opacity: 0; } }
+
+@media (max-width: 640px) {
+  .map-node { width: 96px; gap: 4px; }
+  .map-art { width: 60px; height: 60px; padding: 3px; }
+  .map-node strong { font-size: 11.5px; max-width: 96px; }
+  .map-node small { font-size: 8px; }
+  .map-centre { width: 116px; }
+  .map-centre .map-art { width: 78px; height: 100px; border-radius: 14px; }
+  .map-centre .map-art img { border-radius: 11px; }
+  .map-centre strong { font-size: 13px; max-width: 116px; }
+  .map-close { top: calc(env(safe-area-inset-top, 0px) + 13px); right: 20px; }
+  .map-hint p { font-size: 11px; white-space: normal; max-width: 250px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-map, .scene-map *, .map-hint, .map-hint * { animation: none !important; transition: none !important; }
+  .map-hint-ring { opacity: 1; scale: .8; } .map-hint-chip { opacity: 1; }
+}

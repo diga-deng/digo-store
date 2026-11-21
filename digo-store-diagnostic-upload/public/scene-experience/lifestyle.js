@@ -112,7 +112,12 @@ function visibleSceneCard(feed) { return feed?.querySelector('.life-scene'); }
 function feedFrames() {
   const id = route().startsWith('/scene/') && route().split('/')[2];
   if (id && !branchForScene(id)) return baseScenes.map(scene => ({id: scene.id, scene}));
-  return discoverFeed().map(frame => ({...frame, scene: sceneFor(frame.id)})).filter(frame => frame.scene);
+  const frames = discoverFeed().map(frame => ({...frame, scene: sceneFor(frame.id)})).filter(frame => frame.scene);
+  // Chosen from the scene map, a category keeps the feed inside it until "All scenes" is picked.
+  const scope = world.browse?.scope, shown = id || world.browse?.discover;
+  if (!scope || (shown && branchForScene(shown)?.id !== scope)) return frames;
+  const scoped = frames.filter(frame => frame.branch.id === scope);
+  return scoped.length ? scoped : frames;
 }
 
 const nearbyPhotos = new Map();
@@ -203,9 +208,10 @@ function moveJourneyScene(step, focus=false) {
   return activateFeedScene(frames[(Math.max(index, 0) + step + frames.length) % frames.length].id, focus);
 }
 function discoverPage() {
-  const frames = feedFrames();
   const branch = route().startsWith('/discover/') && discoverBranches.find(group => group.id === route().split('/')[2]);
   const wanted = branch ? branchEntry(branch) : world.browse?.discover;
+  if (branch) world.browse = {...world.browse, scope: branch.id, discover: wanted};
+  const frames = feedFrames();
   const frame = frames.find(item => item.id === wanted) || frames[0];
   currentScene = frame.id;
   return wrap(discoverPoster(frame, frames.indexOf(frame), frames.length), 'discover-page moment-feed');

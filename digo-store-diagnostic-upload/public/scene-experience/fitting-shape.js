@@ -11,9 +11,23 @@
     {id: 'legs', label: 'Legs', at: .66, spread: 0}
   ];
   const MIN = 85, MAX = 120;
+  // Size check. PLACEHOLDER numbers until each brand supplies its real chart: the mannequin at 100%
+  // stands for these body measurements (cm), and a size fits while every measurement is within its limit.
+  const BASE_CM = {shoulders: 42, chest: 92, belly: 74, hips: 98, legs: 56};
+  const SIZE_CHART = [['XS', 84, 66, 90], ['S', 88, 70, 94], ['M', 96, 78, 102], ['L', 104, 86, 110], ['XL', 112, 94, 118]];
+  const SIZES = SIZE_CHART.map(row => row[0]);
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
   const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } };
-  let shape = {...Object.fromEntries(PARTS.map(part => [part.id, 100])), ...read(SHAPE_KEY, {})};
+  const stored = read(SHAPE_KEY, {});
+  let shape = Object.fromEntries(PARTS.map(part => [part.id, Number(stored[part.id]) || 100]));
+  let confirmed = stored.confirmed === true, pendingShape = false;
+  const saveShape = () => write(SHAPE_KEY, {...shape, confirmed});
+  const cm = id => Math.round(BASE_CM[id] * shape[id] / 100);
+  // The smallest size whose chest, waist and hip limits all hold this shape; 'none' when none does.
+  function fitSize() {
+    if (!confirmed) return null;
+    return SIZE_CHART.find(([, chest, waist, hips]) => cm('chest') <= chest && cm('belly') <= waist && cm('hips') <= hips)?.[0] || 'none';
+  }
   let active = 'hips', shaping = false, hold = null, handle = null;
   const room = () => document.querySelector('.fitting-room');
   const stage = () => document.querySelector('.fitting-stage');
@@ -55,10 +69,10 @@
   function panel() {
     return `<section class="fit-panel" aria-label="Your shape">
       <div class="fit-parts" role="group" aria-label="Part of the body">${PARTS.map(part => `<button type="button" data-fit="part" data-id="${part.id}" aria-pressed="${part.id === active}">${part.label}</button>`).join('')}</div>
-      <label class="fit-slider"><span><small>Narrower</small><b data-fit-name>${PARTS.find(part => part.id === active).label}</b><small>Wider</small></span>
+      <label class="fit-slider"><span><small>Narrower</small><b data-fit-name>${PARTS.find(part => part.id === active).label} · about ${cm(active)} cm</b><small>Wider</small></span>
         <input type="range" min="${MIN}" max="${MAX}" step="1" value="${shape[active]}" data-fit-range aria-label="Width"></label>
       <div class="fit-panel-foot"><button type="button" data-fit="reset">Reset</button><button type="button" class="is-primary" data-fit="done">Done</button></div>
-      <p>Measuring by camera, photo or tape is coming next. Your shape stays on this device.</p></section>`;
+      <p>Your size is checked against this shape before you can order. It stays on this device.</p></section>`;
   }
   function setPart(id) {
     active = id;
@@ -66,13 +80,15 @@
     box.querySelectorAll('.fit-guide').forEach(guide => guide.classList.toggle('is-active', guide.dataset.part === id));
     box.querySelectorAll('[data-fit="part"]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === id)));
     const name = box.querySelector('[data-fit-name]'), range = box.querySelector('[data-fit-range]');
-    if (name) name.textContent = PARTS.find(part => part.id === id).label;
+    if (name) name.textContent = PARTS.find(part => part.id === id).label + ' · about ' + cm(id) + ' cm';
     if (range) range.value = shape[id];
   }
   function setValue(id, value) {
     shape[id] = Math.round(Math.min(MAX, Math.max(MIN, value)));
     const range = room()?.querySelector('[data-fit-range]');
     if (range && id === active) range.value = shape[id];
+    const name = room()?.querySelector('[data-fit-name]');
+    if (name && id === active) name.textContent = PARTS.find(part => part.id === id).label + ' · about ' + cm(id) + ' cm';
     drawWarp();
   }
   function startShaping() {
@@ -89,7 +105,10 @@
   function stopShaping() {
     if (!shaping) return;
     shaping = false; handle = null;
-    write(SHAPE_KEY, shape);
+    confirmed = true;
+    saveShape();
+    const size = fitSize();
+    toast(size === 'none' ? 'This shape is outside the sizes we make.' : 'Shape saved. Your size is ' + size + '.');
     document.body.classList.remove('fit-shaping');
     document.querySelectorAll('.fit-guides, .fit-panel').forEach(node => node.remove());
   }
@@ -134,7 +153,29 @@
     if (!read(GUIDE_KEY, {}).used) box.querySelector('.fitting-carousel').insertAdjacentHTML('beforeend',
       '<span class="fit-hint fit-hint-ring" aria-hidden="true"></span><span class="fit-hint fit-hint-press" aria-hidden="true"></span><p class="fit-hint fit-hint-text"><b>Press and hold</b> the figure to set your shape</p>');
     drawWarp();
+    if (pendingShape) { pendingShape = false; setTimeout(startShaping, 350); }
   }
+  // A piece can only be ordered in the size that fits the saved shape. Returns and exchanges are
+  // DIGO's cost, so an untested or ill-fitting size is stopped here instead of being shipped.
+  function orderBlock(id) {
+    const size = fitSize(), chosen = world.options[id]?.size;
+    if (!size) return {reason: 'shape', text: 'Set your shape before ordering. We check every size against it.'};
+    if (size === 'none') return {reason: 'range', text: 'Your shape is outside the sizes we make for this piece, so it cannot be ordered.'};
+    if (!chosen) return {reason: 'choose', text: 'Choose your size. ' + size + ' fits your shape.', size};
+    if (chosen !== size) return {reason: 'wrong', text: chosen + ' does not fit your shape. Choose ' + size + ' to order.', size};
+    return null;
+  }
+  function paintSize() {
+    const box = document.querySelector('.modal.product-sheet .piece-size'); if (!box) return;
+    const id = box.dataset.piece, buyable = box.dataset.buyable === 'true', size = fitSize(), chosen = world.options[id]?.size, block = orderBlock(id);
+    const pills = SIZES.map(name => `<button type="button" data-fit="size" data-id="${name}" aria-pressed="${name === chosen}" class="${name === size ? 'is-yours' : ''}">${name}${name === size ? '<small>fits you</small>' : ''}</button>`).join('');
+    box.innerHTML = `<h3>Size</h3><div class="piece-size-row" role="group" aria-label="Size">${pills}</div>
+      <p class="piece-size-note ${block ? 'is-blocked' : 'is-ok'}" role="status">${esc(block ? block.text : chosen + ' fits your shape.')}</p>
+      ${!size ? '<button type="button" class="piece-size-set" data-fit="set-shape">Set my shape</button>' : '<button type="button" class="piece-size-edit" data-fit="set-shape">Change my shape</button>'}`;
+    const buy = document.querySelector('.modal.product-sheet [data-life="add-real"]');
+    if (buy && buyable) { buy.disabled = !!block; buy.setAttribute('aria-disabled', String(!!block)); }
+  }
+
   // Every piece shows its colour reference and make-up, and can be seen out of the scene's light.
   const openPiece = showProduct;
   showProduct = function (id, type = 'catalog', sceneId = null) {
@@ -165,7 +206,8 @@
       art.replaceWith(media); media.append(art); if (light) media.append(light);
       media.insertAdjacentHTML('beforeend', brand);
     } else sheet.querySelector('h2')?.insertAdjacentHTML('beforebegin', brand);
-    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', facts);
+    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', `<section class="piece-size" data-piece="${esc(p.id)}" data-buyable="${type === 'catalog'}"></section>` + facts);
+    paintSize();
   };
 
   new MutationObserver(mount).observe(document.querySelector('#app'), {childList: true});
@@ -192,13 +234,13 @@
       if (event.cancelable) event.preventDefault();
     }
   }, {capture: true, passive: false});
-  const release = () => { clearTimeout(hold?.timer); hold = null; if (handle) { handle = null; write(SHAPE_KEY, shape); } };
+  const release = () => { clearTimeout(hold?.timer); hold = null; if (handle) { handle = null; saveShape(); } };
   document.addEventListener('pointerup', release, true);
   document.addEventListener('pointercancel', release, true);
   document.addEventListener('contextmenu', event => { if (event.target.closest?.('.fitting-stage')) event.preventDefault(); });
   document.addEventListener('input', event => { if (event.target.matches?.('[data-fit-range]')) setValue(active, Number(event.target.value)); });
   document.addEventListener('change', event => {
-    if (event.target.matches?.('[data-fit-range]')) write(SHAPE_KEY, shape);
+    if (event.target.matches?.('[data-fit-range]')) saveShape();
     if (event.target.matches?.('[data-fit-file]')) { loadFace(event.target.files[0]); event.target.value = ''; }
   });
   document.addEventListener('keydown', event => { if (shaping && event.key === 'Escape') { event.preventDefault(); stopShaping(); } }, true);
@@ -208,9 +250,15 @@
       const action = el.dataset.fit;
       if (action === 'part') setPart(el.dataset.id);
       else if (action === 'done') stopShaping();
-      else if (action === 'reset') { for (const part of PARTS) shape[part.id] = 100; setPart(active); drawWarp(); write(SHAPE_KEY, shape); }
+      else if (action === 'reset') { for (const part of PARTS) shape[part.id] = 100; setPart(active); drawWarp(); saveShape(); }
       else if (action === 'face') el.parentElement.querySelector('[data-fit-file]').click();
       else if (action === 'face-clear') { try { localStorage.removeItem(FACE_KEY); } catch {} mountFace(); }
+      else if (action === 'size') {
+        const id = el.closest('.piece-size').dataset.piece;
+        world.options[id] = {kind: 'retail', plan: 'refundable', ...world.options[id], size: el.dataset.id};
+        writeWorld(); paintSize();
+      }
+      else if (action === 'set-shape') { closeOverlay(); if (route() === '/wardrobe') startShaping(); else { pendingShape = true; navigate('/wardrobe'); } }
       else if (action === 'light') {
         const art = document.querySelector('.modal.product-sheet .product-detail-art');
         if (art) art.innerHTML = art.dataset[el.dataset.id];
@@ -218,7 +266,16 @@
       }
       return;
     }
+    // Nothing reaches the bag or checkout in an unchecked or ill-fitting size.
+    const order = event.target.closest?.('[data-life="add-real"], [data-life="buy-board"]');
+    if (order) {
+      let block = null;
+      if (order.dataset.life === 'add-real') block = orderBlock(order.dataset.id);
+      else for (const item of world.boards[order.dataset.id]?.items || []) if (item.type === 'catalog' && !item.owned && item.selected !== false && (block = orderBlock(item.id))) break;
+      if (block) { event.preventDefault(); event.stopImmediatePropagation(); toast(block.text); paintSize(); return; }
+    }
     // Tapping anywhere outside the figure and its panel goes back to trying pieces.
     if (shaping && !event.target.closest('.fitting-stage, .fit-panel')) { event.preventDefault(); event.stopPropagation(); stopShaping(); }
   }, true);
+  window.DigoFit = {size: fitSize, orderBlock, sizes: SIZES};
 })();

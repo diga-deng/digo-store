@@ -401,11 +401,12 @@ function showProduct(id,type='catalog',sceneId=null) {
   $('.modal')?.classList.add('product-sheet');
 }
 function addReal(id,quiet=false) {
+  const sizeBlock=window.DigoFit?.orderBlock(id);if(sizeBlock){toast(sizeBlock.text);return false;}
   const p=productFor(id);if(!p||!p.active){toast('This piece is unavailable. Your selection is unchanged.');return false;}
   const o=world.options[id]||{kind:'retail',plan:'refundable'},items=storeCartItems();
   const kind=o.kind==='reservation'&&p.reserve_price_cents>0?'reservation':'retail';
-  const match=items.find(x=>x.product.id===id&&x.kind===kind&&(kind==='retail'||x.reservationPlan===o.plan));
-  if(match)match.quantity=Math.min(99,match.quantity+1);else{if(items.length>=20){toast('Your bag has reached 20 selections.');return false;}items.push({product:p,quantity:1,kind,...(kind==='reservation'?{reservationPlan:o.plan}: {})});}
+  const match=items.find(x=>x.product.id===id&&x.size===o.size&&x.kind===kind&&(kind==='retail'||x.reservationPlan===o.plan));
+  if(match)match.quantity=Math.min(99,match.quantity+1);else{if(items.length>=20){toast('Your bag has reached 20 selections.');return false;}items.push({product:p,quantity:1,kind,size:o.size,...(kind==='reservation'?{reservationPlan:o.plan}: {})});}
   try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not update your bag. Please retry.');return false;}
   if(!quiet){closeOverlay();render(false);bagModal();}return true;
 }

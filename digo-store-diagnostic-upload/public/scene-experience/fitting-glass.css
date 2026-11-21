@@ -280,3 +280,18 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 #overlay-root :is(.modal, .drawer) :is(header, footer, .drawer-head, .drawer-foot) { background: none; border-color: #ffffff33; color: white; }
 .glass-page :is(.demo-label, .board-kind, .reference-mini-label), #overlay-root :is(.modal, .drawer) :is(.demo-label, .reference-mini-label) { color: white; background: #ffffff24; border: 1px solid #ffffff80; }
 .glass-page .board-kind { color: #1b2a36; background: #ffffffe6; border-color: transparent; }
+
+/* Size: only the size that fits the saved shape can be ordered. */
+.piece-size { margin: 14px 0; padding: 12px 14px; border-radius: 16px; border: 1px solid #ffffff80; background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202547; box-shadow: inset 0 1px 0 #ffffff40; }
+.piece-size h3 { margin: 0 0 8px; font: 11px/1.2 Arial, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: #ffffffd1; }
+.piece-size-row { display: flex; flex-wrap: wrap; gap: 6px; }
+#overlay-root .modal .piece-size-row button { min-width: 52px; height: 48px; padding: 0 12px; display: grid; place-content: center; justify-items: center; gap: 1px; border-radius: 14px; font: 600 14px/1 Arial, sans-serif; cursor: pointer; }
+#overlay-root .modal .piece-size-row button small { font: 9px/1 Arial, sans-serif; letter-spacing: .04em; color: inherit; opacity: .9; }
+#overlay-root .modal .piece-size-row button.is-yours { border-color: white; box-shadow: 0 0 0 2px #ffffff66; }
+#overlay-root .modal .piece-size-row button[aria-pressed=true] { background: white; color: #1b2a36; border-color: white; }
+.piece-size-note { margin: 10px 0 0; padding: 9px 12px; border-radius: 12px; font: 13px/1.35 Arial, sans-serif; }
+#overlay-root .modal .piece-size-note.is-blocked { background: #ffffff; color: #8a1f1f; font-weight: 600; }
+#overlay-root .modal .piece-size-note.is-ok { background: #ffffff1f; color: white; }
+#overlay-root .modal :is(.piece-size-set, .piece-size-edit) { margin-top: 10px; height: 44px; padding: 0 16px; border-radius: 14px; font: 600 13px/1 Arial, sans-serif; cursor: pointer; }
+#overlay-root .modal .piece-size-set { background: white; color: #1b2a36; border-color: white; }
+#overlay-root .modal .life-btn[disabled] { opacity: .45; cursor: not-allowed; }

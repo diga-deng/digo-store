@@ -1,7 +1,7 @@
 /* Scene map: press and hold a Discover scene and the page shrinks into a map of every
    category. Keep holding and slide onto a branch to open it, then let go on a scene. */
 (function () {
-  const HOLD_MS = 380, DWELL_MS = 240, HINT_KEY = 'digo-scene-map-hint';
+  const HOLD_MS = 380, DWELL_MS = 240, HINT_KEY = 'digo-scene-map-guide-v2';
   const root = () => document.querySelector('#overlay-root');
   let hold = null, map = null, hintTimer = 0;
 
@@ -59,7 +59,7 @@
     map = {el, sceneId, branch: null, holding: !!pointer, pointer: pointer || null, hover: null, dwell: 0};
     document.body.classList.add('scene-map-open');
     draw('is-shrinking');
-    setHint({used: true}); hideHint();
+    setHint({used: true}); clearTimeout(hintTimer); clearGuide();
     if (pointer) navigator.vibrate?.(8); else el.querySelector('.map-node:not(.map-centre)')?.focus();
     return true;
   }
@@ -167,26 +167,45 @@
   addEventListener('resize', () => { if (isOpen()) draw(''); });
   addEventListener('hashchange', () => { map = null; document.body.classList.remove('scene-map-open'); });
 
-  // First visits get a short demonstration of the gesture. It never blocks the page.
-  function hideHint() { clearTimeout(hintTimer); document.querySelector('.map-hint')?.remove(); }
+  // Teaching the gesture. The first visit dims the scene and plays a ghost finger through the
+  // whole move; after that a small pulsing reminder stays until the map has been used.
+  function hideHint() {
+    clearTimeout(hintTimer);
+    const coach = document.querySelector('.map-coach');
+    if (coach) { coach.remove(); showReminder(); }
+  }
+  function showReminder() {
+    document.querySelector('.map-reminder')?.remove();
+    if (hintState().used || !document.querySelector('.discover-poster:not(.piece-poster)')) return;
+    const reminder = document.createElement('p');
+    reminder.className = 'map-reminder'; reminder.setAttribute('role', 'note');
+    reminder.innerHTML = '<i aria-hidden="true"></i>Press and hold to browse by category';
+    document.body.append(reminder);
+  }
   function showHint() {
     const state = hintState();
-    if (state.used || (state.shown || 0) >= 3 || isOpen() || root()?.innerHTML) return;
-    const poster = document.querySelector('.discover-poster:not(.piece-poster)');
-    if (!poster || document.querySelector('.map-hint')) return;
-    const hint = document.createElement('div');
-    hint.className = 'map-hint'; hint.setAttribute('role', 'note');
-    hint.innerHTML = `<div class="map-hint-stage" aria-hidden="true"><span class="map-hint-chip a">Work</span><span class="map-hint-chip b">Travel</span><span class="map-hint-chip c">Social</span><span class="map-hint-ring"></span><span class="map-hint-finger"></span></div>
-      <p><strong>Press and hold</strong> anywhere to browse scenes by category</p>`;
-    document.body.append(hint);
-    setHint({shown: (state.shown || 0) + 1});
-    hintTimer = setTimeout(hideHint, still() ? 6000 : 9000);
+    document.querySelector('.map-reminder')?.remove();
+    if (state.used || isOpen() || root()?.innerHTML) return;
+    if (!document.querySelector('.discover-poster:not(.piece-poster)') || document.querySelector('.map-coach')) return;
+    if (state.coached) return showReminder();
+    const coach = document.createElement('div');
+    coach.className = 'map-coach'; coach.setAttribute('role', 'note');
+    coach.innerHTML = `<div class="coach-stage" aria-hidden="true"><span class="coach-page"></span>
+        ${['a', 'b', 'c', 'd', 'e'].map(k => `<span class="coach-branch ${k}"></span>`).join('')}
+        <span class="coach-ring"></span><span class="coach-finger"></span></div>
+      <h2>Looking for a certain scene?</h2>
+      <ol><li><b>1</b>Press and hold the picture</li><li><b>2</b>Slide to a category</li><li><b>3</b>Let go on a scene</li></ol>
+      <span class="coach-go">Try it now — press and hold</span>`;
+    document.body.append(coach);
+    setHint({coached: true});
   }
   function scheduleHint() {
     clearTimeout(hintTimer);
-    if (document.querySelector('.discover-poster:not(.piece-poster)')) hintTimer = setTimeout(showHint, 1400);
+    hintTimer = setTimeout(showHint, 700);
   }
+  function clearGuide() { document.querySelector('.map-coach')?.remove(); document.querySelector('.map-reminder')?.remove(); }
   addEventListener('wheel', hideHint, {passive: true});
+  addEventListener('hashchange', () => { clearGuide(); scheduleHint(); });
   if (document.readyState === 'complete') scheduleHint(); else addEventListener('load', scheduleHint);
 
   window.DigoSceneMap = {open: () => open(currentSceneId(), null), close, isOpen};

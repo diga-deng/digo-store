@@ -1,0 +1,123 @@
+/* Discover has three things to look at, in order: the person in the scene,
+   the pieces they wear, and the wardrobe those pieces go to. Everything else recedes. */
+
+/* 1 · The scene. The photograph runs edge to edge with nothing laid across it. */
+body.journey-feed .life-header {
+  background: none; border-bottom: 0; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body.journey-feed .life-header .brand { font-size: clamp(17px, 1.5vw, 22px); }
+body.journey-feed .life-header .icon-btn { width: 36px; min-width: 36px; height: 36px; border-radius: 50%; }
+body.journey-feed .life-header .icon-btn svg { width: 17px; height: 17px; }
+.journey-feed .discover-poster::after {
+  background: linear-gradient(0deg, #08101870 0%, transparent 22%),
+              linear-gradient(180deg, #0810188c 0%, #08101838 12%, transparent 24%);
+}
+
+/* The scene names itself at the top centre of the poster: what it is, its look, its weather. */
+.journey-feed .discover-poster .life-scene-copy {
+  inset: calc(env(safe-area-inset-top, 0px) + 16px) auto auto 50%; transform: translateX(-50%);
+  width: max-content; max-width: min(46vw, 620px); text-align: center; z-index: 2;
+}
+.discover-poster .life-scene-copy h1 {
+  font: 400 clamp(19px, 1.7vw, 26px)/1.15 Georgia, serif; letter-spacing: -.01em; margin: 0 0 6px;
+}
+.discover-poster .scene-traits {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; margin: 0; color: #ffffffd9;
+  font-size: 11px; letter-spacing: .09em; text-transform: uppercase; text-shadow: 0 1px 4px #000a;
+}
+.discover-poster .scene-traits span + span::before { content: "·"; margin: 0 .6em; opacity: .7; }
+.journey-feed .discover-poster .poster-credit {
+  position: absolute; z-index: 2; left: clamp(20px, 4vw, 64px); margin: 0; font-size: 9px; opacity: .55;
+  bottom: calc(var(--journey-nav) + env(safe-area-inset-bottom, 0px) + 14px);
+}
+
+/* 2 · The pieces. Separate glass tiles, each one a photo, its price and a plus. */
+.journey-feed .discover-poster .life-rail {
+  top: calc(var(--journey-header) + 26px); left: clamp(14px, 3vw, 46px);
+  width: clamp(66px, 7vw, 96px); max-height: calc(100% - var(--journey-header) - var(--journey-nav) - 150px);
+  display: flex; flex-direction: column; gap: 9px; padding: 0; overflow: hidden; z-index: 2;
+  background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.discover-poster .rail-piece {
+  flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  border: var(--clear-edge); border-radius: 12px; background: var(--clear-face); box-shadow: var(--clear-shadow);
+  backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.journey-feed .discover-poster .life-rail .rail-open {
+  display: block; min-height: 0; padding: 5px 5px 0; border: 0; border-radius: 0;
+  background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.journey-feed .discover-poster .life-rail .rail-open :is(.reference-product-photo, .product-photo) {
+  display: block; width: 100%; height: auto; max-height: none; aspect-ratio: 4/5; object-fit: contain;
+  border-radius: 8px; background-color: #ffffffd1;
+}
+.discover-poster .rail-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 5px 5px 5px 8px;
+}
+.journey-feed .discover-poster .life-rail .rail-meta span {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 10px; letter-spacing: .02em; color: white; text-shadow: 0 1px 3px #000a;
+}
+.journey-feed .discover-poster .life-rail .rail-like {
+  flex: none; display: grid; place-items: center; width: 26px; height: 26px; min-height: 0; padding: 0;
+  border-radius: 50%; border: 1px solid #ffffffb0; background: #ffffff24; color: white; box-shadow: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none; transition: background .18s, color .18s, transform .18s;
+}
+.discover-poster .rail-like svg { width: 13px; height: 13px; stroke-width: 2.2; }
+.journey-feed .discover-poster .life-rail .rail-like:hover { background: #ffffff4d; }
+.journey-feed .discover-poster .life-rail .rail-like:active { transform: scale(.9); }
+.journey-feed .discover-poster .life-rail .rail-like[aria-pressed="true"] { background: white; color: #1b2a36; border-color: white; }
+
+/* Saving the whole scene is a single quiet glass button. */
+.journey-feed .discover-poster .scene-quick { top: calc(var(--journey-header) + 26px); right: clamp(15px, 3vw, 48px); }
+.journey-feed .discover-poster .scene-quick button {
+  width: 40px; min-width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+}
+.journey-feed .discover-poster .scene-quick button svg { width: 16px; height: 16px; }
+.journey-feed .discover-poster .scene-quick button[aria-pressed="true"] { background: white; color: #1b2a36; }
+.journey-feed .discover-poster .scene-quick button[aria-pressed="true"] svg { fill: currentColor; }
+
+/* Paging is a swipe; the arrows stay only as a faint affordance for pointers. */
+.discover-poster .poster-pager { gap: 8px; opacity: .8; transition: opacity .2s; }
+.discover-poster .poster-pager:is(:hover, :focus-within) { opacity: 1; }
+.discover-poster .poster-pager .scene-step { width: 36px; height: 36px; font-size: 15px; }
+@media (hover: none) { .discover-poster .poster-pager { display: none; } }
+
+/* 3 · The wardrobe. One glass bar; the only count on the screen is what you have liked. */
+body.journey-feed nav.life-nav {
+  left: 50%; right: auto; transform: translateX(-50%); width: auto; gap: 2px; padding: 5px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); height: auto; min-height: 0;
+  border: var(--clear-edge); border-radius: 999px; background: var(--clear-face); box-shadow: var(--clear-shadow);
+  backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); pointer-events: auto;
+}
+body.journey-feed nav.life-nav.digo-stage-nav > a {
+  position: relative; flex: none; width: 84px; max-width: none; padding: 7px 4px 6px; gap: 2px;
+  border: 0; border-radius: 999px; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+  color: #ffffffc4; font-size: 10px;
+}
+body.journey-feed nav.life-nav.digo-stage-nav > a svg { width: 19px; height: 19px; }
+body.journey-feed nav.life-nav.digo-stage-nav > a[aria-current=page] { background: #ffffff2e; color: white; border: 0; }
+body.journey-feed nav.life-nav.digo-stage-nav > a[aria-current=page]::after { display: none; }
+.life-nav a { position: relative; }
+.nav-count {
+  position: absolute; top: 3px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 4px;
+  display: grid; place-items: center; border-radius: 999px; background: white; color: #1b2a36;
+  font: 700 10px/1 system-ui, sans-serif; text-shadow: none; box-shadow: 0 1px 4px #0005;
+}
+.nav-count[hidden] { display: none; }
+body:not(.journey-feed) .nav-count { background: #1b2a36; color: white; }
+
+@media (max-width: 640px) {
+  .journey-feed .discover-poster .life-scene-copy { top: calc(var(--journey-header) + 8px); max-width: calc(100vw - 40px); }
+  .journey-feed .discover-poster .life-rail { top: calc(var(--journey-header) + 76px); left: 12px; width: 68px; gap: 7px; max-height: calc(100% - var(--journey-header) - var(--journey-nav) - 110px); }
+  .discover-poster .rail-piece { border-radius: 10px; }
+  .discover-poster .rail-meta { padding: 4px 4px 4px 6px; }
+  .journey-feed .discover-poster .life-rail .rail-meta span { font-size: 8.5px; }
+  .journey-feed .discover-poster .life-rail .rail-like { width: 24px; height: 24px; }
+  .journey-feed .discover-poster .scene-quick { top: calc(var(--journey-header) + 76px); right: 14px; }
+  .discover-poster .life-scene-copy h1 { font-size: 20px; }
+  .discover-poster .scene-traits { font-size: 10px; letter-spacing: .05em; }
+  .discover-poster .scene-traits span:first-child { flex-basis: 100%; }
+  .discover-poster .scene-traits span:nth-child(2)::before { content: none; }
+  body.journey-feed nav.life-nav.digo-stage-nav > a { width: 76px; }
+}

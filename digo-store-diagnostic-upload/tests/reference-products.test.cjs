@@ -76,7 +76,7 @@ test('European references retain their currency and original sold-out identity',
   assert.match(html,/€1,219.00/);assert.match(html,/Brand reference price · EUR/);assert.match(html,/Out of stock at the source/);assert.match(html,/insert-side-table-stone-sand/);assert.doesNotMatch(html,/add-real|add-bag|\/checkout/);
 });
 
-test('Discover covers and scene posters expose the pictured scene’s products in the left rail', () => {
+test('Discover scene posters expose the pictured scene’s products in the left rail, each with a wardrobe plus', () => {
   const run = fixture();
   for (const file of ['curated-edit', 'discover-tree', 'scene-series']) {
     run(fs.readFileSync(path.join(root, 'public/scene-experience', file + '.js'), 'utf8'));
@@ -85,12 +85,15 @@ test('Discover covers and scene posters expose the pictured scene’s products i
   run(journeys.slice(journeys.indexOf('function sceneProductRail('), journeys.indexOf('function sceneSection(')));
   run(journeys.slice(journeys.indexOf('function branchEntry('), journeys.indexOf('function visibleSceneCard(')));
   run(journeys.slice(journeys.indexOf('function discoverPoster('), journeys.indexOf('function rememberPoster(')));
-  for (const [cover, id, pictured] of [[true, 'active', 'alpine-ridge'], [false, 'coast', 'coast']]) {
-    const html = run(`discoverPoster({branch:branchForScene('coast'), scene:sceneFor('${pictured}'), cover:${cover}, id:'${id}'}, 0, 5)`);
+  for (const [id, pictured] of [['alpine-ridge', 'alpine-ridge'], ['coast', 'coast']]) {
+    const html = run(`discoverPoster({branch:branchForScene('coast'), scene:sceneFor('${pictured}'), id:'${id}'}, 0, 5)`);
     const rail = html.match(/<aside class="life-rail"[^>]*>([\s\S]*?)<\/aside>/);
     assert.ok(rail, id);
     const buttons = [...rail[1].matchAll(/data-life="product" data-id="([^"]+)" data-type="concept" data-scene="([^"]+)"/g)];
     assert.deepEqual(buttons.map(m => m[1]), Array.from(run(`sceneFor('${pictured}').items.slice(0, 4)`)));
     assert.ok(buttons.every(m => m[2] === pictured));
+    const likes = [...rail[1].matchAll(/data-life="like-piece" data-id="([^"]+)"/g)];
+    assert.deepEqual(likes.map(m => m[1]), buttons.map(m => m[1]));
+    assert.doesNotMatch(html, /Circle a detail|Browse scenes|CURATED PIECES/);
   }
 });

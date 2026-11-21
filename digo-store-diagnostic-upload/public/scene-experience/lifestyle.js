@@ -25,13 +25,17 @@ function recordSceneInteraction() {}
 function recordProductView() {}
 function mountSwipePage() {}
 function remember(path, label) { if(applyingRemoteState || (world.resume?.path===path&&world.resume.label===label))return; world.resume = { path, label, scroll:world.resume?.path===path?world.resume.scroll:0, at: Date.now() }; writeWorld(); }
-function navLink(path, text, glyph, active) { return `<a href="#${path}" ${active ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${text}</span></a>`; }
+function likedPieceCount() { return world.saved.filter(x => x.kind === 'product' && x.savedManually !== false).length; }
+function navLink(path, text, glyph, active, count=null) {
+  const badge = count === null ? '' : `<b class="nav-count" data-wardrobe-count aria-label="${count} liked pieces" ${count ? '' : 'hidden'}>${count}</b>`;
+  return `<a href="#${path}" ${active ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${text}</span>${badge}</a>`;
+}
 function header() {
-  return `<header class="life-header"><a class="brand" href="#/" aria-label="DIGO home">DIGO</a><span class="brand-line">Different brands. Your style.</span><div class="header-tools"><button class="icon-btn" data-life="search" aria-label="Search">${icon('search')}</button><button class="icon-btn" data-life="bag" aria-label="Shopping bag">${icon('bag')}<span class="bag-count">${storeCartCount()}</span></button><a class="icon-btn" href="#/account" aria-label="Account">${icon('user')}</a></div></header>`;
+  return `<header class="life-header"><a class="brand" href="#/" aria-label="DIGO home">DIGO</a><div class="header-tools"><button class="icon-btn" data-life="search" aria-label="Search">${icon('search')}</button><button class="icon-btn" data-life="bag" aria-label="Shopping bag">${icon('bag')}<span class="bag-count">${storeCartCount()}</span></button><a class="icon-btn" href="#/account" aria-label="Account">${icon('user')}</a></div></header>`;
 }
 function bottomNavigation() {
   const r = route();
-  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r))}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
+  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r), likedPieceCount())}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
 }
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';
@@ -60,15 +64,23 @@ function itemBrand(item) { return itemInfo(item).reference?itemInfo(item).brand:
 function itemCaption(item) { return item.owned?'Already owned':itemInfo(item).screenReference?'Screen reference':itemInfo(item).reference?'Demo reference':item.type==='concept'?'Inspiration only':item.type==='catalog'?storeMoney(itemInfo(item).price_cents || 0):'Your own piece'; }
 function miniBoard(b) { return `<div class="mini-board">${b.items.slice(0,4).map(i=>`<div>${itemArt(i)}</div>`).join('')}</div>`; }
 function resumeCard() { const r=world.resume;return r?`<a class="resume-card" href="#${esc(r.path)}" data-life="resume"><span>${icon('undo')} Pick up where you left off</span><strong>${esc(r.label)}</strong>${icon('right')}</a>`:''; }
+// Each piece is one tile: the photo opens its details, the plus sends it to the wardrobe.
 function sceneProductRail(scene) {
   const pieces = scenePieces(scene).slice(0, 4);
   if (!pieces.length) return '';
-  const buttons = pieces.map((product, index) => {
-    const label = scene.fullScene ? String(index + 1).padStart(2, '0') : 'View piece';
-    return `<button data-life="product" data-id="${esc(product.id)}" data-type="concept" data-scene="${esc(scene.id)}" aria-label="View ${esc(product.name)}">
-      ${productPhoto(product)}<small>${label} ${icon('plus')}</small></button>`;
+  const tiles = pieces.map((product, index) => {
+    const liked = world.saved.some(x => x.key === 'product:' + product.id && x.savedManually !== false);
+    const label = scene.fullScene ? String(index + 1).padStart(2, '0') : pieceLabel(product);
+    return `<div class="rail-piece"><button class="rail-open" data-life="product" data-id="${esc(product.id)}" data-type="concept" data-scene="${esc(scene.id)}" aria-label="View ${esc(product.name)}">
+      ${productPhoto(product)}</button><div class="rail-meta"><span>${esc(label)}</span><button class="rail-like" data-life="like-piece" data-id="${esc(product.id)}" data-type="concept" aria-pressed="${liked}" aria-label="${liked ? 'Remove ' + esc(product.name) + ' from your wardrobe' : 'Add ' + esc(product.name) + ' to your wardrobe'}">${icon(liked ? 'check' : 'plus')}</button></div></div>`;
   }).join('');
-  return `<aside class="life-rail" aria-label="Pieces in this moment"><span>${scene.editorial ? 'CURATED PIECES' : 'THE DETAILS'}</span>${buttons}</aside>`;
+  return `<aside class="life-rail" aria-label="Pieces in this scene">${tiles}</aside>`;
+}
+
+function pieceLabel(p) {
+  if (p.price_cents) return storeMoney(p.price_cents, p.currency);
+  if (typeof p.price === 'number') return '$' + p.price.toFixed(2).replace(/\.00$/, '');
+  return p.brand || '';
 }
 
 function sceneSection(s,index) {
@@ -78,7 +90,7 @@ function sceneSection(s,index) {
     <div class="scene-topline"><span>${String(index+1).padStart(2,'0')} / ${String(baseScenes.length).padStart(2,'0')}</span><span class="scene-static-label">${s.reference?esc(s.brand)+'<span class="reference-mini-label">Demo</span>':'Concept still'}</span></div>
     ${sceneProductRail(s)}
     ${s.editorial?'':s.fullScene?`<svg class="scene-hotspot-lines" aria-hidden="true">${s.hotspots.map((h,i)=>`<line data-hotspot-line="${i}"/>`).join('')}</svg>${s.hotspots.map((h,i)=>`<button class="life-hotspot room-hotspot" data-hotspot-index="${i}" data-life="product" data-type="concept" data-id="${h.id}" data-scene="${s.id}" aria-label="View ${esc(getProduct(h.id).name)}"><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}`:`<button class="life-hotspot" style="left:72%;top:48%" data-life="product" data-type="concept" data-id="${s.items[0]}" data-scene="${s.id}" aria-label="View ${esc(getProduct(s.items[0]).name)}">${icon('plus')}</button>`}
-    <div class="scene-quick"><button data-life="save-scene" data-id="${s.id}" aria-label="Save this moment" aria-pressed="${world.saved.some(x=>x.kind==='scene'&&x.id===s.id)}">${icon('save')}<span>Save</span></button><button data-life="circle" data-id="${s.id}" aria-label="Circle a detail">${icon('circle')}<span>Circle a detail</span></button></div>
+    <div class="scene-quick"><button data-life="save-scene" data-id="${s.id}" aria-label="Save this moment" aria-pressed="${world.saved.some(x=>x.kind==='scene'&&x.id===s.id)}">${icon('save')}<span>Save</span></button></div>
     ${s.screenScene?`<button class="scene-wide-view" data-life="full-scene" data-id="${s.id}">${icon('grid')}<span>Full scene</span></button>`:''}<div class="life-scene-copy"><h2 class="${s.editorial&&!s.hideSceneHeading?'editorial-title':'sr-only'}">${esc(m[0])}</h2><div class="life-actions"><a class="life-btn light" href="#/edit/${s.id}">Make it mine ${icon('plus')}</a><a class="life-btn glass" data-life="open-series" data-id="${s.id}" href="#/series/${s.id}" title="Swipe left to view this series">View series ${icon('right')}</a></div>${s.editorial?`<a class="editorial-credit" href="${esc(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(s.sourceCredit)} ↗</a>`:''}</div>
     <div class="scene-index"><button class="scene-step" data-life="next-scene" data-id="${baseScenes[(index-1+baseScenes.length)%baseScenes.length].id}" data-direction="-1" aria-label="Previous moment">↑</button><button class="scene-step" data-life="next-scene" data-id="${baseScenes[(index+1)%baseScenes.length].id}" data-direction="1" aria-label="Next moment">↓</button></div>
   </section>`;
@@ -98,12 +110,9 @@ function branchEntry(branch) {
 }
 function visibleSceneCard(feed) { return feed?.querySelector('.life-scene'); }
 function feedFrames() {
-  if (!route().startsWith('/scene/')) {
-    return discoverBranches.map(branch => ({id: branch.id, branch, scene: sceneFor(branch.cover), cover: true}));
-  }
-  const id = route().split('/')[2], branch = branchForScene(id);
-  if (!branch) return baseScenes.map(scene => ({id: scene.id, scene}));
-  return branch.scenes.map(([id]) => ({id, branch, scene: sceneFor(id)}));
+  const id = route().startsWith('/scene/') && route().split('/')[2];
+  if (id && !branchForScene(id)) return baseScenes.map(scene => ({id: scene.id, scene}));
+  return discoverFeed().map(frame => ({...frame, scene: sceneFor(frame.id)})).filter(frame => frame.scene);
 }
 
 const nearbyPhotos = new Map();
@@ -128,29 +137,22 @@ function preloadNeighborPhotos(id) {
 }
 
 function discoverPoster(frame, index, count) {
-  const {branch, scene, cover, id} = frame;
+  const {branch, scene, id} = frame;
   if (!branch) return sceneSection(scene, Math.max(0, baseScenes.indexOf(scene)));
-  const title = cover ? branch.title : sceneLabel(branch, scene);
-  const label = cover ? 'Browse scenes' : 'View pieces';
-  const target = cover ? '/scene/' + branchEntry(branch) : '/series/' + id;
+  const title = sceneLabel(branch, scene);
+  const traits = [branch.title, ...(sceneTraits[scene.id] || [])];
   const position = (scene.position || [.5, .5]).map(n => n * 100 + '%').join(' ');
-  const sceneTools = cover ? '' : `<div class="scene-quick">
-    <button data-life="save-scene" data-id="${esc(id)}" aria-label="Save this scene" aria-pressed="${world.saved.some(x=>x.kind==='scene' && x.id===id)}">${icon('save')}<span>Save</span></button>
-    <button data-life="circle" data-id="${esc(id)}" aria-label="Circle a detail">${icon('circle')}<span>Circle a detail</span></button></div>`;
   return `<section class="life-scene discover-poster" data-scene="${esc(id)}" data-branch="${branch.id}" tabindex="-1" aria-label="${esc(title)}" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight">
     <img class="life-scene-photo" src="${esc(scene.image)}" alt="${esc(scene.description || scene.subtitle)}" style="object-position:${position}" fetchpriority="high" draggable="false">
-    ${cover ? '' : `<a class="poster-parent life-btn" href="#/discover/${branch.id}" data-life="branch-back" data-id="${branch.id}" aria-label="Back to ${esc(branch.title)}">${icon('left')}${esc(branch.title)}</a>`}
     ${sceneProductRail(scene)}
-    ${sceneTools}
+    <div class="scene-quick"><button data-life="save-scene" data-id="${esc(scene.id)}" aria-label="Save this scene" aria-pressed="${world.saved.some(x=>x.kind==='scene' && x.id===scene.id)}">${icon('save')}</button></div>
     <div class="life-scene-copy"><h1>${esc(title)}</h1>
-      <div class="life-actions"><a class="life-btn glass" data-life="${cover ? 'open-branch' : 'open-series'}" data-id="${esc(id)}" href="#${target}" title="Swipe left to continue">${label} ${icon('right')}</a>
-      ${cover ? '' : `<a class="life-btn glass" href="#/edit/${esc(id)}">Make it mine ${icon('plus')}</a>`}</div>
-      ${!cover && scene.sourceCredit && scene.sourceUrl ? `<a class="editorial-credit" href="${esc(scene.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(scene.sourceCredit)} ↗</a>` : ''}
+      <p class="scene-traits">${traits.map(t => `<span>${esc(t)}</span>`).join('')}</p>
     </div>
-    <div class="poster-pager" aria-label="${cover ? 'Categories' : 'Scenes'}">
-      <output aria-label="Position">${index+1} / ${count}</output>
-      <button class="scene-step" data-life="page-poster" data-direction="-1" aria-label="Previous ${cover ? 'category' : 'scene'}">↑</button>
-      <button class="scene-step" data-life="page-poster" data-direction="1" aria-label="Next ${cover ? 'category' : 'scene'}">↓</button>
+    ${scene.sourceCredit && scene.sourceUrl ? `<a class="editorial-credit poster-credit" href="${esc(scene.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(scene.sourceCredit)} ↗</a>` : ''}
+    <div class="poster-pager" aria-label="Scenes">
+      <button class="scene-step" data-life="page-poster" data-direction="-1" aria-label="Previous scene">↑</button>
+      <button class="scene-step" data-life="page-poster" data-direction="1" aria-label="Next scene">↓</button>
     </div></section>`;
 }
 
@@ -202,10 +204,12 @@ function moveJourneyScene(step, focus=false) {
   return activateFeedScene(frames[(Math.max(index, 0) + step + frames.length) % frames.length].id, focus);
 }
 function discoverPage() {
-  const branch = homeBranch(), index = discoverBranches.indexOf(branch);
-  currentScene = branchEntry(branch);
-  const frame = {id:branch.id, branch, scene:sceneFor(branch.cover), cover:true};
-  return wrap(discoverPoster(frame, index, discoverBranches.length), 'discover-page moment-feed branch-feed');
+  const frames = feedFrames();
+  const branch = route().startsWith('/discover/') && discoverBranches.find(group => group.id === route().split('/')[2]);
+  const wanted = branch ? branchEntry(branch) : world.browse?.discover;
+  const frame = frames.find(item => item.id === wanted) || frames[0];
+  currentScene = frame.id;
+  return wrap(discoverPoster(frame, frames.indexOf(frame), frames.length), 'discover-page moment-feed');
 }
 function openDiscoverBranch(id) {
   const branch = discoverBranches.find(group => group.id === id);
@@ -233,8 +237,8 @@ function scenePage(id) {
   currentScene=s.id; remember('/scene/'+id,s.title);
   const branch = branchForScene(id);
   if (!branch) return wrap(sceneSection(s, Math.max(0,baseScenes.indexOf(s))), 'scene-page moment-feed');
-  const index = branch.scenes.findIndex(([sceneId]) => sceneId === id);
-  return wrap(discoverPoster({id, branch, scene:s}, index, branch.scenes.length), 'scene-page moment-feed branch-scenes');
+  const frames = feedFrames();
+  return wrap(discoverPoster({id, branch, scene:s}, frames.findIndex(frame => frame.id === id), frames.length), 'scene-page moment-feed');
 }
 function getBoard(id) {
   if (!world.boards[id]) {
@@ -258,6 +262,44 @@ function editPage(id) {
     <div class="version-section"><h2>Your versions <small>${versions.length}</small></h2><p>Save A and B before asking a friend. Each saved version keeps its original selection.</p><div class="version-grid">${versions.map((v,i)=>`<article>${miniBoard(v)}<h3>${String.fromCharCode(65+i)} · ${esc(v.title)}</h3><div class="life-actions">${btn('Edit a copy','version-copy',v.id,'','subtle')}${btn('Add to plan','version-plan',v.id,'','quiet')}</div></article>`).join('')}</div>${btn('Ask a friend','share-start',id,versions.length<2?'disabled':'')}</div></section></div>`,'editor-page');
 }
 
+function syncWardrobeCount() {
+  const count = likedPieceCount();
+  for (const badge of document.querySelectorAll('[data-wardrobe-count]')) {
+    badge.textContent = count; badge.hidden = !count; badge.setAttribute('aria-label', count + ' liked pieces');
+  }
+}
+// The liked piece visibly travels to the wardrobe, so the next step needs no explanation.
+function flyToWardrobe(source) {
+  const target = document.querySelector('.life-nav a[href="#/wardrobe"]');
+  if (!source || !target || matchMedia('(prefers-reduced-motion: reduce)').matches || !source.animate) return;
+  const from = source.getBoundingClientRect(), to = target.getBoundingClientRect();
+  const ghost = source.cloneNode(true);
+  ghost.removeAttribute('loading');
+  Object.assign(ghost.style, {position:'fixed', left:from.left+'px', top:from.top+'px', width:from.width+'px', height:from.height+'px', margin:0, zIndex:90, pointerEvents:'none', borderRadius:'10px', objectFit:'contain'});
+  document.body.append(ghost);
+  const dx = to.left + to.width/2 - (from.left + from.width/2), dy = to.top + to.height/2 - (from.top + from.height/2);
+  ghost.animate([{transform:'translate(0,0) scale(1)', opacity:1}, {transform:`translate(${dx}px,${dy}px) scale(.18)`, opacity:.2}], {duration:520, easing:'cubic-bezier(.5,0,.2,1)'}).finished.finally(() => {
+    ghost.remove();
+    target.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}], {duration:260});
+  });
+}
+function likePiece(el, id, type='concept') {
+  const p = type === 'concept' ? getProduct(id) : productFor(id);
+  if (!p) return;
+  const key = 'product:' + id, existing = world.saved.find(x => x.key === key);
+  const liked = !(existing && existing.savedManually !== false);
+  if (liked) {
+    if (existing) existing.savedManually = true;
+    else world.saved.unshift({kind:'product', id, type, title:p.name, snapshot:type==='catalog'?p:undefined, key, at:Date.now(), group:'', status:'liked', savedManually:true});
+  } else if (existing.orderIds?.length || existing.testOrderIds?.length) existing.savedManually = false;
+  else world.saved = world.saved.filter(x => x.key !== key);
+  if (!writeWorld()) return;
+  el.setAttribute('aria-pressed', String(liked));
+  el.setAttribute('aria-label', (liked ? 'Remove ' : 'Add ') + p.name + (liked ? ' from' : ' to') + ' your wardrobe');
+  el.innerHTML = icon(liked ? 'check' : 'plus');
+  if (liked) flyToWardrobe(el.closest('.rail-piece')?.querySelector('img, .product-photo'));
+  syncWardrobeCount();
+}
 function saveRecord(record) {
   const key=record.kind+':'+record.id, existing=world.saved.find(x=>x.key===key);
   if(!existing)world.saved.unshift({...record,key,at:Date.now(),group:'',status:'liked',savedManually:true});
@@ -438,6 +480,7 @@ document.addEventListener('click',async e=>{
   else if(a==='next-scene')activateFeedScene(id);
   else if(a==='refine-style')overlay(`<h2>Find your own balance.</h2><div class="life-actions">${['Sweet but structured','Light utility','Relaxed tailoring','Natural texture'].map(s=>btn(s,'style-search',s,'','subtle')).join('')}</div>`,'Refine your style');
   else if(a==='save-scene'){saveRecord({kind:'scene',id,title:sceneFor(id).title});el.setAttribute('aria-pressed','true');}
+  else if(a==='like-piece')likePiece(el,id,type);
   else if(a==='save-product'){const p=type==='concept'?getProduct(id):productFor(id);if(p && saveRecord({kind:'product',id,type,title:p.name,snapshot:type==='catalog'?p:undefined}) && route().startsWith('/wardrobe')){render(false);}}
   else if(a==='scene-pieces'){const s=sceneFor(id);if(s.reference){overlay(`<p class="eyebrow">${esc(s.brand)} <span class="reference-mini-label">Demo</span></p><div class="life-product-grid">${s.items.map(pid=>referenceCard(getProduct(pid))).join('')}</div>${btn('Prepare for a day','new-plan',id,'','subtle')}`,'Explore scene pieces');return;}overlay(`<h2>${esc(moments[id]?.[0]||s.title)}</h2><p>Concept pieces in the original image</p><div class="life-product-grid">${s.items.map(pid=>`<article><button class="life-art" data-life="product" data-id="${pid}" data-type="concept" data-scene="${id}">${productPhoto(getProduct(pid))}</button><h3>${esc(getProduct(pid).name)}</h3><small>Illustration · Not orderable</small></article>`).join('')}</div>${btn('Prepare for a day','new-plan',id,'','subtle')}<h3>Related catalog accessories</h3><p>Different pieces with their own identities. These are not the same products shown in the scene.</p><div class="life-product-grid">${catalog.slice(0,4).map(p=>catalogCard(p,'',id)).join('')}</div>`,'Explore scene pieces');}
   else if(a==='related'){overlay(`<h2>Something with a similar feeling.</h2><p>Related catalog accessories. These are not the illustrated piece.</p><div class="life-product-grid">${catalog.slice(0,8).map(p=>catalogCard(p,'',currentProduct?.sceneId||contextScene())).join('')}</div>`,'Related pieces');}

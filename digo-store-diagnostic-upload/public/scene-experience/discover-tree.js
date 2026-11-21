@@ -24,6 +24,29 @@ const discoverBranches = [
   ] }
 ];
 
+// Every scene states the look it shows and the weather it is dressed for.
+// Demo values until each scene is tagged from its real outfit.
+const sceneTraits = {
+  meeting: ['Tailored', '18–24°C'], commute: ['City tailoring', '10–16°C'], atelier: ['Workwear', '16–22°C'],
+  morning: ['Loungewear', '20–24°C'], dog: ['Casual', '8–14°C'], gallery: ['Smart casual', '16–22°C'],
+  'a-quiet-living-room': ['Loungewear', '20–24°C'], 'a-corner-to-play': ['Casual', '20–24°C'], 'architecture-lounge': ['Minimal', '18–24°C'],
+  date: ['Soft tailoring', '14–20°C'], wedding: ['Occasion', '18–26°C'], club: ['Evening', '16–22°C'],
+  dinner: ['Evening', '18–24°C'], 'a-table-for-the-evening': ['Relaxed evening', '18–24°C'],
+  coast: ['Technical', '8–15°C'], 'outdoor-powder': ['Snow', '-12–-2°C'], cycle: ['Active', '10–18°C'],
+  studio: ['Studio', '20–24°C'], 'outdoor-dawn': ['Technical', '2–10°C'], 'alpine-ridge': ['Technical', '8–15°C'],
+  'outdoor-ridgewalk': ['Technical', '0–8°C'], 'alpine-snow': ['Alpine', '-15–-5°C'],
+  'old-town': ['Travel', '14–22°C'], island: ['Resort', '24–32°C'], amalfi: ['Resort evening', '20–26°C'], 'snow-town': ['Winter city', '-5–3°C'],
+  'architecture-canoas': ['Minimal', '22–28°C'], 'architecture-glass': ['Minimal', '18–24°C'],
+  'architecture-terrace': ['Resort', '22–30°C'], 'architecture-courtyard': ['Minimal', '18–26°C']
+};
+// Home is one continuous feed of scenes. Categories take turns so neighbours differ.
+function discoverFeed() {
+  const rows = discoverBranches.map(branch => branch.scenes.map(([id]) => ({id, branch})));
+  const feed = [];
+  for (let turn = 0; rows.some(row => row[turn]); turn++) for (const row of rows) if (row[turn]) feed.push(row[turn]);
+  return feed;
+}
+
 const discoverPhotographs = [
   ['commute', 33402246, 'A woman in a blazer walks past a glass-fronted building.', .38, ['edit-lp-34','edit-lp-21','edit-lp-25']],
   ['meeting', 7793672, 'Colleagues gather around a table with their notebooks and laptops.', .44, ['edit-lp-25','edit-lp-34','edit-lp-23']],

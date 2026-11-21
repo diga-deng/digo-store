@@ -139,14 +139,19 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 .piece-facts dt { color: #55616b; font-size: 12px; } .piece-facts dd { margin: 0; text-align: right; font-size: 13px; color: #1b2a36; }
 .piece-facts p { margin: 6px 0 0; font-size: 11px; color: #55616b; }
 
-/* The way from one piece into its brand. */
-.piece-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; padding: 12px 14px; border-radius: 16px; background: #1b2a36; color: white; text-decoration: none; }
-.piece-brand span { display: grid; gap: 2px; min-width: 0; }
+/* Under the pictures of a piece: its brand, a few of the brand's other pieces, and the way to all. */
+.piece-brand { margin: 14px 0; border-radius: 18px; background: #1b2a36; color: white; overflow: hidden; }
+.piece-brand-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; color: white; text-decoration: none; }
+.piece-brand-link span { display: grid; gap: 2px; min-width: 0; }
 .piece-brand small { font: 10px/1.2 Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #ffffffc7; }
 .piece-brand strong { font: 400 19px/1.15 Georgia, serif; }
 .piece-brand em { flex: none; display: flex; align-items: center; gap: 6px; font: normal 600 12.5px/1 Arial, sans-serif; }
 .piece-brand em svg { width: 15px; height: 15px; }
-.piece-brand:focus-visible { outline: 2px solid #1b2a36; outline-offset: 2px; }
+.piece-brand-row { display: flex; gap: 8px; padding: 0 14px 14px; overflow-x: auto; scrollbar-width: none; }
+.piece-brand-row button { flex: none; width: 84px; padding: 0; border: 0; background: none; color: white; cursor: pointer; display: grid; gap: 5px; text-align: left; }
+.piece-brand-row :is(img, .product-photo, .life-product-placeholder) { display: block; width: 84px; height: 104px; object-fit: contain; border-radius: 10px; background-color: #ffffffeb; }
+.piece-brand-row span { font: 11px/1.25 Arial, sans-serif; color: #ffffffd9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.piece-brand :is(a, button):focus-visible { outline: 2px solid white; outline-offset: -2px; }
 
 /* A brand's page: all of its pieces on glass, over the scene you came from. */
 .life-main.brand-page { position: relative; max-width: none; background: none; color: white; padding: 4px 4vw calc(var(--journey-nav) + 40px); }

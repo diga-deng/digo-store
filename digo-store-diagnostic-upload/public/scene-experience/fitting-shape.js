@@ -153,9 +153,14 @@
       <div><dt>Fabric weight</dt><dd>${esc(p.weight || pending)}</dd></div>
       <div><dt>Made in</dt><dd>${esc(p.origin || pending)}</dd></div></dl>
       <p>Screens differ. The colour card number is the colour a piece is produced to.</p></section>`;
-    const brand = p.brand && brandPieces(brandSlug(p.brand)).length ? `<a class="piece-brand" href="#/brand/${encodeURIComponent(brandSlug(p.brand))}">
-      <span><small>Brand</small><strong>${esc(p.brand)}</strong></span><em>See all ${brandPieces(brandSlug(p.brand)).length} pieces ${icon('right')}</em></a>` : '';
-    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', brand + facts);
+    // Straight under the pictures: the brand, its other pieces, and the way to all of them.
+    const family = p.brand ? brandPieces(brandSlug(p.brand)) : [], others = family.filter(row => row.p.id !== p.id);
+    const brand = family.length ? `<section class="piece-brand" aria-label="More from ${esc(p.brand)}">
+      <a class="piece-brand-link" href="#/brand/${encodeURIComponent(brandSlug(p.brand))}"><span><small>Like this brand?</small><strong>${esc(p.brand)}</strong></span><em>See all ${family.length} pieces ${icon('right')}</em></a>
+      ${others.length ? `<div class="piece-brand-row">${others.slice(0, 8).map(row => `<button type="button" data-life="product" data-id="${esc(row.p.id)}" data-type="${row.type}" ${sceneId ? `data-scene="${esc(sceneId)}"` : ''} aria-label="View ${esc(row.p.name)}">${row.type === 'catalog' ? productArt(row.p) : productPhoto(row.p)}<span>${esc(row.p.name)}</span></button>`).join('')}</div>` : ''}</section>` : '';
+    const under = sheet.querySelector('.piece-light') || sheet.querySelector('.reference-gallery') || art;
+    if (under) under.insertAdjacentHTML('afterend', brand); else sheet.querySelector('h2')?.insertAdjacentHTML('beforebegin', brand);
+    (sheet.querySelector('.life-actions') || sheet.querySelector('h2'))?.insertAdjacentHTML('beforebegin', facts);
   };
 
   new MutationObserver(mount).observe(document.querySelector('#app'), {childList: true});

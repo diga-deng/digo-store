@@ -319,3 +319,27 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 .pieces-page .saved-card .life-btn { justify-self: start; min-height: 40px; padding: 0 14px; border-radius: 999px; }
 .pieces-page .pieces-heading { margin: 28px 0 0; font: 400 22px/1.2 Georgia, serif; }
 .pieces-page .closet-empty { margin-top: 24px; display: grid; justify-items: center; gap: 14px; text-align: center; padding: 28px 18px; }
+
+/* The bag: tick what to buy now. */
+#overlay-root .drawer .bag-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; margin-bottom: 10px; }
+#overlay-root .drawer .bag-line h3 { margin: 2px 0; font: 400 17px/1.2 Georgia, serif; }
+#overlay-root .drawer .bag-line p { margin: 0; font-size: 12px; }
+.bag-tick { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; }
+.bag-tick input { width: 24px; height: 24px; margin: 0; accent-color: white; cursor: pointer; }
+.bag-hint { margin: 0 0 12px; font: 13px/1.3 Arial, sans-serif; color: #ffffffe0; }
+#overlay-root .drawer .drawer-foot .life-btn { width: 100%; min-height: 52px; font-weight: 600; font-size: 15px; }
+#overlay-root .drawer .bag-line .life-btn { min-height: 40px; padding: 0 12px; border-radius: 999px; }
+
+/* The bag as a page of the wardrobe. */
+.bag-page { max-width: 640px; margin: 18px auto 0; }
+.glass-page .bag-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; margin-bottom: 10px; border-radius: 20px; border: 1px solid #ffffff66;
+  background: linear-gradient(125deg, #ffffff2e, #ffffff0a 52%, #ffffff1c), #1e202547; box-shadow: inset 0 1px 0 #ffffff40, 0 8px 24px #0000003d; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.glass-page .bag-line h3 { margin: 2px 0; font: 400 17px/1.2 Georgia, serif; }
+.glass-page .bag-line p { margin: 0; font-size: 12px; }
+.glass-page .bag-line .life-btn { min-height: 40px; padding: 0 12px; border-radius: 999px; }
+.bag-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px; }
+.bag-total span { display: grid; gap: 2px; font: 14px/1.3 Arial, sans-serif; } .bag-total strong { font: 400 24px/1 Georgia, serif; }
+.glass-page .bag-buy { width: 100%; min-height: 54px; font-weight: 600; font-size: 15px; }
+.tab-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 5px; padding: 0 5px; border-radius: 999px; background: white; color: #1b2a36; font: 700 10px/1 Arial, sans-serif; }
+.fitting-tabs a[aria-current=page] .tab-count { background: #1b2a36; color: white; }
+@media (max-width: 640px) { .glass-page .fitting-tabs a { padding: 0 11px; } }

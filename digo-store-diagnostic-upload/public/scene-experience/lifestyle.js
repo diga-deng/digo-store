@@ -31,11 +31,11 @@ function navLink(path, text, glyph, active, count=null) {
   return `<a href="#${path}" ${active ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${text}</span>${badge}</a>`;
 }
 function header() {
-  return `<header class="life-header"><a class="brand" href="#/" aria-label="DIGO home">DIGO</a><div class="header-tools"><button class="icon-btn" data-life="search" aria-label="Search">${icon('search')}</button><button class="icon-btn" data-life="bag" aria-label="Shopping bag">${icon('bag')}<span class="bag-count">${storeCartCount()}</span></button><a class="icon-btn" href="#/account" aria-label="Account">${icon('user')}</a></div></header>`;
+  return `<header class="life-header"><a class="brand" href="#/" aria-label="DIGO home">DIGO</a><div class="header-tools"><button class="icon-btn" data-life="search" aria-label="Search">${icon('search')}</button></div></header>`;
 }
 function bottomNavigation() {
   const r = route();
-  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/') || r.startsWith('/brand/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r), likedPieceCount())}${navLink('/plans','Plans','calendar',r.startsWith('/plan'))}</nav>`;
+  return `<nav class="life-nav digo-stage-nav" aria-label="Main navigation">${navLink('/', 'Discover', 'sun', r==='/' || r.startsWith('/discover/') || r.startsWith('/scene') || r.startsWith('/series/') || r.startsWith('/edit/') || r.startsWith('/brand/'))}${navLink('/wardrobe','Wardrobe','shirt',r.startsWith('/wardrobe') || ['/world','/recent','/interests'].includes(r), likedPieceCount())}${navLink('/account','Me','user',r.startsWith('/account') || r.startsWith('/plan'))}</nav>`;
 }
 symbols.calendar = '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h3"/>';
 symbols.share = '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4m-6 6 6 4"/>';
@@ -410,8 +410,30 @@ function addReal(id,quiet=false) {
   try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not update your bag. Please retry.');return false;}
   if(!quiet){closeOverlay();render(false);bagModal();}return true;
 }
-function bagModal() {const items=storeCartItems(),full=items.reduce((n,x)=>n+x.product.price_cents*x.quantity,0),due=items.reduce((n,x)=>n+(x.kind==='reservation'?x.product.reserve_price_cents:x.product.price_cents)*x.quantity,0);
-  overlay(`<div class="drawer-head"><h2>A little of your world.</h2><button class="icon-btn" data-action="close" aria-label="Close bag">${icon('close')}</button></div><div class="drawer-body">${items.length?items.map((x,i)=>`<article class="bag-line"><div><p class="eyebrow">${esc(brandFor(x.product))}</p><h3>${esc(x.product.name)}</h3><p>${x.kind==='reservation'?'Deposit · '+x.reservationPlan:'Pay in full'} · Qty ${x.quantity}</p><strong>${storeMoney((x.kind==='reservation'?x.product.reserve_price_cents:x.product.price_cents)*x.quantity)}</strong></div>${btn('Remove one','bag-remove',String(i),'','quiet')}</article>`).join(''):empty('Your bag is waiting.','Save a little, try a combination, or go straight to a piece.','/shop','Browse all pieces')}${items.length?`<div class="detail-totals"><span>Full product total <strong>${storeMoney(full)}</strong></span><span>Due now <strong>${storeMoney(due)}</strong></span><span>Balance later <strong>${storeMoney(full-due)}</strong></span><small>Shipping, tax and delivery unconfirmed</small></div><details class="product-more"><summary>Gift details & what is included</summary><p>Standard packaging, no scent selected. Gift boxes, scent carriers, tracker compatibility, swatches and spare buttons are not yet confirmed for these styles.</p><a href="/checkout">Review options at checkout →</a></details>${notice('Payments are being set up. Your bag is saved for this browser session.')}`:''}</div>${items.length?'<div class="drawer-foot"><a class="life-btn" href="/checkout">Review checkout →</a></div>':''}`,'drawer');}
+// The bag holds pieces one by one. Ticked pieces are bought now; the rest wait for next time.
+const BAG_LATER_KEY = 'digo-cart-later-v1';
+function bagItems() {
+  let later = [];
+  try { later = JSON.parse(sessionStorage.getItem(BAG_LATER_KEY) || '[]'); } catch { later = []; }
+  if (!Array.isArray(later) || !later.length) return storeCartItems();
+  // Pieces left unticked at the last checkout come back, still unticked.
+  const items = [...storeCartItems(), ...later.filter(x => x?.product?.id).map(x => ({...x, selected: false}))];
+  try { sessionStorage.setItem('digo-cart-v3', JSON.stringify(items)); sessionStorage.removeItem(BAG_LATER_KEY); } catch { /* Keep both lists as they are. */ }
+  return storeCartItems();
+}
+function bagPrice(x) { return (x.kind === 'reservation' ? x.product.reserve_price_cents : x.product.price_cents) * x.quantity; }
+// The bag lives in the wardrobe, right after the fitting room.
+function bagContent() {
+  const items = bagItems(), chosen = items.filter(x => x.selected !== false), due = chosen.reduce((n, x) => n + bagPrice(x), 0);
+  if (!items.length) return `<div class="closet-empty"><p>Your bag is empty. Add a look from the fitting room, or a piece from any scene.</p><a class="life-btn" href="#/wardrobe">Go to the fitting room</a></div>`;
+  const lines = items.map((x, i) => `<article class="bag-line"><label class="bag-tick"><input type="checkbox" data-change-life="bag-select" data-id="${i}" ${x.selected !== false ? 'checked' : ''}><span class="sr-only">Buy ${esc(x.product.name)}</span></label>
+    <div><p class="eyebrow">${esc(brandFor(x.product))}</p><h3>${esc(x.product.name)}</h3><p>${x.size ? 'Size ' + esc(x.size) + ' · ' : ''}Qty ${x.quantity}${x.kind === 'reservation' ? ' · Deposit' : ''}</p><strong>${storeMoney(bagPrice(x))}</strong></div>
+    ${btn('Remove', 'bag-remove', String(i), '', 'quiet')}</article>`).join('');
+  return `<div class="bag-page"><p class="bag-hint">Tick the pieces you want to buy now.</p>${lines}
+    <div class="bag-total"><span>${chosen.length} of ${items.length} selected<small>Shipping and tax are added at checkout</small></span><strong>${storeMoney(due)}</strong></div>
+    <button class="life-btn bag-buy" data-life="bag-checkout" ${chosen.length ? '' : 'disabled'}>Buy selected · ${storeMoney(due)}</button></div>`;
+}
+function bagModal() { closeOverlay(); if (route() === '/wardrobe/bag') render(false); else navigate('/wardrobe/bag'); }
 function searchModal(query='') {
   overlay(`<p class="eyebrow">FIND YOUR NEXT LITTLE THING</p><h2>A piece, a place, a feeling.</h2><label class="search-box">${icon('search')}<input id="life-search" type="search" placeholder="Product, brand, moment or feeling…" value="${esc(query)}" aria-label="Search products, brands, moments and styles"></label><a class="text-btn" href="#/references">Browse demo pieces ${icon('arrow')}</a><div id="life-search-results"></div>`,'Search');searchPaint(query);
 }
@@ -526,6 +548,12 @@ document.addEventListener('click',async e=>{
   else if(a==='related'){overlay(`<h2>Something with a similar feeling.</h2><p>Related catalog accessories. These are not the illustrated piece.</p><div class="life-product-grid">${catalog.slice(0,8).map(p=>catalogCard(p,'',currentProduct?.sceneId||contextScene())).join('')}</div>`,'Related pieces');}
   else if(a==='add-to-board'){const p=type==='concept'?getProduct(id):productFor(id);const boardId=(route().startsWith('/edit/')?route().split('/')[2]:null)||currentProduct?.sceneId||'pieces-'+id;const b=getBoard(boardId);if(!b.items.some(i=>i.id===id&&i.type===type))world.boards[boardId]=J.change(b,{type:'add',item:{key:newId(),id,type,owned:false,locked:false,selected:true,snapshot:type==='catalog'?p:undefined}});writeWorld();navigate('/edit/'+boardId);}
   else if(a==='add-real')addReal(id);
+  else if(a==='bag-checkout'){
+    const items=bagItems(),chosen=items.filter(x=>x.selected!==false),later=items.filter(x=>x.selected===false);
+    if(!chosen.length){toast('Tick at least one piece to buy.');return;}
+    try{sessionStorage.setItem(BAG_LATER_KEY,JSON.stringify(later));sessionStorage.setItem('digo-cart-v3',JSON.stringify(chosen));}catch{toast('Could not update your bag. Please retry.');return;}
+    location.assign('/checkout');
+  }
   else if(a==='bag-remove'){const items=storeCartItems(),item=items[Number(id)];if(item){item.quantity--;try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items.filter(x=>x.quantity>0)));bagModal();}catch{toast('Could not update your bag. Please retry.');}}}
   else if(a==='board-lock')changeBoard({type:'toggle',key:id,field:'locked'});
   else if(a==='board-own'){
@@ -580,6 +608,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{if(e.target.id==='life-search')searchPaint(e.target.value);});
 document.addEventListener('change',e=>{
   const el=e.target,a=el.dataset.changeLife,id=el.dataset.id;
+  if(a==='bag-select'){const items=bagItems(),item=items[Number(id)];if(item){item.selected=el.checked;try{sessionStorage.setItem('digo-cart-v3',JSON.stringify(items));}catch{toast('Could not update your bag. Please retry.');}bagModal();}return;}
   if(el.dataset.boardField){const key=el.dataset.boardField;world.boards[currentBoard]=J.change(getBoard(currentBoard),{type:'preferences',value:{[key]:el.value}});writeWorld();if(key==='budget')render(false);}
   if(el.dataset.planField){world.plans[id][el.dataset.planField]=el.value;writeWorld();if(['date','place','budget'].includes(el.dataset.planField))render(false);}
   if(a==='group'){const x=world.saved.find(x=>x.key===id);if(x){x.group=el.value;writeWorld();}}

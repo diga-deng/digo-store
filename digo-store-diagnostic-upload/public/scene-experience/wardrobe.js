@@ -210,10 +210,11 @@ function closetEmpty() {
   return `<div class="closet-empty"><div class="empty-rail" aria-hidden="true">${hanger()}${hanger()}${hanger()}</div><p>${ordered?'Purchased pieces appear here after payment is confirmed.':owned?'Your own pieces will live here.':'A little space for your next favourite.'}</p>${!ordered&&!owned?`<button class="life-btn subtle" data-closet="add">Add DIGO pieces ${icon('plus')}</button>`:`<a class="life-btn subtle" href="${owned?'#/edit/amalfi':'/shop'}">${owned?'Add an owned piece':'Explore pieces'} ${icon('arrow')}</a>`}</div>`;
 }
 function closetPage() {
-  const fitting = route() === '/wardrobe' && !location.hash.includes('tab=purchased');
+  const fitting = route() === '/wardrobe' && !location.hash.includes('tab=purchased'), bag = route() === '/wardrobe/bag', count = storeCartCount();
   const tabs = `<nav class="fitting-tabs" aria-label="Wardrobe views">
     <a href="#/wardrobe" ${fitting ? 'aria-current="page"' : ''}>Fitting room</a>
-    <a href="#/wardrobe/pieces" ${!fitting ? 'aria-current="page"' : ''}>My pieces</a></nav>`;
+    <a href="#/wardrobe/pieces" ${!fitting && !bag ? 'aria-current="page"' : ''}>My pieces</a>
+    <a href="#/wardrobe/bag" ${bag ? 'aria-current="page"' : ''}>Bag${count ? ` <b class="tab-count">${count}</b>` : ''}</a></nav>`;
   const heading = `<div class="closet-top"><h1>Wardrobe</h1>${tabs}</div>`;
   if (fitting) {
     requestAnimationFrame(warmFittingPhotos);
@@ -221,6 +222,7 @@ function closetPage() {
     const backdrop = `<div class="fit-backdrop" aria-hidden="true" style="background-image:url('${esc(scene?.image || '')}')"></div>`;
     return wrap(backdrop + heading + fittingRoom(), 'closet-page fitting-page');
   }
+  if (bag) return wrap(heading + bagContent(), 'closet-page pieces-page');
   return wrap(heading + myPieces(), 'closet-page pieces-page');
   const rows = closetRecords();
   let content;

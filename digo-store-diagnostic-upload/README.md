@@ -85,8 +85,8 @@ payment integrity, gesture intent/history and concept-versus-commerce checks.
 
 ## Language models
 
-`lib/model.ts` lets server code call a language model. Nothing shoppers see uses
-it yet: this is only the connection.
+`lib/model.ts` lets server code call a language model. One thing shoppers see
+uses it: describing their shape in the fitting room (below).
 
 - One group of Vercel variables per model, up to five, tried in order:
   `DIGO_MODEL_1_NAME`, `DIGO_MODEL_1_URL` (a full OpenAI-compatible chat
@@ -104,3 +104,30 @@ it yet: this is only the connection.
 - Sizes are still decided by the size chart in
   `public/scene-experience/fitting-shape.js`, whose numbers are placeholders
   until each brand supplies its real chart. A model must not decide a size.
+
+### Describing your shape in the fitting room
+
+While setting their shape, a shopper can press "Describe yourself instead" and
+say it in words (height, weight, where weight sits, arms, chest). `/api/fit`
+passes this to the model, which proposes the figure's numbers; the figure
+changes, the shopper corrects anything by hand, and presses Done. The size then
+comes from the size chart as before.
+
+- The button only appears when a model is connected.
+- Before the first message the shopper is told that what they type, and the
+  figure's shape, go to the language model provider. Nothing is stored by the
+  store's server. The saved shape stays on the device, as before.
+- The shape now has nine numbers: width for shoulders, chest, belly, hips and
+  legs; upper arm; and front-to-back depth for chest, belly and hips. Depth
+  adds half its change to that measurement. Arms and depth are recorded but
+  not drawn: the photograph is a front view. Arms are not yet used for size.
+- The model's answer is never trusted: only the nine numbers are kept, each
+  limited to 85–120, and anything unreadable is refused. The model is told not
+  to name a size, and the provider's error text is not shown to shoppers.
+- Each visitor gets 20 messages an hour and the site 600. This is counted in
+  memory per server instance, so it slows abuse but is not a hard budget; set a
+  spending cap with the provider as well.
+- Not verified: how well the model's numbers match real bodies. There is no
+  measured data behind "a bit of a belly" yet, and the base measurements and
+  size chart are placeholders. Treat the result as a starting point the shopper
+  confirms, and collect real measurements before relying on it.

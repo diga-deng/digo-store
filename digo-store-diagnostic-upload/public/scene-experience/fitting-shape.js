@@ -1,5 +1,7 @@
 /* Fitting room extras: press and hold the figure to set your shape, tap outside to go back
-   to trying pieces, and add your own face above the mannequin's neck. All kept on this device. */
+   to trying pieces, and add your own face above the mannequin's neck. The shape and the face are
+   kept on this device. A shopper can also describe themselves in words: only then, and only after
+   they agree, what they type and the figure's shape are sent to /api/fit to work out the numbers. */
 (function () {
   const SHAPE_KEY = 'digo-fitting-shape-v1', FACE_KEY = 'digo-fitting-face-v1', GUIDE_KEY = 'digo-fitting-guide-v1';
   // Where each measurement sits on the studio photograph, as a fraction of its height.
@@ -8,21 +10,31 @@
     {id: 'chest', label: 'Chest', at: .19, spread: .05},
     {id: 'belly', label: 'Belly', at: .30, spread: .055},
     {id: 'hips', label: 'Hips', at: .42, spread: .06},
-    {id: 'legs', label: 'Legs', at: .66, spread: 0}
+    {id: 'legs', label: 'Legs', at: .66, spread: 0},
+    // Recorded for fitted sleeves. The front photograph cannot show the arms changing on their own.
+    {id: 'arms', label: 'Arms', at: .24, spread: 0, flat: true}
   ];
+  // Front-to-back depth: a belly that sits forward, a fuller chest or seat. Not visible from the front
+  // either, so it is recorded and counted in the measurement rather than drawn.
+  const DEPTH = {chest: 'chestDepth', belly: 'bellyDepth', hips: 'hipsDepth'};
+  const KEYS = [...PARTS.map(part => part.id), ...Object.values(DEPTH)];
+  const DRAWN = PARTS.filter(part => !part.flat);
   const MIN = 85, MAX = 120;
   // Size check. PLACEHOLDER numbers until each brand supplies its real chart: the mannequin at 100%
   // stands for these body measurements (cm), and a size fits while every measurement is within its limit.
-  const BASE_CM = {shoulders: 42, chest: 92, belly: 74, hips: 98, legs: 56};
+  const BASE_CM = {shoulders: 42, chest: 92, belly: 74, hips: 98, legs: 56, arms: 28};
   const SIZE_CHART = [['XS', 84, 66, 90], ['S', 88, 70, 94], ['M', 96, 78, 102], ['L', 104, 86, 110], ['XL', 112, 94, 118]];
   const SIZES = SIZE_CHART.map(row => row[0]);
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
   const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } };
   const stored = read(SHAPE_KEY, {});
-  let shape = Object.fromEntries(PARTS.map(part => [part.id, Number(stored[part.id]) || 100]));
+  const limit = value => Math.round(Math.min(MAX, Math.max(MIN, Number(value) || 100)));
+  let shape = Object.fromEntries(KEYS.map(key => [key, limit(stored[key])]));
   let confirmed = stored.confirmed === true, pendingShape = false;
   const saveShape = () => write(SHAPE_KEY, {...shape, confirmed});
-  const cm = id => Math.round(BASE_CM[id] * shape[id] / 100);
+  // Width changes a measurement in full; depth adds half as much again (an approximation of going
+  // round an oval). With depth untouched this is the same number as before depth existed.
+  const cm = id => Math.round(BASE_CM[id] * shape[id] / 100 * (DEPTH[id] ? 1 + (shape[DEPTH[id]] - 100) / 200 : 1));
   // The smallest size whose chest, waist and hip limits all hold this shape; 'none' when none does.
   function fitSize() {
     if (!confirmed) return null;
@@ -31,12 +43,12 @@
   let active = 'hips', shaping = false, hold = null, handle = null;
   const room = () => document.querySelector('.fitting-room');
   const stage = () => document.querySelector('.fitting-stage');
-  const isDefault = () => PARTS.every(part => shape[part.id] === 100);
+  const isDefault = () => DRAWN.every(part => shape[part.id] === 100);
 
   // Each row of the photograph is stretched or narrowed by the parts of the body near it.
   function rowScale(t) {
     let scale = 1;
-    for (const part of PARTS) {
+    for (const part of DRAWN) {
       const amount = shape[part.id] / 100 - 1;
       if (!amount) continue;
       const weight = part.id === 'legs' ? Math.min(1, Math.max(0, (t - .47) / .08)) * (t > .93 ? Math.max(0, (1 - t) / .07) : 1)
@@ -63,34 +75,97 @@
   }
 
   function guides() {
-    return PARTS.map(part => `<div class="fit-guide ${part.id === active ? 'is-active' : ''}" data-part="${part.id}" style="top:${part.at * 100}%">
+    return DRAWN.map(part => `<div class="fit-guide ${part.id === active ? 'is-active' : ''}" data-part="${part.id}" style="top:${part.at * 100}%">
       <i data-fit-handle="${part.id}" data-side="-1"></i><i data-fit-handle="${part.id}" data-side="1"></i><span>${part.label}</span></div>`).join('');
   }
+  const label = id => PARTS.find(part => part.id === id).label + ' · about ' + cm(id) + ' cm';
   function panel() {
     return `<section class="fit-panel" aria-label="Your shape">
+      <div class="fit-sliders">
       <div class="fit-parts" role="group" aria-label="Part of the body">${PARTS.map(part => `<button type="button" data-fit="part" data-id="${part.id}" aria-pressed="${part.id === active}">${part.label}</button>`).join('')}</div>
-      <label class="fit-slider"><span><small>Narrower</small><b data-fit-name>${PARTS.find(part => part.id === active).label} · about ${cm(active)} cm</b><small>Wider</small></span>
+      <label class="fit-slider"><span><small>Narrower</small><b data-fit-name>${label(active)}</b><small>Wider</small></span>
         <input type="range" min="${MIN}" max="${MAX}" step="1" value="${shape[active]}" data-fit-range aria-label="Width"></label>
-      <div class="fit-panel-foot"><button type="button" data-fit="reset">Reset</button><button type="button" class="is-primary" data-fit="done">Done</button></div>
-      <p>Your size is checked against this shape before you can order. It stays on this device.</p></section>`;
+      <label class="fit-slider fit-depth" ${DEPTH[active] ? '' : 'hidden'}><span><small>Flatter</small><b>Front to back</b><small>Fuller</small></span>
+        <input type="range" min="${MIN}" max="${MAX}" step="1" value="${shape[DEPTH[active]] ?? 100}" data-fit-depth aria-label="Front to back"></label>
+      <button type="button" class="fit-talk-open" data-fit="talk" ${talk.available ? '' : 'hidden'}>Describe yourself instead</button>
+      </div>
+      <div class="fit-talk" data-gesture-ignore hidden></div>
+      <div class="fit-panel-foot"><button type="button" data-fit="talk-back" hidden>Use the sliders</button><button type="button" data-fit="reset">Reset</button><button type="button" class="is-primary" data-fit="done">Done</button></div>
+      <p data-fit-note>Your size is checked against this shape before you can order. The shape is kept on this device.</p></section>`;
   }
   function setPart(id) {
     active = id;
     const box = room(); if (!box) return;
     box.querySelectorAll('.fit-guide').forEach(guide => guide.classList.toggle('is-active', guide.dataset.part === id));
     box.querySelectorAll('[data-fit="part"]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === id)));
-    const name = box.querySelector('[data-fit-name]'), range = box.querySelector('[data-fit-range]');
-    if (name) name.textContent = PARTS.find(part => part.id === id).label + ' · about ' + cm(id) + ' cm';
+    const name = box.querySelector('[data-fit-name]'), range = box.querySelector('[data-fit-range]'), depth = box.querySelector('[data-fit-depth]');
+    if (name) name.textContent = label(id);
     if (range) range.value = shape[id];
+    if (depth) { depth.closest('.fit-depth').hidden = !DEPTH[id]; depth.value = shape[DEPTH[id]] ?? 100; }
   }
   function setValue(id, value) {
-    shape[id] = Math.round(Math.min(MAX, Math.max(MIN, value)));
-    const range = room()?.querySelector('[data-fit-range]');
+    shape[id] = limit(value);
+    const box = room(), range = box?.querySelector('[data-fit-range]'), depth = box?.querySelector('[data-fit-depth]'), name = box?.querySelector('[data-fit-name]');
     if (range && id === active) range.value = shape[id];
-    const name = room()?.querySelector('[data-fit-name]');
-    if (name && id === active) name.textContent = PARTS.find(part => part.id === id).label + ' · about ' + cm(id) + ' cm';
+    if (depth && id === DEPTH[active]) depth.value = shape[id];
+    if (name) name.textContent = label(active);
     drawWarp();
   }
+
+  // Describing yourself in words instead of moving sliders. The language model proposes the numbers;
+  // the shopper sees the figure change and can still correct any part by hand before pressing Done.
+  const talk = {available: false, open: false, busy: false, turns: [], error: ''};
+  const TALK_INTRO = 'Tell me your height and weight, then anything about your shape: where weight sits, your shoulders, arms, chest or belly. Skip whatever you would rather not say.';
+  function talkHtml() {
+    if (!read(GUIDE_KEY, {}).talkAgreed) return `<p class="fit-talk-note">What you type here, and the figure's shape, are sent to our language model provider to work out your shape. We do not store it. Share only what you are comfortable with.</p>
+      <div class="fit-talk-row"><button type="button" class="is-primary" data-fit="talk-agree">Continue</button></div>`;
+    const lines = [{role: 'assistant', content: TALK_INTRO}, ...talk.turns].map(turn => `<p class="fit-say fit-say-${turn.role === 'user' ? 'you' : 'us'}">${esc(turn.content)}</p>`).join('');
+    return `<div class="fit-talk-log" role="log" aria-live="polite">${lines}${talk.busy ? '<p class="fit-say fit-say-us fit-say-wait">Working out your shape…</p>' : ''}${talk.error ? `<p class="fit-say fit-say-error" role="alert">${esc(talk.error)}</p>` : ''}</div>
+      <div class="fit-talk-row"><input type="text" data-fit-say maxlength="600" enterkeyhint="send" autocomplete="off" aria-label="Describe your shape" placeholder="166 cm, 58 kg, belly sits forward, slim arms" ${talk.busy ? 'disabled' : ''}>
+        <button type="button" class="is-primary" data-fit="talk-send" ${talk.busy ? 'disabled' : ''}>Send</button></div>`;
+  }
+  function paintTalk(keep = '') {
+    const box = room()?.querySelector('.fit-panel'); if (!box) return;
+    const view = box.querySelector('.fit-talk');
+    box.querySelector('.fit-sliders').hidden = talk.open; view.hidden = !talk.open;
+    box.querySelector('[data-fit="talk-back"]').hidden = !talk.open; box.querySelector('[data-fit="reset"]').hidden = talk.open;
+    box.querySelector('[data-fit-note]').hidden = talk.open;
+    if (!talk.open) return;
+    view.innerHTML = talkHtml();
+    const log = view.querySelector('.fit-talk-log'), input = view.querySelector('[data-fit-say]');
+    if (log) log.scrollTop = log.scrollHeight;
+    if (input) { input.value = keep; if (!talk.busy) input.focus({preventScroll: true}); }
+  }
+  function applyShape(next) {
+    for (const key of KEYS) if (next && key in next) shape[key] = limit(next[key]);
+    setPart(active); drawWarp(); saveShape();
+  }
+  async function sendTalk() {
+    const input = room()?.querySelector('[data-fit-say]'), text = input?.value.trim();
+    if (!text || talk.busy) return;
+    talk.turns.push({role: 'user', content: text}); talk.busy = true; talk.error = ''; paintTalk();
+    let failed = '';
+    try {
+      // The server accepts twelve turns; the latest eleven always start and end with the shopper.
+      const response = await fetch('/api/fit', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({messages: talk.turns.slice(-11), shape})});
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) failed = data.error || 'We could not work that out. Please try again, or set your shape by hand.';
+      else {
+        applyShape(data.shape);
+        talk.turns.push({role: 'assistant', content: [data.reply, data.question].filter(Boolean).join(' ') || 'I have updated the figure. Does it look like you?'});
+      }
+    } catch { failed = 'We could not reach the helper. Check your connection, or set your shape by hand.'; }
+    talk.busy = false;
+    // A message that was not answered goes back into the box, so nothing typed is lost.
+    if (failed) { talk.turns.pop(); talk.error = failed; }
+    paintTalk(failed ? text : '');
+  }
+  // Offer the helper only when the store has a language model connected.
+  fetch('/api/fit').then(response => response.ok ? response.json() : {}).then(data => {
+    talk.available = data.available === true;
+    const button = room()?.querySelector('.fit-panel [data-fit="talk"]');
+    if (button) button.hidden = !talk.available;
+  }).catch(() => {});
   function startShaping() {
     const box = room(), carousel = box?.querySelector('.fitting-carousel');
     if (!box || shaping) return;
@@ -104,7 +179,7 @@
   }
   function stopShaping() {
     if (!shaping) return;
-    shaping = false; handle = null;
+    shaping = false; handle = null; talk.open = false; talk.error = '';
     confirmed = true;
     saveShape();
     const size = fitSize();
@@ -273,9 +348,12 @@
   document.addEventListener('pointerup', release, true);
   document.addEventListener('pointercancel', release, true);
   document.addEventListener('contextmenu', event => { if (event.target.closest?.('.fitting-stage, .fit-buy')) event.preventDefault(); });
-  document.addEventListener('input', event => { if (event.target.matches?.('[data-fit-range]')) setValue(active, Number(event.target.value)); });
+  document.addEventListener('input', event => {
+    if (event.target.matches?.('[data-fit-range]')) setValue(active, Number(event.target.value));
+    if (event.target.matches?.('[data-fit-depth]') && DEPTH[active]) setValue(DEPTH[active], Number(event.target.value));
+  });
   document.addEventListener('change', event => {
-    if (event.target.matches?.('[data-fit-range]')) saveShape();
+    if (event.target.matches?.('[data-fit-range], [data-fit-depth]')) saveShape();
     if (event.target.matches?.('[data-fit-file]')) { loadFace(event.target.files[0]); event.target.value = ''; }
   });
   document.addEventListener('keydown', event => {
@@ -283,13 +361,18 @@
     if (event.key === 'Escape' && room()?.querySelector('.fit-buy.is-open')) toggleBuyOne(false);
   });
   document.addEventListener('keydown', event => { if (shaping && event.key === 'Escape') { event.preventDefault(); stopShaping(); } }, true);
+  document.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing && event.target.matches?.('[data-fit-say]')) { event.preventDefault(); sendTalk(); } });
   document.addEventListener('click', event => {
     const el = event.target.closest?.('[data-fit]');
     if (el) {
       const action = el.dataset.fit;
       if (action === 'part') setPart(el.dataset.id);
       else if (action === 'done') stopShaping();
-      else if (action === 'reset') { for (const part of PARTS) shape[part.id] = 100; setPart(active); drawWarp(); saveShape(); }
+      else if (action === 'reset') { for (const key of KEYS) shape[key] = 100; setPart(active); drawWarp(); saveShape(); }
+      else if (action === 'talk') { talk.open = true; paintTalk(); }
+      else if (action === 'talk-back') { talk.open = false; talk.error = ''; paintTalk(); }
+      else if (action === 'talk-agree') { write(GUIDE_KEY, {...read(GUIDE_KEY, {}), talkAgreed: true}); paintTalk(); }
+      else if (action === 'talk-send') sendTalk();
       else if (action === 'face') el.parentElement.querySelector('[data-fit-file]').click();
       else if (action === 'face-clear') { try { localStorage.removeItem(FACE_KEY); } catch {} mountFace(); }
       else if (action === 'buy-look') { if (buyHeld) { buyHeld = false; event.preventDefault(); } else buyLook([0, 1]); }

@@ -82,3 +82,25 @@ and compressed images are hosted on the same domain. The existing `/shop`,
 
 Run `npm ci`, `npm test`, and `npm run build` before deploying. The suite includes
 payment integrity, gesture intent/history and concept-versus-commerce checks.
+
+## Language models
+
+`lib/model.ts` lets server code call a language model. Nothing shoppers see uses
+it yet: this is only the connection.
+
+- One group of Vercel variables per model, up to five, tried in order:
+  `DIGO_MODEL_1_NAME`, `DIGO_MODEL_1_URL` (a full OpenAI-compatible chat
+  completions address), `DIGO_MODEL_1_KEY`, `DIGO_MODEL_1_MODEL`, and the
+  optional `DIGO_MODEL_1_EXTRA` (JSON merged into the request). Changing
+  provider means changing variables, not code. See `.env.example`.
+- Keys stay on the server. They are never sent to the browser or returned by an API.
+- To check the connection, send the admin password to `/api/admin/model`:
+  `GET` lists the connected models; `POST` asks each one a short fixed question
+  and reports which answered, how long it took, and any error from the provider.
+
+  ```bash
+  curl -X POST https://digo-store-diagnostic.vercel.app/api/admin/model -H "x-admin-secret: <admin password>"
+  ```
+- Sizes are still decided by the size chart in
+  `public/scene-experience/fitting-shape.js`, whose numbers are placeholders
+  until each brand supplies its real chart. A model must not decide a size.

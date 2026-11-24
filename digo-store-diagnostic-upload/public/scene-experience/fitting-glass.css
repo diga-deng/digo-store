@@ -101,6 +101,27 @@ body.fit-shaping .fitting-zone { pointer-events: none; }
 .fit-panel-foot button { flex: 1; height: 44px; border-radius: 16px; font: 600 13px/1 Arial, sans-serif; color: white; background: #ffffff1f; border: 1px solid #ffffff80; cursor: pointer; }
 .fit-panel-foot .is-primary { background: white; color: #1b2a36; border-color: white; }
 .fit-panel p { margin: 0; font: 11px/1.4 Arial, sans-serif; color: #ffffffd1; text-align: center; }
+.fit-panel [hidden] { display: none !important; }
+.fit-sliders { display: grid; gap: 12px; }
+/* Describing yourself in words instead of moving the sliders. The log stays short so the figure,
+   which changes as the shopper talks, remains in view above the panel. */
+.fit-talk { display: grid; gap: 10px; }
+.fit-talk-log { display: grid; gap: 6px; max-height: min(22dvh, 170px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.fit-panel .fit-say { max-width: 88%; padding: 8px 12px; border-radius: 16px; font: 13px/1.4 Arial, sans-serif; text-align: left; color: white; background: #ffffff1f; border: 1px solid #ffffff40; justify-self: start; overflow-wrap: anywhere; }
+.fit-panel .fit-say-you { justify-self: end; background: white; color: #1b2a36; border-color: white; }
+.fit-panel .fit-say-wait { opacity: .75; font-style: italic; }
+.fit-panel .fit-say-error { max-width: 100%; background: #7a1f1fb3; border-color: #ffb4b4; }
+.fit-panel .fit-talk-note { font-size: 12px; text-align: left; color: white; }
+.fit-talk-row { display: flex; gap: 8px; }
+/* The box takes the page's own glass look; 16px keeps phones from zooming in when it is tapped. */
+.fit-panel .fit-talk-row input { flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 16px; font: 16px/1 Arial, sans-serif; }
+.fit-panel .fit-talk-row input::placeholder { color: #ffffffa6; }
+.fit-panel .fit-talk-row input:disabled { opacity: .6; }
+.fit-panel :is(.fit-talk-row button, .fit-talk-open) { flex: 1; height: 44px; padding: 0 16px; border-radius: 16px; font: 600 13px/1 Arial, sans-serif; color: white; background: #ffffff1f; border: 1px solid #ffffff80; cursor: pointer; }
+.fit-panel .fit-talk-row input + button { flex: none; }
+.fit-panel .fit-talk-row button.is-primary { background: white; color: #1b2a36; border-color: white; }
+.fit-panel .fit-talk-row button:disabled { opacity: .6; cursor: default; }
+.fit-panel :is(.fit-talk-row :is(button, input), .fit-talk-open):focus-visible { outline: 2px solid white; outline-offset: 2px; }
 
 /* Your picks from Discover, with their total, stay within reach above the navigation. */
 .fit-picks {
